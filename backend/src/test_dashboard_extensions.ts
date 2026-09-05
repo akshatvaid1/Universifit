@@ -1,8 +1,8 @@
 process.env.NODE_ENV = 'test';
 import http from 'http';
-import { app } from './index';
-import { inMemoryStore } from './config/inMemoryDb';
-import { generateToken } from './config/jwt';
+import { app } from './index.js';
+import { inMemoryStore } from './config/inMemoryDb.js';
+import { generateToken } from './config/jwt.js';
 
 async function runTests() {
   console.log('=== RUNNING CREATOR DASHBOARD EXTENSION TESTS ===');

@@ -6,7 +6,7 @@
         },
         "backend": {
             "root": "backend",
-            "entrypoint": "dist/index.js",
+            "entrypoint": "src/index.ts",
             "buildCommand": "npm run build"
         }
     },
@@ -14,14 +14,12 @@
         {
             "source": "/api(/.*)?",
             "destination": {
-                "type": "service",
                 "service": "backend"
             }
         },
         {
             "source": "/(.*)",
             "destination": {
-                "type": "service",
                 "service": "frontend"
             }
         }

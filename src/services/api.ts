@@ -1123,8 +1123,11 @@ export const updateCreatorProfileApi = async (profileData: {
       if (storedUser) {
         setStoredAuth(token || '', {
           ...storedUser,
-          fullName: profileData.fullName || storedUser.fullName,
-          avatarUrl: profileData.avatarUrl !== undefined ? profileData.avatarUrl : storedUser.avatarUrl,
+          profile: {
+            ...storedUser.profile,
+            fullName: profileData.fullName || storedUser.profile?.fullName || '',
+            avatarUrl: profileData.avatarUrl !== undefined ? profileData.avatarUrl : storedUser.profile?.avatarUrl,
+          },
         });
       }
       return { success: true, data: json.data };

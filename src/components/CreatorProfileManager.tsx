@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
   ShieldCheck,
   Award,
   Upload,
   CheckCircle2,
-  AlertCircle,
   ExternalLink,
   Lock,
   Landmark,
@@ -15,7 +13,6 @@ import {
   Sparkles,
   Plus,
   X,
-  FileCheck,
   FileUp,
 } from 'lucide-react';
 import { Card, Badge, Button, Input } from './ui';

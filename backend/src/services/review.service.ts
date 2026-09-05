@@ -1,4 +1,4 @@
-import { inMemoryStore } from '../config/inMemoryDb';
+import { inMemoryStore } from '../config/inMemoryDb.js';
 
 /**
  * Ascend Creator Reviews & Ratings Service

@@ -91,7 +91,6 @@ import {
   fetchMemberActivityApi,
   fetchCreatorCommunityAnalyticsApi,
   toggleOfferStatusApi,
-  updateCreatorProfileApi,
   type CreatorDashboardData,
   type StudioCourseItem,
   type PayoutDetails,
