@@ -164,7 +164,7 @@ app.use((err: any, _req: Request, res: Response, _next: any) => {
 export default app;
 export { app };
 
-if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
+if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`⚡ [Ascend Backend]: REST API server is listening at http://localhost:${PORT}`);
     CronService.start();

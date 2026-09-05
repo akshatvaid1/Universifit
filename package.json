@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:all": "npm run build && npm --prefix backend run build",
+    "build:backend": "npm --prefix backend run build",
+    "start": "npm --prefix backend run start",
+    "start:backend": "npm --prefix backend run start",
     "start:prod": "npm --prefix backend run start",
     "lint": "oxlint",
     "preview": "vite preview"
