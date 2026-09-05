@@ -1,0 +1,21 @@
+{
+  "name": "Ascend — Vetted Coaching Platform",
+  "short_name": "Ascend",
+  "description": "Train, look, and feel better — guided by verified practitioners in strength biomechanics, clinical nutrition, posture, and longevity.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121315",
+  "theme_color": "#121315",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ]
+}

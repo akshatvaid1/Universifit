@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Background with subtle corner rounding -->
+  <rect width="64" height="64" rx="16" fill="#121315" />
+  <rect x="1" y="1" width="62" height="62" rx="15" stroke="#B8703F" stroke-opacity="0.3" stroke-width="2" />
+  
+  <!-- Stylized Geometric Mountain Apex / Ascend 'A' -->
+  <path d="M32 12L15 48H25L32 32L39 48H49L32 12Z" fill="url(#copperGrad)" />
+  <path d="M32 23L23 42H28.5L32 34.5L35.5 42H41L32 23Z" fill="#121315" fill-opacity="0.9" />
+  
+  <!-- Warm glow accent on peak -->
+  <circle cx="32" cy="13" r="3" fill="#E29A68" />
+
+  <defs>
+    <linearGradient id="copperGrad" x1="15" y1="48" x2="49" y2="12" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8F5128" />
+      <stop offset="0.5" stop-color="#B8703F" />
+      <stop offset="1" stop-color="#E29A68" />
+    </linearGradient>
+  </defs>
+</svg>

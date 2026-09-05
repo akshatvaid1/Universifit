@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <rect width="180" height="180" rx="40" fill="#121315" />
+  <rect x="2" y="2" width="176" height="176" rx="38" stroke="#B8703F" stroke-opacity="0.35" stroke-width="4" />
+  
+  <!-- Stylized Geometric Mountain Apex / Ascend 'A' -->
+  <path d="M90 32L40 142H68L90 92L112 142H140L90 32Z" fill="url(#copperGradLarge)" />
+  <path d="M90 62L62 124H78L90 98L102 124H118L90 62Z" fill="#121315" fill-opacity="0.95" />
+  
+  <!-- Peak Glow Accent -->
+  <circle cx="90" cy="34" r="7" fill="#E29A68" />
+
+  <defs>
+    <linearGradient id="copperGradLarge" x1="40" y1="142" x2="140" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8F5128" />
+      <stop offset="0.5" stop-color="#B8703F" />
+      <stop offset="1" stop-color="#E29A68" />
+    </linearGradient>
+  </defs>
+</svg>

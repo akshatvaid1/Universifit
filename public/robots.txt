@@ -1,0 +1,25 @@
+# robots.txt for Ascend (https://ascend.io)
+User-agent: *
+Allow: /
+Allow: /discover
+Allow: /creator/*
+Allow: /community
+Allow: /privacy
+Allow: /terms
+Allow: /refund-policy
+Allow: /contact
+
+# Disallow Private Athlete & Creator Portals
+Disallow: /admin/
+Disallow: /admin/*
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /my-space
+Disallow: /my-space/*
+Disallow: /checkout
+Disallow: /checkout/*
+Disallow: /api/
+Disallow: /api/*
+
+# XML Sitemap Location
+Sitemap: https://ascend.io/sitemap.xml

@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" fill="none">
+  <!-- Background Canvas -->
+  <rect width="1200" height="630" fill="#121315" />
+  
+  <!-- Subtle Grid Accent -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-opacity="0.025" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="glow" cx="80%" cy="20%" r="60%">
+      <stop offset="0%" stop-color="#B8703F" stop-opacity="0.18" />
+      <stop offset="60%" stop-color="#B8703F" stop-opacity="0.03" />
+      <stop offset="100%" stop-color="#121315" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="bottomGlow" cx="20%" cy="90%" r="50%">
+      <stop offset="0%" stop-color="#6E8B6F" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#121315" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="copperText" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E29A68" />
+      <stop offset="50%" stop-color="#B8703F" />
+      <stop offset="100%" stop-color="#8F5128" />
+    </linearGradient>
+    <linearGradient id="borderGrad" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#B8703F" stop-opacity="0.5" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#6E8B6F" stop-opacity="0.3" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Gradients & Grid -->
+  <rect width="1200" height="630" fill="url(#grid)" />
+  <rect width="1200" height="630" fill="url(#glow)" />
+  <rect width="1200" height="630" fill="url(#bottomGlow)" />
+
+  <!-- Outer Border Frame -->
+  <rect x="24" y="24" width="1152" height="582" rx="28" stroke="url(#borderGrad)" stroke-width="2" />
+
+  <!-- Top Left: Brand Logo & Pill -->
+  <g transform="translate(80, 80)">
+    <!-- Apex Glyph -->
+    <rect width="52" height="52" rx="14" fill="#16171A" stroke="#B8703F" stroke-width="1.5" stroke-opacity="0.5" />
+    <path d="M26 12L14 38H21L26 27L31 38H38L26 12Z" fill="url(#copperText)" />
+    <circle cx="26" cy="13" r="2.5" fill="#E29A68" />
+    
+    <!-- Wordmark -->
+    <text x="68" y="36" font-family="'Fraunces', Georgia, serif" font-size="34" font-weight="800" fill="#F7F4EF" letter-spacing="0.04em">ASCEND</text>
+
+    <!-- Verified Pill -->
+    <rect x="240" y="8" width="180" height="34" rx="17" fill="#6E8B6F" fill-opacity="0.15" stroke="#6E8B6F" stroke-width="1" stroke-opacity="0.3" />
+    <circle cx="258" cy="25" r="4" fill="#6E8B6F" />
+    <text x="270" y="30" font-family="'Inter', -apple-system, sans-serif" font-size="12" font-weight="700" fill="#6E8B6F" letter-spacing="0.06em">VERIFIED NETWORK</text>
+  </g>
+
+  <!-- Main Value Proposition Headline -->
+  <g transform="translate(80, 210)">
+    <text x="0" y="44" font-family="'Fraunces', Georgia, serif" font-size="52" font-weight="800" fill="#F7F4EF" letter-spacing="-0.02em">
+      Train, Look, and Feel Better.
+    </text>
+    <text x="0" y="104" font-family="'Fraunces', Georgia, serif" font-size="52" font-weight="700" fill="url(#copperText)" letter-spacing="-0.02em">
+      Guided by Vetted Elite Coaches.
+    </text>
+
+    <text x="0" y="160" font-family="'Inter', -apple-system, sans-serif" font-size="20" font-weight="400" fill="#F7F4EF" fill-opacity="0.7" letter-spacing="-0.01em">
+      1-on-1 biomechanics audits, clinical metabolic nutrition, posture restoration &amp; longevity protocols.
+    </text>
+  </g>
+
+  <!-- Specialty Chips Row -->
+  <g transform="translate(80, 440)">
+    <!-- Chip 1 -->
+    <rect x="0" y="0" width="220" height="42" rx="21" fill="#16171A" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1" />
+    <text x="110" y="26" font-family="'Inter', sans-serif" font-size="14" font-weight="600" fill="#F7F4EF" text-anchor="middle">Strength &amp; Hypertrophy</text>
+
+    <!-- Chip 2 -->
+    <rect x="236" y="0" width="200" height="42" rx="21" fill="#16171A" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1" />
+    <text x="336" y="26" font-family="'Inter', sans-serif" font-size="14" font-weight="600" fill="#F7F4EF" text-anchor="middle">Metabolic Nutrition</text>
+
+    <!-- Chip 3 -->
+    <rect x="452" y="0" width="180" height="42" rx="21" fill="#16171A" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1" />
+    <text x="542" y="26" font-family="'Inter', sans-serif" font-size="14" font-weight="600" fill="#F7F4EF" text-anchor="middle">Posture &amp; Alignment</text>
+
+    <!-- Chip 4 -->
+    <rect x="648" y="0" width="170" height="42" rx="21" fill="#16171A" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1" />
+    <text x="733" y="26" font-family="'Inter', sans-serif" font-size="14" font-weight="600" fill="#F7F4EF" text-anchor="middle">Clinical Skincare</text>
+  </g>
+
+  <!-- Bottom Metric Bar -->
+  <g transform="translate(80, 528)">
+    <text x="0" y="22" font-family="'Inter', monospace" font-size="15" font-weight="700" fill="#E29A68">
+      ★ 4.99 AVERAGE RATING
+    </text>
+    <text x="210" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="500" fill="#ffffff" fill-opacity="0.35">|</text>
+    <text x="235" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="600" fill="#F7F4EF" fill-opacity="0.8">
+      14,000+ Athletes Coached
+    </text>
+    <text x="475" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="500" fill="#ffffff" fill-opacity="0.35">|</text>
+    <text x="500" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="600" fill="#6E8B6F">
+      100% Money-Back Guarantee
+    </text>
+
+    <text x="1040" y="22" font-family="'Inter', sans-serif" font-size="16" font-weight="700" fill="#F7F4EF" fill-opacity="0.9" text-anchor="end">
+      ascend.io
+    </text>
+  </g>
+</svg>

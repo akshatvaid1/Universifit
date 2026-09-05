@@ -1,0 +1,754 @@
+// Ascend Backend Prisma Schema
+// PostgreSQL Database Connection
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------
+// Enums
+// ----------------------------------------------------
+
+enum DiscountType {
+  PERCENT
+  FLAT
+}
+
+enum Role {
+  BUYER
+  CREATOR
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ReferralStatus {
+  PENDING
+  VERIFIED
+  REWARDED
+}
+
+enum OfferType {
+  COURSE
+  ONE_ON_ONE
+  COMMUNITY
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum EventStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum RSVPStatus {
+  GOING
+  NOT_GOING
+  WAITLISTED
+}
+
+enum TierAccess {
+  FREE
+  PAID
+}
+
+// ----------------------------------------------------
+// Models
+// ----------------------------------------------------
+
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String
+  fullName     String
+  avatarUrl              String?
+  role                   Role            @default(BUYER)
+  points                 Int             @default(0)
+  isProfilePrivate       Boolean         @default(false)
+  isEmailVerified        Boolean         @default(false)
+  emailVerificationToken String?
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  // Relations
+  creatorProfile  CreatorProfile?
+  enrollments     Enrollment[]
+  bookings        Booking[]
+  communityPosts  CommunityPost[]
+  postReplies     PostReply[]
+  postLikes       PostLike[]
+  payments        Payment[]
+  lessonProgress  LessonProgress[]
+  sentMessages      Message[] @relation("SentMessages")
+  receivedMessages  Message[] @relation("ReceivedMessages")
+  reviews           Review[]
+  notifications     Notification[]
+  supportTickets    SupportTicket[]
+  wishlistItems     WishlistItem[]
+  certificates      Certificate[]
+  referredBy        Referral?       @relation("ReferredUser")
+  pointsTransactions PointsTransaction[]
+  eventRsvps        EventRSVP[]
+  membershipMemberships MembershipMember[]
+
+  @@map("users")
+}
+
+model CreatorProfile {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  handle             String             @unique
+  headline           String?
+  bio                String?
+  specialtyTags      String[]           @default([])
+  credentials        String[]           @default([])
+  verificationDocs   String[]           @default([]) // S3/R2 stored document URLs
+  verificationStatus VerificationStatus @default(PENDING)
+  rejectionReason    String?
+  verifiedAt         DateTime?
+  rating             Float              @default(5.0)
+  totalClients       Int                @default(0)
+  profileViews       Int                @default(0)
+  referralCode       String?            @unique
+  referralBonus      Decimal            @default(25.00) @db.Decimal(10, 2)
+  agreementAccepted  Boolean            @default(false)
+  agreementAcceptedAt DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // Relations
+  offers           Offer[]
+  courses          Course[]
+  availabilities   Availability[]
+  bookings         Booking[]
+  coupons          Coupon[]
+  referrals        Referral[]
+  communityPosts   CommunityPost[]
+  reviews          Review[]
+  storefrontVisits StorefrontVisit[]
+  pointsRules      PointsRule[]
+  userLevels       UserLevel[]
+  pointsTransactions PointsTransaction[]
+  events           Event[]
+  membershipTiers  MembershipTier[]
+  membershipMembers MembershipMember[]
+
+  @@map("creator_profiles")
+}
+
+model Availability {
+  id        String         @id @default(uuid())
+  creatorId String
+  creator   CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  startTime DateTime
+  endTime   DateTime
+  isBooked  Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  // 1-to-1 relation with Booking
+  booking   Booking?
+
+  @@unique([creatorId, startTime])
+  @@map("availabilities")
+}
+
+model Offer {
+  id          String         @id @default(uuid())
+  creatorId   String
+  creator     CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  type        OfferType
+  price           Decimal        @db.Decimal(10, 2)
+  currency        String         @default("USD")
+  isRecurring     Boolean        @default(false)
+  billingInterval String?        @default("month") // 'month' | 'year'
+  razorpayPlanId  String?
+  viewCount       Int            @default(0)
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  course        Course?
+  enrollments   Enrollment[]
+  bookings      Booking[]
+  payments      Payment[]
+  wishlistItems WishlistItem[]
+
+  @@map("offers")
+}
+
+model Course {
+  id           String         @id @default(uuid())
+  creatorId    String
+  creator      CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  offerId      String?        @unique
+  offer        Offer?         @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  title        String
+  description  String?
+  thumbnailUrl String?
+  isPublished  Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  // Relations
+  lessons      Lesson[]
+  enrollments  Enrollment[]
+  certificates Certificate[]
+
+  @@map("courses")
+}
+
+model Lesson {
+  id              String           @id @default(uuid())
+  courseId        String
+  course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  videoUrl        String?
+  durationSeconds Int              @default(0)
+  order           Int              @default(1)
+  dripDays        Int              @default(0)
+  dripDate        DateTime?
+  isPreview       Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  progressRecords LessonProgress[]
+
+  @@map("lessons")
+}
+
+model LessonProgress {
+  id                 String    @id @default(uuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId           String
+  lesson             Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  isCompleted        Boolean   @default(false)
+  completedAt        DateTime?
+  lastWatchedSeconds Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([userId, lessonId])
+  @@map("lesson_progress")
+}
+
+model Booking {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creatorId       String
+  creator         CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  offerId         String?
+  offer           Offer?         @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  availabilityId  String?        @unique
+  availability    Availability?  @relation(fields: [availabilityId], references: [id], onDelete: SetNull)
+  scheduledAt     DateTime
+  durationMinutes Int            @default(45)
+  status          BookingStatus  @default(SCHEDULED)
+  meetingUrl      String?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  payment         Payment?
+  messages        Message[]
+  reviews         Review[]
+  supportTickets  SupportTicket[]
+
+  @@unique([creatorId, scheduledAt])
+  @@map("bookings")
+}
+
+model CommunityPost {
+  id          String          @id @default(uuid())
+  creatorId   String?
+  creator     CreatorProfile? @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title       String
+  content     String          @db.Text
+  category    String?
+  likesCount  Int             @default(0)
+  tierAccess  TierAccess      @default(FREE)
+  isPinned    Boolean         @default(false)
+  pinnedAt    DateTime?
+  isReported  Boolean         @default(false)
+  reportReason String?
+  reportCount Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  replies PostReply[]
+  likes   PostLike[]
+  reports PostReport[]
+
+  @@map("community_posts")
+}
+
+model PostReport {
+  id        String        @id @default(uuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporterId String
+  reason    String        // 'SPAM' | 'HARASSMENT' | 'INAPPROPRIATE' | 'MISINFORMATION' | 'OFF_TOPIC'
+  details   String?       @db.Text
+  status    String        @default("PENDING") // 'PENDING' | 'DISMISSED' | 'ACTIONED'
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("post_reports")
+}
+
+model PostReply {
+  id        String        @id @default(uuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String        @db.Text
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("post_replies")
+}
+
+model PostLike {
+  id        String        @id @default(uuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@unique([userId, postId])
+  @@map("post_likes")
+}
+
+model Enrollment {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offerId         String
+  offer           Offer            @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  courseId        String?
+  course          Course?          @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  status                 EnrollmentStatus @default(ACTIVE)
+  progressPercent        Int              @default(0)
+  isRecurring            Boolean          @default(false)
+  billingInterval        String?          @default("month")
+  razorpaySubscriptionId String?
+  currentPeriodStart      DateTime?
+  currentPeriodEnd        DateTime?
+  cancelAtPeriodEnd       Boolean          @default(false)
+  cancelledAt             DateTime?
+  enrolledAt             DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  messages        Message[]
+  reviews         Review[]
+  supportTickets  SupportTicket[]
+  certificates    Certificate[]
+
+  @@unique([userId, offerId])
+  @@map("enrollments")
+}
+
+model Payment {
+  id                    String        @id @default(uuid())
+  userId                String
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  offerId               String?
+  offer                 Offer?        @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  bookingId             String?       @unique
+  booking               Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  couponId              String?
+  coupon                Coupon?       @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  discountAmount        Decimal?      @db.Decimal(10, 2)
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("USD")
+  status                PaymentStatus @default(PENDING)
+  razorpayOrderId        String?       @unique
+  razorpayPaymentId      String?       @unique
+  razorpaySignature      String?
+  razorpaySubscriptionId String?
+  stripePaymentIntentId  String?       @unique
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+model Coupon {
+  id           String         @id @default(uuid())
+  code         String         @unique
+  discountType DiscountType   @default(PERCENT)
+  value        Decimal        @db.Decimal(10, 2)
+  expiryDate   DateTime?
+  creatorId    String
+  creator      CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  usageLimit   Int?
+  usedCount    Int            @default(0)
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  // Relations
+  payments     Payment[]
+
+  @@index([creatorId, isActive])
+  @@map("coupons")
+}
+
+model Message {
+  id           String      @id @default(uuid())
+  senderId     String
+  receiverId   String
+  enrollmentId String?
+  bookingId    String?
+  text         String      @db.Text
+  isRead       Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+
+  sender       User        @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver     User        @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  enrollment   Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  booking      Booking?    @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([senderId, receiverId])
+  @@index([receiverId, isRead])
+  @@map("messages")
+}
+
+model Review {
+  id            String          @id @default(uuid())
+  creatorId     String
+  buyerId       String
+  enrollmentId  String?
+  bookingId     String?
+  rating        Int             // 1 to 5 stars
+  reviewText    String          @db.Text
+  programTitle  String?
+  verifiedBuyer Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  creator       CreatorProfile  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  buyer         User            @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  enrollment    Enrollment?     @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  booking       Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@unique([buyerId, enrollmentId])
+  @@unique([buyerId, bookingId])
+  @@index([creatorId, rating])
+  @@map("reviews")
+}
+
+enum NotificationType {
+  BOOKING_NEW
+  BOOKING_CONFIRMED
+  MESSAGE_RECEIVED
+  COURSE_PUBLISHED
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  PAYMENT_SUCCESS
+  REVIEW_RECEIVED
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String           @db.Text
+  linkUrl   String?
+  isRead    Boolean          @default(false)
+  emailSent Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+enum TicketCategory {
+  PAYMENT_ISSUE
+  ACCESS_ISSUE
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+model SupportTicket {
+  id            String         @id @default(uuid())
+  ticketNumber  String         @unique
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      TicketCategory
+  subject       String
+  description   String         @db.Text
+  status        TicketStatus   @default(OPEN)
+  enrollmentId  String?
+  enrollment    Enrollment?    @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  bookingId     String?
+  booking       Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  adminResponse String?        @db.Text
+  respondedAt   DateTime?
+  resolvedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@map("support_tickets")
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offerId   String
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, offerId])
+  @@index([userId, createdAt])
+  @@map("wishlist_items")
+}
+
+model Certificate {
+  id                String      @id @default(uuid())
+  certificateNumber String      @unique
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId          String
+  course            Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrollmentId      String?
+  enrollment        Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  buyerName         String
+  courseTitle       String
+  creatorName       String
+  completionDate    DateTime    @default(now())
+  pdfPath           String?
+  pdfUrl            String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@map("certificates")
+}
+
+model StorefrontVisit {
+  id         String         @id @default(uuid())
+  creatorId  String
+  creator    CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  visitorId  String?
+  referrer   String?
+  userAgent  String?
+  createdAt  DateTime       @default(now())
+
+  @@index([creatorId, createdAt])
+  @@map("storefront_visits")
+}
+
+model Referral {
+  id             String         @id @default(uuid())
+  creatorId      String
+  creator        CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  referredUserId String         @unique
+  referredUser   User           @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+  referralCode   String
+  status         ReferralStatus @default(PENDING)
+  bonusAmount    Decimal        @default(25.00) @db.Decimal(10, 2)
+  rewardPaidAt   DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([creatorId])
+  @@index([referralCode])
+  @@map("referrals")
+}
+
+model PointsRule {
+  id        String   @id @default(uuid())
+  creatorId String?  // null = global default
+  action    String   // 'post' | 'reply' | 'like-received' | 'lesson-complete' | 'event-attend'
+  points    Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator   CreatorProfile? @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, action])
+  @@index([action, isActive])
+  @@map("points_rules")
+}
+
+model UserLevel {
+  id        String   @id @default(uuid())
+  creatorId String?  // null = global default
+  tierName  String
+  minPoints Int
+  badgeColor String  @default("#6B7280")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator   CreatorProfile? @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, minPoints])
+  @@map("user_levels")
+}
+
+model PointsTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  creatorId String
+  action    String
+  points    Int
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creator   CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, createdAt])
+  @@index([userId, creatorId])
+  @@map("points_transactions")
+}
+
+model Event {
+  id              String         @id @default(uuid())
+  creatorId       String
+  creator         CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?        @db.Text
+  scheduledAt     DateTime
+  durationMinutes Int            @default(60)
+  capacity        Int?           // null = unlimited
+  isRecurring     Boolean        @default(false)
+  recurrenceRule  String?        // RRULE string e.g. "FREQ=WEEKLY;BYDAY=MO"
+  meetingUrl      String?
+  meetingCode     String?
+  conferenceId    String?
+  calendarEventId String?
+  eventOfferId    String?        // optional: gates RSVP to tier that includes this offerId
+  status          EventStatus    @default(SCHEDULED)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  rsvps           EventRSVP[]
+
+  @@index([creatorId, scheduledAt])
+  @@index([status, scheduledAt])
+  @@map("events")
+}
+
+model EventRSVP {
+  id          String     @id @default(uuid())
+  eventId     String
+  event       Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      RSVPStatus @default(GOING)
+  hasAttended Boolean    @default(false)
+  attendedAt  DateTime?
+  joinToken   String     @unique @default(uuid())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([eventId, userId])
+  @@index([eventId, hasAttended])
+  @@index([joinToken])
+  @@map("event_rsvps")
+}
+
+model MembershipTier {
+  id               String         @id @default(uuid())
+  creatorId        String
+  creator          CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?        @db.Text
+  price            Decimal        @default(0) @db.Decimal(10, 2)
+  currency         String         @default("INR")
+  access           TierAccess     @default(FREE)
+  includedOfferIds String[]       // offer IDs this tier grants access to
+  isDefault        Boolean        @default(false)  // auto-join free tier
+  isActive         Boolean        @default(true)
+  sortOrder        Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  members          MembershipMember[]
+
+  @@unique([creatorId, name])
+  @@index([creatorId, isActive])
+  @@map("membership_tiers")
+}
+
+model MembershipMember {
+  id        String         @id @default(uuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creatorId String
+  creator   CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  tierId    String
+  tier      MembershipTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  status    String         @default("ACTIVE")
+  bannedAt  DateTime?
+  banReason String?
+  joinedAt  DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId, creatorId])   // one active tier per user per creator
+  @@index([tierId])
+  @@map("membership_members")
+}
