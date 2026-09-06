@@ -1,0 +1,24 @@
+# Universifit
+
+> Universifit is a vetted 1-on-1 coaching platform and athletic curriculum marketplace connecting individuals with verified practitioners in strength biomechanics, clinical metabolic nutrition, posture restoration, and longevity protocols.
+
+## Core Offerings
+
+- **1-on-1 Consultations**: Private video coaching sessions with top 1% verified practitioners covering movement screening, form audits, and personalized protocols.
+- **Masterclass Curriculums**: Structured video syllabi with sequential module progressions, downloadable spreadsheets, and coach feedback milestones.
+- **Inner Circle Squads**: Private community circles for form audits, personal record celebrations, and peer accountability.
+- **Buyer Protection**: 256-bit encrypted checkout via Razorpay, 14-day consultation refund window, and 30-day curriculum mastery guarantee.
+
+## Key Navigation Links
+
+- [Home](https://universifit.vercel.app/): Main landing page with featured practitioners, platform metrics, and core disciplines.
+- [Discover Coaches](https://universifit.vercel.app/discover): Interactive directory of verified coaches filterable by discipline (strength, nutrition, posture, longevity) and goal.
+- [Community](https://universifit.vercel.app/community): Athletic discussion feed, weekly PRs, and reputation score tracking.
+- [Privacy Policy](https://universifit.vercel.app/privacy): Biometric data governance, encrypted telemetry storage, and zero third-party advertising policy.
+- [Terms of Service](https://universifit.vercel.app/terms): Platform usage terms, coaching marketplace escrow terms, and creator payout guidelines.
+- [Refund Policy](https://universifit.vercel.app/refund-policy): Transparent 14-day consultation refund policy and 30-day curriculum satisfaction guarantee.
+- [Concierge Support](https://universifit.vercel.app/contact): Platform assistance desk for billing inquiries and coach application verification.
+
+## Creator Verification Standards
+
+Practitioners on Universifit are vetted through credential validation, coaching portfolio audits, and verified client case studies before listing 1-on-1 consultations or video syllabi.

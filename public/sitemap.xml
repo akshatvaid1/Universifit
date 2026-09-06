@@ -1,76 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Primary Landing & Discover Hub -->
   <url>
-    <loc>https://ascend.io/</loc>
-    <lastmod>2026-09-02</lastmod>
+    <loc>https://universifit.vercel.app/</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ascend.io/discover</loc>
-    <lastmod>2026-09-02</lastmod>
+    <loc>https://universifit.vercel.app/discover</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
-
-  <!-- Verified Creator Profiles -->
   <url>
-    <loc>https://ascend.io/creator/marcus.vance</loc>
-    <lastmod>2026-09-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://ascend.io/creator/dr.elena.metabolism</loc>
-    <lastmod>2026-09-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://ascend.io/creator/kai.mobility</loc>
-    <lastmod>2026-09-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://ascend.io/creator/sarah.skin</loc>
-    <lastmod>2026-09-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-
-  <!-- Community Hub -->
-  <url>
-    <loc>https://ascend.io/community</loc>
-    <lastmod>2026-09-02</lastmod>
+    <loc>https://universifit.vercel.app/community</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.75</priority>
+    <priority>0.8</priority>
   </url>
-
-  <!-- Legal & Transparency Pages -->
   <url>
-    <loc>https://ascend.io/privacy</loc>
-    <lastmod>2026-09-02</lastmod>
+    <loc>https://universifit.vercel.app/privacy</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://ascend.io/terms</loc>
-    <lastmod>2026-09-02</lastmod>
+    <loc>https://universifit.vercel.app/terms</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://ascend.io/refund-policy</loc>
-    <lastmod>2026-09-02</lastmod>
+    <loc>https://universifit.vercel.app/refund-policy</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://ascend.io/contact</loc>
-    <lastmod>2026-09-02</lastmod>
+    <loc>https://universifit.vercel.app/contact</loc>
+    <lastmod>2026-09-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://universifit.vercel.app/creator/chadtag</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://universifit.vercel.app/creator/marcus.vance</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://universifit.vercel.app/creator/dr.elena.metabolism</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://universifit.vercel.app/creator/kai.mobility</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://universifit.vercel.app/creator/sarah.skin</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://universifit.vercel.app/course/course-chadmax</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://universifit.vercel.app/course/c-big3-mechanics</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
   </url>
 </urlset>

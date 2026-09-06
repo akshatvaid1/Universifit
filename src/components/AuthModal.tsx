@@ -270,17 +270,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <h3 className="font-display font-bold text-xl text-white">
                 {mode === 'verify' ? 'Email Verified!' : 'Authentication Successful'}
               </h3>
-              <p className="text-xs text-neutral-400">Redirecting to your Ascend Space...</p>
+              <p className="text-xs text-neutral-400">Redirecting to your Universifit Space...</p>
             </motion.div>
           ) : (
             <div>
               {/* Header */}
               <div className="text-center space-y-1 mb-6">
                 <div className="w-10 h-10 rounded-2xl bg-[#B8703F] text-white font-display font-black text-lg flex items-center justify-center mx-auto mb-3 shadow-md">
-                  A
+                  U
                 </div>
                 <h2 className="text-2xl font-display font-bold text-white tracking-tight">
-                  {mode === 'login' && 'Sign In to Ascend'}
+                  {mode === 'login' && 'Sign In to Universifit'}
                   {mode === 'register' && 'Create Your Account'}
                   {mode === 'forgot' && 'Reset Password'}
                   {mode === 'reset' && 'Set New Password'}
@@ -338,7 +338,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       <input
                         required
                         type="email"
-                        placeholder="alex@ascend.fit"
+                        placeholder="alex@universifit.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full bg-[#1e1e22] rounded-full py-2.5 pl-11 pr-4 text-sm text-white placeholder:text-neutral-500 border border-white/[0.08] focus:border-[#B8703F] focus:outline-none transition-colors"
@@ -425,7 +425,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </div>
                     <input
                       type="text"
-                      placeholder="e.g. MARCUS-ASCEND"
+                      placeholder="e.g. MARCUS-UNIVERSIFIT"
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                       className="w-full bg-[#1e1e22] rounded-full py-2.5 px-4 text-sm font-mono uppercase tracking-wider text-white border border-white/[0.08] focus:border-[#B8703F] focus:outline-none placeholder:text-neutral-600"

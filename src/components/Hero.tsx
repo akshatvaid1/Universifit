@@ -115,7 +115,7 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
               <div className="relative h-[430px] sm:h-[490px] w-full rounded-2xl overflow-hidden bg-neutral-900">
                 <img
                   src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&auto=format&fit=crop&q=80"
-                  alt="Ascend Certified Coach"
+                  alt="Marcus Vance, Head Strength & Biomechanics Coach at Universifit demonstrating posture protocols"
                   className="w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-700"
                 />
                 
@@ -143,7 +143,7 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className="font-display font-bold text-lg text-[#F7F4EF]">
-                            Ascend Certified Coach
+                            Universifit Certified Coach
                           </h4>
                           <ShieldCheck className="w-4 h-4 text-[#6E8B6F]" />
                         </div>

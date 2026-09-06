@@ -83,7 +83,7 @@ export const CoachCard: React.FC<CoachCardProps> = ({ coach, onBook }) => {
           <div className="relative mb-4 h-48 w-full rounded-2xl overflow-hidden bg-neutral-900">
             <img
               src={coach.avatarUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&auto=format&fit=crop&q=80'}
-              alt={coach.fullName}
+              alt={`${coach.fullName} — ${coach.headline || 'Verified Coach'}`}
               className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
             />
 

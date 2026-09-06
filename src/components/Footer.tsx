@@ -8,6 +8,8 @@ export interface FooterProps {
   onNavigateStatic?: (page: 'privacy' | 'terms' | 'refund-policy' | 'contact') => void;
   onNavigateAdmin?: () => void;
   onNavigateHome?: () => void;
+  onNavigateDiscover?: (category?: string, search?: string) => void;
+  onSelectCourse?: (courseId: string) => void;
   onOpenSupport?: () => void;
 }
 
@@ -16,6 +18,8 @@ export const Footer: React.FC<FooterProps> = ({
   onNavigateStatic,
   onNavigateAdmin,
   onNavigateHome,
+  onNavigateDiscover,
+  onSelectCourse,
   onOpenSupport,
 }) => {
   const handleStaticClick = (page: 'privacy' | 'terms' | 'refund-policy' | 'contact', e: React.MouseEvent) => {
@@ -34,6 +38,26 @@ export const Footer: React.FC<FooterProps> = ({
       onNavigateAdmin();
     } else {
       window.history.pushState({}, '', '/admin/creators');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  };
+
+  const handleCategoryClick = (category: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onNavigateDiscover) {
+      onNavigateDiscover(category);
+    } else {
+      window.history.pushState({}, '', `/discover?category=${encodeURIComponent(category)}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  };
+
+  const handleCourseClick = (courseId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onSelectCourse) {
+      onSelectCourse(courseId);
+    } else {
+      window.history.pushState({}, '', `/course/${encodeURIComponent(courseId)}`);
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
   };
@@ -60,11 +84,11 @@ export const Footer: React.FC<FooterProps> = ({
               className="flex items-center gap-3 group inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded-xl p-1 cursor-pointer"
             >
               <div className="w-10 h-10 rounded-2xl bg-[#F7F4EF] text-[#16171A] font-display font-black text-xl flex items-center justify-center tracking-tighter transition-transform group-hover:scale-105 shadow-sm">
-                A
+                U
               </div>
               <div className="flex flex-col">
                 <span className="font-display font-extrabold text-2xl tracking-tight text-[#F7F4EF] leading-none">
-                  Ascend
+                  Universifit
                 </span>
                 <span className="text-[10px] font-semibold text-[#F7F4EF]/50 uppercase tracking-widest mt-0.5">
                   Vetted Coaching Platform
@@ -148,37 +172,135 @@ export const Footer: React.FC<FooterProps> = ({
             </h4>
             <ul className="space-y-3 text-sm text-[#F7F4EF]/60 font-medium">
               <li>
-                <a href="/discover?category=strength" className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
+                <a
+                  href="/discover?category=strength"
+                  onClick={(e) => handleCategoryClick('Strength & Physique', e)}
+                  className="hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1 block"
+                >
                   Strength & Physique
                 </a>
               </li>
               <li>
-                <a href="/discover?category=nutrition" className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
+                <a
+                  href="/discover?category=nutrition"
+                  onClick={(e) => handleCategoryClick('Nutrition Coaching', e)}
+                  className="hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1 block"
+                >
                   Metabolic Nutrition
                 </a>
               </li>
               <li>
-                <a href="/discover?category=skincare" className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
+                <a
+                  href="/discover?category=skincare"
+                  onClick={(e) => handleCategoryClick('Skincare & Grooming', e)}
+                  className="hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1 block"
+                >
                   Clinical Skincare
                 </a>
               </li>
               <li>
-                <a href="/discover?category=posture" className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
+                <a
+                  href="/discover?category=posture"
+                  onClick={(e) => handleCategoryClick('Posture', e)}
+                  className="hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1 block"
+                >
                   Posture & Alignment
+                </a>
+              </li>
+              <li className="pt-1">
+                <a
+                  href="/discover"
+                  onClick={(e) => handleCategoryClick('All', e)}
+                  className="text-xs font-semibold text-[#B8703F] hover:text-[#E29A68] transition-colors cursor-pointer flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1"
+                >
+                  <span>Explore All Disciplines</span>
+                  <span>&rarr;</span>
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: For Coaches */}
+          {/* Column 3: Explore & Curriculums */}
+          <div className="lg:col-span-2 space-y-4">
+            <h4 className="text-xs uppercase font-extrabold tracking-widest text-[#F7F4EF]/90 font-display">
+              Explore More
+            </h4>
+            <ul className="space-y-3 text-sm text-[#F7F4EF]/60 font-medium">
+              <li>
+                <a
+                  href="/discover"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (onNavigateDiscover) onNavigateDiscover('All');
+                    else window.history.pushState({}, '', '/discover');
+                  }}
+                  className="hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1"
+                >
+                  <span>Vetted Coaches Directory</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 bg-[#B8703F]/20 text-[#B8703F] rounded-full">
+                    Top 1%
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/course/c-big3-mechanics"
+                  onClick={(e) => handleCourseClick('c-big3-mechanics', e)}
+                  className="hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1 block"
+                >
+                  Big 3 Biomechanics
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/course/course-chadmax"
+                  onClick={(e) => handleCourseClick('course-chadmax', e)}
+                  className="hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1 block"
+                >
+                  ChadMax Protocol
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/discover?category=challenges"
+                  onClick={(e) => handleCategoryClick('Challenges', e)}
+                  className="hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1 block"
+                >
+                  Cohorts & Squads
+                </a>
+              </li>
+              <li className="pt-1">
+                <a
+                  href="/discover"
+                  onClick={(e) => handleCategoryClick('All', e)}
+                  className="text-xs font-semibold text-[#B8703F] hover:text-[#E29A68] transition-colors cursor-pointer flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1"
+                >
+                  <span>Explore Masterclasses</span>
+                  <span>&rarr;</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: For Coaches */}
           <div className="lg:col-span-2 space-y-4">
             <h4 className="text-xs uppercase font-extrabold tracking-widest text-[#F7F4EF]/90 font-display">
               For Coaches
             </h4>
             <ul className="space-y-3 text-sm text-[#F7F4EF]/60 font-medium">
               <li>
-                <a href="#become-coach" className="hover:text-white transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
-                  <span>Become a Coach</span>
+                <a
+                  href="/auth?mode=signup"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (onNavigateStatic) {
+                      window.history.pushState({}, '', '/auth?mode=signup');
+                      window.dispatchEvent(new PopStateEvent('popstate'));
+                    }
+                  }}
+                  className="hover:text-white transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1 cursor-pointer"
+                >
+                  <span>Apply as Coach</span>
                   <ArrowUpRight className="w-3.5 h-3.5 text-[#B8703F]" />
                 </a>
               </li>
@@ -194,50 +316,77 @@ export const Footer: React.FC<FooterProps> = ({
                 </li>
               )}
               <li>
-                <a href="#pricing" className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
-                  Creator Pricing
+                <a
+                  href="/terms"
+                  onClick={(e) => handleStaticClick('terms', e)}
+                  className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1 cursor-pointer"
+                >
+                  Creator Standards
                 </a>
               </li>
               <li>
-                <a href="#guidelines" className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
-                  Coach Standards
+                <a
+                  href="/contact"
+                  onClick={(e) => handleStaticClick('contact', e)}
+                  className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1 cursor-pointer"
+                >
+                  Coach Concierge
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Resources */}
-          <div className="lg:col-span-2 space-y-4">
-            <h4 className="text-xs uppercase font-extrabold tracking-widest text-[#F7F4EF]/90 font-display">
-              Resources
-            </h4>
-            <ul className="space-y-3 text-sm text-[#F7F4EF]/60 font-medium">
-              <li>
-                <a href="#blog" className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
-                  Ascend Journal
-                </a>
-              </li>
-              <li>
-                <a href="#free-guides" className="hover:text-white transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
-                  <span>Free Protocols</span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 bg-[#B8703F]/20 text-[#B8703F] rounded-full">
-                    PDF
-                  </span>
-                </a>
-              </li>
-              <li>
-                <a href="#macro-calc" className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
-                  Macro Calculator
-                </a>
-              </li>
-              <li>
-                <a href="#community" className="hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded px-1">
-                  Community Rules
-                </a>
-              </li>
-            </ul>
-          </div>
+        </div>
 
+        {/* Curated Explore More Hubs Row */}
+        <div className="py-6 border-b border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#F7F4EF]/50 font-display">
+            <span>Explore Universifit:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => onNavigateDiscover ? onNavigateDiscover('Strength & Physique') : undefined}
+              className="px-3 py-1 rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-[#F7F4EF]/70 hover:text-white border border-white/[0.08] transition-colors cursor-pointer"
+            >
+              Strength & Biomechanics
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigateDiscover ? onNavigateDiscover('Nutrition Coaching') : undefined}
+              className="px-3 py-1 rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-[#F7F4EF]/70 hover:text-white border border-white/[0.08] transition-colors cursor-pointer"
+            >
+              Metabolic Diet
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigateDiscover ? onNavigateDiscover('Skincare & Grooming') : undefined}
+              className="px-3 py-1 rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-[#F7F4EF]/70 hover:text-white border border-white/[0.08] transition-colors cursor-pointer"
+            >
+              Clinical Skincare
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigateDiscover ? onNavigateDiscover('Posture') : undefined}
+              className="px-3 py-1 rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-[#F7F4EF]/70 hover:text-white border border-white/[0.08] transition-colors cursor-pointer"
+            >
+              Posture Optimization
+            </button>
+            <button
+              type="button"
+              onClick={() => onSelectCourse ? onSelectCourse('c-big3-mechanics') : undefined}
+              className="px-3 py-1 rounded-full bg-[#B8703F]/15 hover:bg-[#B8703F]/25 text-[#E29A68] hover:text-white border border-[#B8703F]/30 transition-colors cursor-pointer"
+            >
+              Big 3 Masterclass
+            </button>
+            <button
+              type="button"
+              onClick={() => onSelectCourse ? onSelectCourse('course-chadmax') : undefined}
+              className="px-3 py-1 rounded-full bg-[#B8703F]/15 hover:bg-[#B8703F]/25 text-[#E29A68] hover:text-white border border-[#B8703F]/30 transition-colors cursor-pointer"
+            >
+              ChadMax Protocol
+            </button>
+          </div>
         </div>
 
         {/* Social Icons Row + Bottom Copyright Bar */}
@@ -315,7 +464,7 @@ export const Footer: React.FC<FooterProps> = ({
 
           {/* Copyright + Privacy / Terms Links */}
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-6 text-xs text-[#F7F4EF]/50 font-medium">
-            <p>© {new Date().getFullYear()} Ascend Coaching Inc. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Universifit Coaching Inc. All rights reserved.</p>
             <div className="flex flex-wrap items-center gap-4">
               <a
                 href="/privacy"

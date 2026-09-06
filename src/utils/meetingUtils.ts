@@ -140,8 +140,8 @@ export function generateGoogleCalendarUrl(params: {
   const formatGCalDate = (d: Date) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
 
   const datesParam = `${formatGCalDate(start)}/${formatGCalDate(end)}`;
-  const eventTitle = `Ascend 1:1 Session: ${title} (${coachName || 'Coach'})`;
-  const eventDetails = `Ascend 1-on-1 Coaching Consultation\n\nCoach: ${coachName || 'Verified Coach'}\nStudent: ${
+  const eventTitle = `Universifit 1:1 Session: ${title} (${coachName || 'Coach'})`;
+  const eventDetails = `Universifit 1-on-1 Coaching Consultation\n\nCoach: ${coachName || 'Verified Coach'}\nStudent: ${
     studentName || 'Athlete'
   }\n\nGoogle Meet Link:\n${meetLink}\n\nPlease join 3 minutes prior with camera and microphone enabled.`;
 
@@ -170,13 +170,13 @@ export function downloadIcsFile(params: {
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Ascend Coaching Platforms//EN',
+    'PRODID:-//Universifit Coaching Platforms//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    `UID:ascend-${id}-${Date.now()}@ascend.fit`,
-    `SUMMARY:Ascend 1:1: ${title} with ${coachName || 'Coach'}`,
-    `DESCRIPTION:Ascend 1-on-1 Coaching Video Consultation\\nGoogle Meet: ${meetLink}`,
+    `UID:universifit-${id}-${Date.now()}@universifit.fit`,
+    `SUMMARY:Universifit 1:1: ${title} with ${coachName || 'Coach'}`,
+    `DESCRIPTION:Universifit 1-on-1 Coaching Video Consultation\\nGoogle Meet: ${meetLink}`,
     `LOCATION:${meetLink}`,
     'STATUS:CONFIRMED',
     'END:VEVENT',
@@ -187,7 +187,7 @@ export function downloadIcsFile(params: {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.setAttribute('download', `ascend-session-${id || 'slot'}.ics`);
+  link.setAttribute('download', `universifit-session-${id || 'slot'}.ics`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

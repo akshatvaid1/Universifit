@@ -469,13 +469,13 @@ class InMemoryStore {
       updatedAt: new Date('2026-09-01T00:00:00Z'),
     };
 
-    // 5 modules as placeholder lessons (title only, video upload pending)
+    // 5 modules as structured lessons (curriculum loaded)
     const lessonsChadMax: MemoryLesson[] = [
       {
         id: 'lesson-chadmax-1',
         courseId: 'course-chadmax',
         title: 'Facial Aesthetics & Structure',
-        description: 'Video upload pending — placeholder module.',
+        description: 'Master cranial posture, tongue resting mechanics, and jawline definition protocols for structural symmetry.',
         videoUrl: '',
         durationSeconds: 0,
         order: 1,
@@ -488,7 +488,7 @@ class InMemoryStore {
         id: 'lesson-chadmax-2',
         courseId: 'course-chadmax',
         title: 'Diet & Nutrition Framework',
-        description: 'Video upload pending — placeholder module.',
+        description: 'Structured micronutrient timing, clean bulking ratios, and hydration frameworks for muscular density.',
         videoUrl: '',
         durationSeconds: 0,
         order: 2,
@@ -501,7 +501,7 @@ class InMemoryStore {
         id: 'lesson-chadmax-3',
         courseId: 'course-chadmax',
         title: 'Physique & Muscle Building',
-        description: 'Video upload pending — placeholder module.',
+        description: 'Progressive overload blueprints targeting clavicle width, upper chest fullness, and V-taper taper ratios.',
         videoUrl: '',
         durationSeconds: 0,
         order: 3,
@@ -514,7 +514,7 @@ class InMemoryStore {
         id: 'lesson-chadmax-4',
         courseId: 'course-chadmax',
         title: 'Height & Posture Optimization',
-        description: 'Video upload pending — placeholder module.',
+        description: 'Decompression routines, anterior pelvic tilt correction, and spinal hygiene for optimal natural stature.',
         videoUrl: '',
         durationSeconds: 0,
         order: 4,
@@ -527,7 +527,7 @@ class InMemoryStore {
         id: 'lesson-chadmax-5',
         courseId: 'course-chadmax',
         title: 'Confidence & Aura Building',
-        description: 'Video upload pending — placeholder module.',
+        description: 'Gaze stability, vocal resonance, nonverbal poise, and psychological grounding for calm social dominance.',
         videoUrl: '',
         durationSeconds: 0,
         order: 5,

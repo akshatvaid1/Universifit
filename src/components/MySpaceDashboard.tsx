@@ -102,15 +102,15 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
     setError(null);
     Promise.all([
       fetchBuyerDashboardData().catch((err) => {
-        console.warn('fetchBuyerDashboardData error', err);
+        console.debug('fetchBuyerDashboardData error', err);
         return null;
       }),
       fetchWishlistApi().catch((err) => {
-        console.warn('fetchWishlistApi error', err);
+        console.debug('fetchWishlistApi error', err);
         return { success: true, data: SAMPLE_WISHLIST_ITEMS, count: SAMPLE_WISHLIST_ITEMS.length };
       }),
       fetchUserSubscriptionsApi().catch((err) => {
-        console.warn('fetchUserSubscriptionsApi error', err);
+        console.debug('fetchUserSubscriptionsApi error', err);
         return { success: true, data: SAMPLE_BUYER_DASHBOARD.subscriptions || [], count: 0 };
       }),
     ])
@@ -120,7 +120,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
         if (subscriptionsRes && subscriptionsRes.data) setSubscriptions(subscriptionsRes.data);
       })
       .catch((err) => {
-        console.warn('Dashboard data loading error', err);
+        console.debug('Dashboard data loading error', err);
         setError('Network interruption while syncing your member space');
       })
       .finally(() => {
@@ -153,7 +153,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
         setCancelModalState({ isOpen: false, isSubmitting: false });
       }, 1800);
     } catch (err: any) {
-      console.warn('Failed to cancel subscription', err);
+      console.debug('Failed to cancel subscription', err);
       setCancelModalState((prev) => ({
         ...prev,
         isSubmitting: false,
@@ -170,7 +170,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
     try {
       await pauseSubscriptionApi(enrollmentId);
     } catch (err) {
-      console.warn('Failed to pause subscription', err);
+      console.debug('Failed to pause subscription', err);
     }
   };
 
@@ -182,7 +182,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
     try {
       await resumeSubscriptionApi(enrollmentId);
     } catch (err) {
-      console.warn('Failed to resume subscription', err);
+      console.debug('Failed to resume subscription', err);
     }
   };
 
@@ -193,7 +193,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
     try {
       await removeFromWishlistApi(offerId);
     } catch (err) {
-      console.warn('Failed to remove from wishlist', err);
+      console.debug('Failed to remove from wishlist', err);
     }
   };
 
@@ -248,9 +248,9 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
             <AlertCircle className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-display font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-display font-bold text-white tracking-tight">
               Unable to Load Member Space
-            </h2>
+            </h1>
             <p className="text-xs sm:text-sm text-[#F7F4EF]/60 leading-relaxed">
               We encountered a network issue while querying your enrolled programs and session calendar. Check your connection or tap below to retry.
             </p>
@@ -291,7 +291,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
               <div className="relative shrink-0">
                 <img
                   src={data.user.avatarUrl}
-                  alt={data.user.name}
+                  alt={`${data.user.name} profile photo`}
                   className="w-16 h-16 rounded-2xl object-cover ring-2 ring-white/15 shadow-xl"
                 />
                 <div className="absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-[#B8703F] text-white shadow-md flex items-center gap-0.5">
@@ -534,7 +534,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
                         <div className="relative h-44 rounded-2xl overflow-hidden bg-neutral-900">
                           <img
                             src={course.thumbnailUrl}
-                            alt={course.title}
+                            alt={`${course.title} curriculum cover`}
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#16171A] via-black/20 to-transparent" />
@@ -543,7 +543,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
                           <div className="absolute top-3 left-3 flex items-center gap-2 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs font-semibold text-white">
                             <img
                               src={course.coachAvatar}
-                              alt={course.coachName}
+                              alt={`Coach ${course.coachName}`}
                               className="w-5 h-5 rounded-full object-cover"
                             />
                             <span>{course.coachName}</span>
@@ -751,7 +751,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
                           <div className="flex items-start gap-4">
                             <img
                               src={sub.coachAvatar}
-                              alt={sub.coachName}
+                              alt={`Coach ${sub.coachName}`}
                               className="w-16 h-16 rounded-2xl object-cover ring-2 ring-white/10 shrink-0"
                             />
                             <div className="space-y-1.5">
@@ -945,7 +945,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
                       <div className="flex items-start gap-4">
                         <img
                           src={booking.coachAvatar}
-                          alt={booking.coachName}
+                          alt={`Coach ${booking.coachName}`}
                           className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white/10 shrink-0"
                         />
                         <div className="space-y-1">
@@ -1246,7 +1246,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
                               >
                                 <img
                                   src={creator.user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'}
-                                  alt={creator.user?.fullName || creator.handle}
+                                  alt={`Coach ${creator.user?.fullName || creator.handle}`}
                                   className="w-10 h-10 rounded-xl object-cover ring-1 ring-white/10 group-hover/creator:ring-[#B8703F]/50 transition-all"
                                 />
                                 <div>

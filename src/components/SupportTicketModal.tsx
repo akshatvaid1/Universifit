@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LifeBuoy,
@@ -65,23 +65,23 @@ export const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'IN_PROGRESS' | 'RESOLVED'>('ALL');
 
-  useEffect(() => {
-    if (isOpen) {
-      loadTickets();
-    }
-  }, [isOpen]);
-
-  const loadTickets = async () => {
+  const loadTickets = useCallback(async () => {
     setIsLoadingTickets(true);
     try {
       const data = await fetchUserSupportTicketsApi();
       setTickets(data);
     } catch (err) {
-      console.warn('Error loading support tickets:', err);
+      console.debug('Error loading support tickets:', err);
     } finally {
       setIsLoadingTickets(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadTickets();
+    }
+  }, [isOpen, loadTickets]);
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +106,7 @@ export const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
         setActiveTab('list');
       }
     } catch (err) {
-      console.warn('Error creating ticket:', err);
+      console.debug('Error creating ticket:', err);
     } finally {
       setIsSubmitting(false);
     }

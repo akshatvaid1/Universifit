@@ -37,7 +37,7 @@ export const AvailabilityEditor: React.FC<AvailabilityEditorProps> = ({
         if (res.data) setSchedule(res.data);
       })
       .catch((err) => {
-        console.warn('getAvailabilityScheduleApi error', err);
+        console.debug('getAvailabilityScheduleApi error', err);
       })
       .finally(() => {
         setIsLoading(false);

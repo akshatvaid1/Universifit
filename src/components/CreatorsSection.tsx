@@ -21,7 +21,7 @@ export const CreatorsSection: React.FC<CreatorsSectionProps> = ({ onBookCreator 
         }
       })
       .catch((err) => {
-        console.warn('Could not load creators in CreatorsSection', err);
+        console.debug('Could not load creators in CreatorsSection', err);
       });
   }, []);
 
@@ -112,7 +112,7 @@ export const CreatorsSection: React.FC<CreatorsSectionProps> = ({ onBookCreator 
                   <div className="h-44 w-full rounded-2xl overflow-hidden bg-neutral-800">
                     <img
                       src={creator.avatarUrl || undefined}
-                      alt={creator.fullName}
+                      alt={`${creator.fullName} — ${creator.headline || 'Verified Universifit Coach'}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
@@ -121,7 +121,7 @@ export const CreatorsSection: React.FC<CreatorsSectionProps> = ({ onBookCreator 
                     <div className="relative">
                       <img
                         src={creator.avatarUrl || undefined}
-                        alt={creator.fullName}
+                        alt={`${creator.fullName} avatar photo`}
                         className="w-14 h-14 rounded-2xl object-cover ring-4 ring-[#151517] shadow-lg"
                       />
                     </div>

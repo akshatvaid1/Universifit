@@ -89,7 +89,7 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({
         setConversations(loaded);
       }
     } catch (err) {
-      console.warn('Error loading conversations', err);
+      console.debug('Error loading conversations', err);
     } finally {
       setIsLoadingConversations(false);
     }
@@ -104,7 +104,7 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({
         markThreadReadApi(partnerId);
       }
     } catch (err) {
-      console.warn('Error loading thread', err);
+      console.debug('Error loading thread', err);
     } finally {
       setIsLoadingThread(false);
     }
@@ -288,7 +288,7 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({
                       <div className="relative shrink-0">
                         <img
                           src={conv.partner.avatarUrl}
-                          alt={conv.partner.fullName}
+                          alt={`${conv.partner.fullName} avatar`}
                           className="w-12 h-12 rounded-2xl object-cover ring-1 ring-white/10"
                         />
                         {conv.partner.role === 'CREATOR' && (
@@ -375,7 +375,7 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({
                     <div className="relative">
                       <img
                         src={selectedConversation.partner.avatarUrl}
-                        alt={selectedConversation.partner.fullName}
+                        alt={`${selectedConversation.partner.fullName} avatar`}
                         className="w-10 h-10 rounded-2xl object-cover ring-1 ring-white/10"
                       />
                       {selectedConversation.partner.role === 'CREATOR' && (

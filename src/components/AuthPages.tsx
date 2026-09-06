@@ -101,10 +101,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
   // Quick Demo Auto-Fill Handlers
   const handleQuickDemoLogin = (role: 'BUYER' | 'CREATOR') => {
     if (role === 'CREATOR') {
-      setEmail('marcus@ascend.io');
+      setEmail('marcus@universifit.com');
       setPassword('password123');
     } else {
-      setEmail('akshat@ascend.io');
+      setEmail('akshat@universifit.com');
       setPassword('password123');
     }
   };
@@ -267,7 +267,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
       });
 
       if (res.success) {
-        setInfoMsg('Email verified successfully! Welcome to Ascend.');
+        setInfoMsg('Email verified successfully! Welcome to Universifit.');
         setTimeout(() => {
           if (selectedRole === 'CREATOR') {
             setIsEnteringCreatorOnboarding(true);
@@ -338,10 +338,10 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
             className="flex items-center gap-2 cursor-pointer"
           >
             <div className="w-7 h-7 rounded-xl bg-[#B8703F] text-white font-display font-black text-sm flex items-center justify-center shadow-md">
-              A
+              U
             </div>
             <span className="font-display font-bold text-base text-white tracking-tight">
-              Ascend
+              Universifit
             </span>
           </a>
 
@@ -359,7 +359,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
           {/* Header */}
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-display font-bold text-[#F7F4EF] tracking-tight">
-              {mode === 'login' && 'Welcome Back to Ascend'}
+              {mode === 'login' && 'Welcome Back to Universifit'}
               {mode === 'signup' && 'Join the Elite Coaching Network'}
               {mode === 'forgot' && 'Reset Your Password'}
               {mode === 'reset' && 'Set New Password'}
@@ -369,7 +369,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
               {mode === 'login' && 'Sign in to access your customized programs, bookings, and studio.'}
               {mode === 'signup' && 'Create your account to train with vetted practitioners or monetize your craft.'}
               {mode === 'forgot' && 'Enter your email address and we will send you a recovery link.'}
-              {mode === 'reset' && 'Choose a secure password for your Ascend account.'}
+              {mode === 'reset' && 'Choose a secure password for your Universifit account.'}
               {mode === 'verify' && 'Enter the 6-digit confirmation code sent to your inbox.'}
             </p>
           </div>
@@ -501,7 +501,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                   isLoading={isLoading}
                   rightIcon={<ArrowRight className="w-4 h-4" />}
                 >
-                  Sign In to Ascend
+                  Sign In to Universifit
                 </Button>
               </form>
             )}
@@ -561,7 +561,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                       required
                     />
                     <span className="leading-relaxed">
-                      I agree to Ascend's{' '}
+                      I agree to Universifit's{' '}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -871,7 +871,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
 
       {/* Footer bar */}
       <div className="py-6 text-center text-xs text-[#F7F4EF]/40 font-mono border-t border-white/[0.06]">
-        Ascend Coaching Ecosystem • 256-Bit SSL Secured
+        Universifit Coaching Ecosystem • 256-Bit SSL Secured
       </div>
     </div>
   );

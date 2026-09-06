@@ -188,7 +188,7 @@ export const MobileAppBanner: React.FC = () => {
                     <div className="flex items-center gap-2.5">
                       <img
                         src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=100&auto=format&fit=crop&q=80"
-                        alt="Verified Coach"
+                        alt="Verified Universifit Coach on live consultation call"
                         className="w-10 h-10 rounded-full object-cover ring-2 ring-emerald-500"
                       />
                       <div>

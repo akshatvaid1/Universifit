@@ -18,8 +18,9 @@ import {
   Pencil,
   Sparkles,
   Heart,
+  Play,
 } from 'lucide-react';
-import { Card, Badge, Button } from './ui';
+import { Card, Badge, Button, Breadcrumbs } from './ui';
 import { ReviewModal } from './ReviewModal';
 import {
   fetchCreatorById,
@@ -33,17 +34,23 @@ import {
   type CreatorReviewsSummary,
   type ReviewItem,
 } from '../services/api';
-import { updatePageMetadata } from '../utils/seo';
+import { updatePageMetadata, setCreatorSchema, clearCreatorSchema, getCreatorOgImageUrl } from '../utils/seo';
 
 interface CreatorProfilePageProps {
   creatorId: string;
   onBack?: () => void;
+  onNavigateHome?: () => void;
+  onNavigateDiscover?: (category?: string) => void;
+  onSelectCourse?: (courseId: string) => void;
   onBookOffer?: (offer: CreatorOffer, creator: CreatorItem) => void;
 }
 
 export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   creatorId,
   onBack,
+  onNavigateHome,
+  onNavigateDiscover,
+  onSelectCourse,
   onBookOffer,
 }) => {
   const [creator, setCreator] = useState<CreatorItem | null>(null);
@@ -91,7 +98,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         }
       })
       .catch((err) => {
-        console.warn('Profile fetch error', err);
+        console.debug('Profile fetch error', err);
         setError('Network interruption while querying coach profile');
       })
       .finally(() => {
@@ -121,7 +128,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     try {
       await toggleWishlistApi(offer.id);
     } catch (err) {
-      console.warn('Wishlist toggle error:', err);
+      console.debug('Wishlist toggle error:', err);
     }
   };
 
@@ -139,15 +146,49 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
           : creator.bio
         : `Verified 1-on-1 coaching, protocols & custom splits with ${creator.fullName}. Specializing in ${creator.specialtyTags.join(', ')}.`;
 
+      const ogImage = getCreatorOgImageUrl({
+        id: creator.handle || creator.id || creatorId,
+        fullName: creator.fullName,
+        avatarUrl: creator.avatarUrl,
+        headline: creator.headline,
+      });
+
       updatePageMetadata({
-        title: `${creator.fullName} — ${creator.headline || 'Verified Coach'} | Ascend`,
+        title: `${creator.fullName} — ${creator.headline || 'Verified Coach'} | Universifit`,
         description: `${bioSnippet} Rated ${creator.rating.toFixed(2)}★ with ${creator.totalClients}+ active athletes coached.`,
-        ogImage: creator.avatarUrl || '/og-image.svg',
+        ogImage,
         ogType: 'profile',
-        canonicalUrl: `${window.location.origin}/creator/${encodeURIComponent(creator.handle || creator.id)}`,
+        canonicalUrl: `${window.location.origin}/creator/${encodeURIComponent(creator.handle || creator.id || creatorId)}`,
+      });
+
+      // Inject Schema.org Person & ProfessionalService Structured Data (Online, Not LocalBusiness)
+      setCreatorSchema({
+        id: creator.id || creatorId,
+        fullName: creator.fullName,
+        handle: creator.handle,
+        headline: creator.headline || undefined,
+        bio: creator.bio || undefined,
+        avatarUrl: creator.avatarUrl || undefined,
+        specialtyTags: creator.specialtyTags,
+        rating: creator.rating,
+        totalReviews: reviewsData?.totalReviews || creator.totalClients,
+        socialLinks: creator.socialLinks,
+      });
+    } else if (error) {
+      clearCreatorSchema();
+      updatePageMetadata({
+        title: 'Coach Profile Unavailable | Universifit',
+        description: 'The requested coach profile could not be found or has temporarily paused bookings on Universifit.',
+        ogImage: '/og-image.svg',
+        ogType: 'website',
+        canonicalUrl: `${window.location.origin}/creator/${encodeURIComponent(creatorId)}`,
       });
     }
-  }, [creator]);
+
+    return () => {
+      clearCreatorSchema();
+    };
+  }, [creator, error, creatorId, reviewsData?.totalReviews]);
 
   const selectedOffer =
     offers.find((o) => o.id === selectedOfferId) || offers[0] || creator?.featuredOffers?.[0];
@@ -247,9 +288,9 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
             <AlertCircle className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-display font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-display font-bold text-white tracking-tight">
               Coach Profile Unavailable
-            </h2>
+            </h1>
             <p className="text-xs sm:text-sm text-[#F7F4EF]/60 leading-relaxed">
               We were unable to load this coach's curriculum and consultation schedules. The practitioner may have updated their handle or temporarily paused new bookings.
             </p>
@@ -294,18 +335,38 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Top Navigation & Back Bar */}
+      {/* Top Navigation & Breadcrumb Bar */}
       <div className="border-b border-white/[0.08] bg-[#121315]/80 backdrop-blur-md sticky top-20 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-xs font-semibold text-[#F7F4EF]/70 hover:text-white transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded-lg px-2 py-1"
-          >
-            <ChevronLeft className="w-4 h-4 text-[#B8703F]" />
-            <span>Back to Discovery</span>
-          </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#F7F4EF]/70 hover:text-white transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded-lg px-2 py-1 shrink-0"
+              title="Back to Discovery"
+            >
+              <ChevronLeft className="w-4 h-4 text-[#B8703F]" />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+            <div className="h-4 w-px bg-white/10 hidden sm:block shrink-0" />
+            <Breadcrumbs
+              items={[
+                { label: 'Home', onClick: onNavigateHome },
+                { label: 'Discover', onClick: () => onNavigateDiscover ? onNavigateDiscover() : onBack?.() },
+                ...(creator.specialtyTags && creator.specialtyTags.length > 0
+                  ? [
+                      {
+                        label: creator.specialtyTags[0],
+                        onClick: () => onNavigateDiscover?.(creator.specialtyTags[0]),
+                      },
+                    ]
+                  : []),
+                { label: creator.fullName, isCurrent: true },
+              ]}
+              className="min-w-0"
+            />
+          </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={handleShare}
               className="px-3.5 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F]"
@@ -334,7 +395,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
               <div className="relative h-[360px] sm:h-[420px] rounded-3xl overflow-hidden bg-neutral-900 border border-white/15 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.8)]">
                 <img
                   src={creator.avatarUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&auto=format&fit=crop&q=80'}
-                  alt={creator.fullName}
+                  alt={`${creator.fullName} — ${creator.headline || 'Verified Coach'} portrait`}
                   className="w-full h-full object-cover object-center"
                 />
 
@@ -762,6 +823,86 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                 </div>
               )}
             </Card>
+
+            {/* Other Offers by Same Coach Contextual Block */}
+            {offers.length > 1 && (
+              <Card variant="charcoal" className="p-5 bg-[#121315] border-white/[0.08] space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                  <span className="text-xs uppercase font-bold text-[#F7F4EF]/70 tracking-wider">
+                    Other Offers by {creator.fullName}
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#B8703F]">
+                    {offers.filter((o) => o.id !== selectedOffer?.id).length} more
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {offers
+                    .filter((o) => o.id !== selectedOffer?.id)
+                    .map((otherOffer) => (
+                      <button
+                        key={otherOffer.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedOfferId(otherOffer.id);
+                          window.scrollTo({ top: 400, behavior: 'smooth' });
+                        }}
+                        className="w-full text-left p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.06] hover:border-[#B8703F]/40 transition-all flex items-center justify-between gap-3 group cursor-pointer"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            {getFormatIcon(otherOffer.type)}
+                            <span className="text-xs font-semibold text-white truncate group-hover:text-[#E29A68] transition-colors">
+                              {otherOffer.title}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-[#F7F4EF]/50 truncate block mt-0.5">
+                            {otherOffer.type === 'COURSE' ? 'Video Masterclass' : otherOffer.type === 'COMMUNITY' ? 'Group Cohort' : '1-on-1 Coaching'}
+                          </span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-xs font-bold text-[#B8703F]">${Number(otherOffer.price)}</span>
+                          <span className="text-[10px] text-[#F7F4EF]/40 group-hover:text-white block transition-colors">Select &rarr;</span>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Featured Course Masterclass by Coach */}
+            {(creator.handle === 'chadtag' || creator.id.includes('chad') || creator.handle === 'marcus.vance' || creator.id.includes('marcus')) && onSelectCourse && (
+              <Card variant="charcoal" className="p-5 bg-gradient-to-br from-[#16171A] to-[#1a1b20] border-[#B8703F]/30 space-y-3 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <Badge variant="copper" size="sm">Video Masterclass</Badge>
+                  <span className="text-[10px] text-[#F7F4EF]/60 font-mono">Curriculum Available</span>
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-sm text-white">
+                    {creator.handle === 'chadtag' || creator.id.includes('chad')
+                      ? 'ChadMax: Aesthetics & Stature Masterclass'
+                      : 'Big 3 Biomechanics: Squat, Bench & Deadlift'}
+                  </h4>
+                  <p className="text-[11px] text-[#F7F4EF]/60 mt-1 leading-relaxed">
+                    Explore full syllabus, stream video lessons, and download custom workout spreadsheet templates.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() =>
+                    onSelectCourse(
+                      creator.handle === 'chadtag' || creator.id.includes('chad')
+                        ? 'course-chadmax'
+                        : 'c-big3-mechanics'
+                    )
+                  }
+                  leftIcon={<Play className="w-3.5 h-3.5 text-[#B8703F] fill-current" />}
+                >
+                  Enter Video Classroom
+                </Button>
+              </Card>
+            )}
           </div>
 
         </div>
@@ -916,7 +1057,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                           <div className="flex items-center gap-3">
                             <img
                               src={review.buyerAvatar}
-                              alt={review.buyerName}
+                              alt={`${review.buyerName}, verified client review photo`}
                               className="w-11 h-11 rounded-xl object-cover ring-1 ring-white/10 shrink-0"
                             />
                             <div>

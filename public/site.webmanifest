@@ -1,6 +1,6 @@
 {
-  "name": "Ascend — Vetted Coaching Platform",
-  "short_name": "Ascend",
+  "name": "Universifit — Vetted Coaching Platform",
+  "short_name": "Universifit",
   "description": "Train, look, and feel better — guided by verified practitioners in strength biomechanics, clinical nutrition, posture, and longevity.",
   "start_url": "/",
   "display": "standalone",
@@ -8,13 +8,23 @@
   "theme_color": "#121315",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
     },
     {
-      "src": "/apple-touch-icon.svg",
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
       "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
       "type": "image/svg+xml"
     }
   ]

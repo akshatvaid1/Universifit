@@ -152,7 +152,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                   Privacy & Health Data Usage Policy
                 </h1>
                 <p className="text-sm text-[#F7F4EF]/60 leading-relaxed max-w-3xl">
-                  Effective Date: January 1, 2026. This policy governs how Ascend Coaching Inc. collects, protects, isolates, and limits the processing of your personal information, physique check-in media, and biometric records across our global fitness marketplace.
+                  Effective Date: January 1, 2026. This policy governs how Universifit Coaching Inc. collects, protects, isolates, and limits the processing of your personal information, physique check-in media, and biometric records across our global fitness marketplace.
                 </p>
               </div>
 
@@ -166,7 +166,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                     Our Core Promise: Zero AI Model Training on Private Media
                   </h3>
                   <p className="text-[#F7F4EF]/70 leading-relaxed">
-                    Ascend explicitly guarantees that your physique check-in photos, DEXA scans, lifting mechanics recordings, and direct chat consultations with coaches are <span className="text-white font-semibold underline decoration-[#6E8B6F]">never sold, never leased to data brokers, and never used to train commercial generative AI or computer vision models</span> without your explicit, auditable opt-in.
+                    Universifit explicitly guarantees that your physique check-in photos, DEXA scans, lifting mechanics recordings, and direct chat consultations with coaches are <span className="text-white font-semibold underline decoration-[#6E8B6F]">never sold, never leased to data brokers, and never used to train commercial generative AI or computer vision models</span> without your explicit, auditable opt-in.
                   </p>
                 </div>
               </div>
@@ -199,7 +199,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                   <div className="p-5 rounded-2xl bg-[#16171A] border border-white/[0.08] space-y-2">
                     <h3 className="font-bold text-white">Transaction & Billing Records</h3>
                     <p className="text-[#F7F4EF]/60 leading-relaxed">
-                      Payment references, order histories, and payout addresses. We partner with PCI-DSS Level 1 payment processors (Razorpay, Stripe); raw credit card credentials never enter Ascend servers.
+                      Payment references, order histories, and payout addresses. We partner with PCI-DSS Level 1 payment processors (Razorpay, Stripe); raw credit card credentials never enter Universifit servers.
                     </p>
                   </div>
                 </div>
@@ -223,7 +223,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                       <strong className="text-white">Revocation of Access:</strong> Upon termination of a coaching relationship, you may revoke coach access to historical check-in photo galleries at any moment from your My Space settings.
                     </li>
                     <li>
-                      <strong className="text-white">Right to Erasure (GDPR Art. 17):</strong> Submitting an erasure request via <code className="text-[#B8703F] bg-white/[0.05] px-1.5 py-0.5 rounded">privacy@ascend.io</code> initiates complete permanent scrubbing of your image vaults within 30 days.
+                      <strong className="text-white">Right to Erasure (GDPR Art. 17):</strong> Submitting an erasure request via <code className="text-[#B8703F] bg-white/[0.05] px-1.5 py-0.5 rounded">privacy@universifit.com</code> initiates complete permanent scrubbing of your image vaults within 30 days.
                     </li>
                   </ul>
                 </div>
@@ -301,7 +301,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                     Medical & Physical Exercise Advisory
                   </h3>
                   <p className="leading-relaxed">
-                    Ascend is a technology marketplace connecting independent fitness and wellness practitioners with clients. Coaches on Ascend do not provide medical diagnosis, prescribe pharmaceutical medications, or replace emergency healthcare. Always consult a licensed physician prior to commencing high-intensity strength training or aggressive caloric restriction.
+                    Universifit is a technology marketplace connecting independent fitness and wellness practitioners with clients. Coaches on Universifit do not provide medical diagnosis, prescribe pharmaceutical medications, or replace emergency healthcare. Always consult a licensed physician prior to commencing high-intensity strength training or aggressive caloric restriction.
                   </p>
                 </div>
               </div>
@@ -320,14 +320,14 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
 
                 <div className="p-6 rounded-3xl bg-[#16171A] border border-white/[0.08] space-y-6 text-xs sm:text-sm">
                   <p className="text-[#F7F4EF]/70 leading-relaxed">
-                    Ascend provides verified coaches with client discovery, payment processing, intake forms, and automated video course delivery. In return, transactions are governed by the following commercial schedule:
+                    Universifit provides verified coaches with client discovery, payment processing, intake forms, and automated video course delivery. In return, transactions are governed by the following commercial schedule:
                   </p>
 
                   <div className="grid sm:grid-cols-3 gap-4">
                     <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1.5">
                       <div className="text-[11px] font-mono uppercase text-[#F7F4EF]/50">Commission Split</div>
                       <div className="text-2xl font-bold font-display text-emerald-400">85% / 15%</div>
-                      <p className="text-[11px] text-[#F7F4EF]/60">Coach receives 85% of gross booking; Ascend retains 15% marketplace fee.</p>
+                      <p className="text-[11px] text-[#F7F4EF]/60">Coach receives 85% of gross booking; Universifit retains 15% marketplace fee.</p>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1.5">
@@ -352,10 +352,10 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                         <strong className="text-white">Tax Documentation:</strong> Creators are responsible for submitting applicable tax certificates (Form W-9 for US entities; PAN/GSTIN registration for Indian coaches) before payouts exceed statutory limits.
                       </li>
                       <li>
-                        <strong className="text-white">Chargeback Protection:</strong> In the event a client files a payment reversal, Ascend defends creators if proof of delivery (session recording, completed intake sheet, or active chat thread) was established.
+                        <strong className="text-white">Chargeback Protection:</strong> In the event a client files a payment reversal, Universifit defends creators if proof of delivery (session recording, completed intake sheet, or active chat thread) was established.
                       </li>
                       <li>
-                        <strong className="text-white">Platform Exclusivity of In-App Leads:</strong> For clients introduced through Ascend Discover, coaches agree to process all follow-on subscriptions and bookings through Ascend for a 12-month period.
+                        <strong className="text-white">Platform Exclusivity of In-App Leads:</strong> For clients introduced through Universifit Discover, coaches agree to process all follow-on subscriptions and bookings through Universifit for a 12-month period.
                       </li>
                     </ul>
                   </div>
@@ -370,7 +370,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                 </h2>
                 <div className="p-6 rounded-3xl bg-[#16171A] border border-white/[0.08] space-y-3 text-xs sm:text-sm text-[#F7F4EF]/70 leading-relaxed">
                   <p>
-                    All practitioners operating under verified status must submit valid documentation evaluated by Ascend Administrators (`PATCH /admin/creators/:id/verify`). Permitted credentials include:
+                    All practitioners operating under verified status must submit valid documentation evaluated by Universifit Administrators (`PATCH /admin/creators/:id/verify`). Permitted credentials include:
                   </p>
                   <ul className="list-disc pl-5 space-y-1.5 text-xs">
                     <li>Accredited Strength Certifications: NSCA-CSCS, USAW Level 1/2, NASM-CPT/CES, ACSM-EP.</li>
@@ -387,7 +387,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                   <span>Intellectual Property & Course Ownership</span>
                 </h2>
                 <div className="p-6 rounded-3xl bg-[#16171A] border border-white/[0.08] text-xs sm:text-sm text-[#F7F4EF]/70 leading-relaxed">
-                  Coaches retain 100% copyright over their self-authored video lessons, training routines, and proprietary nutrition spreadsheets. By publishing on Ascend, creators grant Ascend a worldwide, non-exclusive license to host, stream, and market the content to registered students.
+                  Coaches retain 100% copyright over their self-authored video lessons, training routines, and proprietary nutrition spreadsheets. By publishing on Universifit, creators grant Universifit a worldwide, non-exclusive license to host, stream, and market the content to registered students.
                 </div>
               </section>
             </motion.div>
@@ -497,10 +497,10 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
               <div className="p-6 rounded-3xl bg-[#16171A] border border-white/[0.08] space-y-3 text-xs sm:text-sm">
                 <div className="flex items-center gap-2 text-emerald-400 font-bold">
                   <CheckCircle2 className="w-5 h-5" />
-                  <span>The Ascend Coach Attendance Guarantee</span>
+                  <span>The Universifit Coach Attendance Guarantee</span>
                 </div>
                 <p className="text-[#F7F4EF]/70 leading-relaxed">
-                  If a verified coach fails to attend a confirmed appointment or does not deliver an agreed-upon initial customized intake protocol within <strong className="text-white">5 business days</strong> of payment, the buyer is entitled to an immediate <strong className="text-white">100% automatic refund</strong> or re-credit to their Ascend wallet, at their choice.
+                  If a verified coach fails to attend a confirmed appointment or does not deliver an agreed-upon initial customized intake protocol within <strong className="text-white">5 business days</strong> of payment, the buyer is entitled to an immediate <strong className="text-white">100% automatic refund</strong> or re-credit to their Universifit wallet, at their choice.
                 </p>
               </div>
 
@@ -516,7 +516,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                       Visit your <strong className="text-white">My Space</strong> dashboard, navigate to the <strong className="text-white">Purchases & Bookings</strong> tab, locate the order, and select <span className="text-[#B8703F] font-semibold">Request Cancellation</span>.
                     </li>
                     <li>
-                      Alternatively, send an email to <a href="mailto:refunds@ascend.io" className="text-[#B8703F] underline">refunds@ascend.io</a> including your Order Reference ID (e.g., <code className="bg-white/[0.05] px-1 rounded font-mono">asc_ord_...</code>) and the reason for cancellation.
+                      Alternatively, send an email to <a href="mailto:refunds@universifit.com" className="text-[#B8703F] underline">refunds@universifit.com</a> including your Order Reference ID (e.g., <code className="bg-white/[0.05] px-1 rounded font-mono">uni_ord_...</code>) and the reason for cancellation.
                     </li>
                     <li>
                       Approved refunds are processed back to the original funding source (credit card, UPI, debit, net banking) within <strong className="text-white">5 to 7 business days</strong>.
@@ -546,7 +546,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                   <span>CONCIERGE & SUPPORT</span>
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-white tracking-tight">
-                  Contact Ascend Support
+                  Contact Universifit Support
                 </h1>
                 <p className="text-sm text-[#F7F4EF]/60 leading-relaxed max-w-3xl">
                   Have a question about a coach booking, platform verification, or enterprise partnerships? Our dedicated support team responds within 12 hours.
@@ -563,7 +563,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                         Send a Direct Inquiry
                       </h2>
                       <p className="text-xs text-[#F7F4EF]/60 mt-1">
-                        Fill out the details below and an Ascend concierge specialist will respond to your registered email.
+                        Fill out the details below and a Universifit concierge specialist will respond to your registered email.
                       </p>
                     </div>
 
@@ -643,7 +643,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                           </label>
                           <input
                             type="text"
-                            placeholder="asc_ord_91823"
+                            placeholder="uni_ord_91823"
                             value={contactOrderId}
                             onChange={(e) => setContactOrderId(e.target.value)}
                             className="w-full bg-[#121315] border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder:text-neutral-500 text-xs font-mono focus:outline-none focus:border-[#B8703F]"
@@ -695,24 +695,24 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                     <div className="space-y-3">
                       <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                         <div className="font-bold text-white">General & Buyer Support</div>
-                        <a href="mailto:support@ascend.io" className="text-[#B8703F] font-mono hover:underline">
-                          support@ascend.io
+                        <a href="mailto:support@universifit.com" className="text-[#B8703F] font-mono hover:underline">
+                          support@universifit.com
                         </a>
                         <div className="text-[10px] text-[#F7F4EF]/40 mt-0.5">SLA: &lt; 12 hours response</div>
                       </div>
 
                       <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                         <div className="font-bold text-white">Creator Verification & Audits</div>
-                        <a href="mailto:creators@ascend.io" className="text-[#B8703F] font-mono hover:underline">
-                          creators@ascend.io
+                        <a href="mailto:creators@universifit.com" className="text-[#B8703F] font-mono hover:underline">
+                          creators@universifit.com
                         </a>
                         <div className="text-[10px] text-[#F7F4EF]/40 mt-0.5">SLA: &lt; 24 hours turnaround</div>
                       </div>
 
                       <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                         <div className="font-bold text-white">Billing & Dispute Resolution</div>
-                        <a href="mailto:refunds@ascend.io" className="text-[#B8703F] font-mono hover:underline">
-                          refunds@ascend.io
+                        <a href="mailto:refunds@universifit.com" className="text-[#B8703F] font-mono hover:underline">
+                          refunds@universifit.com
                         </a>
                         <div className="text-[10px] text-[#F7F4EF]/40 mt-0.5">Priority routing: &lt; 4 hours</div>
                       </div>
@@ -726,7 +726,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                       <span>Corporate Entity</span>
                     </h3>
                     <p className="text-[#F7F4EF]/60 leading-relaxed">
-                      <strong className="text-white">Ascend Coaching Technologies Inc.</strong><br />
+                      <strong className="text-white">Universifit Coaching Technologies Inc.</strong><br />
                       450 Lexington Avenue, Suite 1400<br />
                       New York, NY 10017, United States
                     </p>
@@ -744,7 +744,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
 
       {/* Footer */}
       <footer className="py-8 text-center text-xs text-[#F7F4EF]/40 font-mono border-t border-white/[0.06]">
-        Ascend Coaching Inc. • Legal & Compliance Documentation
+        Universifit Coaching Inc. • Legal & Compliance Documentation
       </footer>
     </div>
   );

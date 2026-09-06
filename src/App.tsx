@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { TrustStrip } from './components/TrustStrip';
@@ -7,20 +7,40 @@ import { VerifiedCoachesCarousel } from './components/VerifiedCoachesCarousel';
 import { TestimonialCarousel } from './components/TestimonialCarousel';
 import { MobileAppBanner } from './components/MobileAppBanner';
 import { CreatorsSection } from './components/CreatorsSection';
-import { DiscoverPage } from './components/DiscoverPage';
-import { CreatorProfilePage } from './components/CreatorProfilePage';
-import { CheckoutPage } from './components/CheckoutPage';
-import { CoursePlayerPage } from './components/CoursePlayerPage';
-import { CommunityPage } from './components/CommunityPage';
-import { MySpaceDashboard } from './components/MySpaceDashboard';
-import { CreatorDashboard } from './components/CreatorDashboard';
-import { AuthPages } from './components/AuthPages';
-import { AdminCreatorsPage } from './components/AdminCreatorsPage';
-import { StaticPages, type StaticPageType } from './components/StaticPages';
-import { MessagesModal } from './components/MessagesModal';
-import { SupportTicketModal } from './components/SupportTicketModal';
 import { Footer } from './components/Footer';
-import { Forbidden403 } from './components/Forbidden403';
+import type { StaticPageType } from './components/StaticPages';
+
+// Code-split and lazy-load non-homepage routes & heavy modals
+const DiscoverPage = lazy(() => import('./components/DiscoverPage').then((m) => ({ default: m.DiscoverPage })));
+const CreatorProfilePage = lazy(() => import('./components/CreatorProfilePage').then((m) => ({ default: m.CreatorProfilePage })));
+const CheckoutPage = lazy(() => import('./components/CheckoutPage').then((m) => ({ default: m.CheckoutPage })));
+const CoursePlayerPage = lazy(() => import('./components/CoursePlayerPage').then((m) => ({ default: m.CoursePlayerPage })));
+const CommunityPage = lazy(() => import('./components/CommunityPage').then((m) => ({ default: m.CommunityPage })));
+const MySpaceDashboard = lazy(() => import('./components/MySpaceDashboard').then((m) => ({ default: m.MySpaceDashboard })));
+const CreatorDashboard = lazy(() => import('./components/CreatorDashboard').then((m) => ({ default: m.CreatorDashboard })));
+const AuthPages = lazy(() => import('./components/AuthPages').then((m) => ({ default: m.AuthPages })));
+const AdminCreatorsPage = lazy(() => import('./components/AdminCreatorsPage').then((m) => ({ default: m.AdminCreatorsPage })));
+const StaticPages = lazy(() => import('./components/StaticPages').then((m) => ({ default: m.StaticPages })));
+const Forbidden403 = lazy(() => import('./components/Forbidden403').then((m) => ({ default: m.Forbidden403 })));
+const NotFound404 = lazy(() => import('./components/NotFound404').then((m) => ({ default: m.NotFound404 })));
+const MessagesModal = lazy(() => import('./components/MessagesModal').then((m) => ({ default: m.MessagesModal })));
+const SupportTicketModal = lazy(() => import('./components/SupportTicketModal').then((m) => ({ default: m.SupportTicketModal })));
+
+function RouteLoadingFallback() {
+  return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center py-20 px-4">
+      <div className="relative flex items-center justify-center">
+        <div className="w-14 h-14 rounded-2xl border-2 border-white/10 border-t-[#B8703F] animate-spin" />
+        <div className="absolute w-7 h-7 rounded-xl bg-[#16171A] flex items-center justify-center font-display font-black text-xs text-[#E29A68]">
+          U
+        </div>
+      </div>
+      <p className="mt-4 text-xs font-mono text-[#F7F4EF]/50 tracking-wider uppercase animate-pulse">
+        Loading Universifit...
+      </p>
+    </div>
+  );
+}
 import {
   type CreatorItem,
   type CreatorOffer,
@@ -30,10 +50,17 @@ import {
   getStoredUser,
   clearStoredAuth,
 } from './services/api';
-import { updatePageMetadata, STATIC_ROUTE_METADATA } from './utils/seo';
+import {
+  updatePageMetadata,
+  STATIC_ROUTE_METADATA,
+  setOrganizationSchema,
+  clearOrganizationSchema,
+  clearCourseSchema,
+  clearCreatorSchema,
+} from './utils/seo';
 
 export function App() {
-  const [currentRoute, setCurrentRoute] = useState<'home' | 'discover' | 'creator' | 'checkout' | 'course' | 'community' | 'myspace' | 'dashboard' | 'auth' | 'admin-creators' | 'static' | 'forbidden'>('home');
+  const [currentRoute, setCurrentRoute] = useState<'home' | 'discover' | 'creator' | 'checkout' | 'course' | 'community' | 'myspace' | 'dashboard' | 'auth' | 'admin-creators' | 'static' | 'forbidden' | 'not-found'>('home');
   const [currentUser, setCurrentUser] = useState<AuthUserData | null>(() => getStoredUser());
   const [forbiddenRequiredRole, setForbiddenRequiredRole] = useState<'CREATOR' | 'ADMIN' | 'BUYER'>('CREATOR');
   const [staticPage, setStaticPage] = useState<StaticPageType>('privacy');
@@ -83,6 +110,23 @@ export function App() {
       setSupportBookingId(undefined);
     }
     setIsSupportModalOpen(true);
+  };
+
+  const handleAuthSuccess = (role: 'BUYER' | 'CREATOR' | 'ADMIN', user?: AuthUserData) => {
+    const activeUser = user || getStoredUser();
+    if (activeUser) setCurrentUser(activeUser);
+
+    if (role === 'CREATOR') {
+      setCurrentRoute('dashboard');
+      window.history.pushState({}, '', '/dashboard');
+    } else if (role === 'ADMIN') {
+      setCurrentRoute('admin-creators');
+      window.history.pushState({}, '', '/admin/creators');
+    } else {
+      setCurrentRoute('myspace');
+      window.history.pushState({}, '', '/my-space');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Handle browser URL hash or path changes
@@ -181,8 +225,10 @@ export function App() {
         const searchVal = searchParams.get('search') || searchParams.get('q');
         if (cat) setDiscoverCategory(cat);
         if (searchVal !== null) setDiscoverSearch(searchVal);
-      } else {
+      } else if (path === '/' || path === '' || hash === '' || hash === '#' || hash === '#home') {
         setCurrentRoute('home');
+      } else {
+        setCurrentRoute('not-found');
       }
     };
 
@@ -243,69 +289,103 @@ export function App() {
     };
   }, []);
 
-  // Synchronize dynamic per-page <title>, meta description, Open Graph, and Twitter tags
+  // Manage JSON-LD structured data lifecycle per route (Organization on home, cleanups elsewhere)
   useEffect(() => {
+    if (currentRoute === 'home') {
+      setOrganizationSchema();
+    } else {
+      clearOrganizationSchema();
+    }
+
+    if (currentRoute !== 'course') {
+      clearCourseSchema();
+    }
+
+    if (currentRoute !== 'creator') {
+      clearCreatorSchema();
+    }
+  }, [currentRoute]);
+
+  // Synchronize dynamic per-page <title>, meta description, Open Graph, Twitter, and canonical tags
+  useEffect(() => {
+    if (currentRoute === 'not-found') {
+      updatePageMetadata({
+        ...STATIC_ROUTE_METADATA.notFound,
+        canonicalUrl: `${window.location.origin}${window.location.pathname}`,
+      });
+      return;
+    }
+
     if (currentRoute === 'creator') {
       // Dynamic per-creator metadata is handled inside CreatorProfilePage after fetching creator details
       return;
     }
 
+    if (currentRoute === 'course') {
+      // Dynamic per-course metadata is handled inside CoursePlayerPage after fetching course syllabus
+      return;
+    }
+
+    if (currentRoute === 'checkout' && checkoutOffer && checkoutCreator) {
+      updatePageMetadata({
+        title: `Checkout: ${checkoutOffer.title} (${checkoutCreator.fullName}) | Universifit`,
+        description: `Enroll in ${checkoutOffer.title} coached by ${checkoutCreator.fullName}. 256-bit encrypted checkout with 30-day money-back guarantee on Universifit.`,
+        ogImage: '/og-image.svg',
+        ogType: 'website',
+        canonicalUrl: `${window.location.origin}/checkout`,
+      });
+      return;
+    }
+
     if (currentRoute === 'static') {
       const meta = STATIC_ROUTE_METADATA[staticPage] || STATIC_ROUTE_METADATA.privacy;
-      updatePageMetadata(meta);
+      updatePageMetadata({
+        ...meta,
+        canonicalUrl: `${window.location.origin}/${staticPage}`,
+      });
       return;
     }
 
     if (currentRoute === 'discover') {
       if (discoverCategory && discoverCategory !== 'All') {
         updatePageMetadata({
-          title: `Discover ${discoverCategory} Coaches & Protocols | Ascend`,
-          description: `Browse verified ${discoverCategory} coaching programs, video curriculums, and 1-on-1 consultations with vetted specialists on Ascend.`,
+          title: `Discover ${discoverCategory} Coaches & Protocols | Universifit`,
+          description: `Browse verified ${discoverCategory} coaching programs, video curriculums, and 1-on-1 consultations with vetted specialists on Universifit.`,
           ogImage: '/og-image.svg',
           ogType: 'website',
           canonicalUrl: `${window.location.origin}/discover?category=${encodeURIComponent(discoverCategory)}`,
         });
       } else {
-        updatePageMetadata(STATIC_ROUTE_METADATA.discover);
+        updatePageMetadata({
+          ...STATIC_ROUTE_METADATA.discover,
+          canonicalUrl: `${window.location.origin}/discover`,
+        });
       }
       return;
     }
 
-    if (currentRoute === 'course') {
-      updatePageMetadata({
-        title: 'Curriculum Video Classroom & Modules | Ascend',
-        description: 'Watch HD video training modules, download protocol spreadsheets, and submit weekly form checks to your verified coach.',
-        ogImage: '/og-image.svg',
-        ogType: 'article',
-      });
-      return;
-    }
+    const routeCanonicalMap: Record<string, string> = {
+      home: `${window.location.origin}/`,
+      myspace: `${window.location.origin}/my-space`,
+      dashboard: `${window.location.origin}/dashboard`,
+      auth: `${window.location.origin}/${authPageMode === 'login' ? 'login' : 'signup'}`,
+      'admin-creators': `${window.location.origin}/admin/creators`,
+      forbidden: `${window.location.origin}/forbidden`,
+      community: `${window.location.origin}/community`,
+      checkout: `${window.location.origin}/checkout`,
+    };
 
     const routeMeta = STATIC_ROUTE_METADATA[currentRoute] || STATIC_ROUTE_METADATA.home;
-    updatePageMetadata(routeMeta);
-  }, [currentRoute, staticPage, discoverCategory]);
+    updatePageMetadata({
+      ...routeMeta,
+      canonicalUrl: routeCanonicalMap[currentRoute] || `${window.location.origin}/${currentRoute}`,
+    });
+  }, [currentRoute, staticPage, discoverCategory, checkoutOffer, checkoutCreator, authPageMode]);
 
   const handleOpenAuth = (mode: 'login' | 'register') => {
     setAuthPageMode(mode === 'login' ? 'login' : 'signup');
     setCurrentRoute('auth');
     window.history.pushState({}, '', mode === 'login' ? '/login' : '/signup');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleAuthSuccess = (role: 'BUYER' | 'CREATOR' | 'ADMIN', user?: AuthUserData) => {
-    const activeUser = user || getStoredUser();
-    if (activeUser) setCurrentUser(activeUser);
-
-    if (role === 'CREATOR') {
-      setCurrentRoute('dashboard');
-      window.history.pushState({}, '', '/dashboard');
-    } else if (role === 'ADMIN') {
-      setCurrentRoute('admin-creators');
-      window.history.pushState({}, '', '/admin/creators');
-    } else {
-      setCurrentRoute('myspace');
-      window.history.pushState({}, '', '/my-space');
-    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -468,146 +548,166 @@ export function App() {
         />
       )}
 
-      {/* Main Content Router */}
+      {/* Main Content Router with Suspense Code-Splitting */}
       <main className="flex-1">
-        {currentRoute === 'forbidden' ? (
-          /* HTTP 403 Forbidden Access Page */
-          <Forbidden403
-            requiredRole={forbiddenRequiredRole}
-            userRole={currentUser?.role || 'BUYER'}
-            onBackHome={handleNavigateHome}
-            onLoginDifferent={() => handleOpenAuth('login')}
-          />
-        ) : currentRoute === 'static' ? (
-          /* /privacy, /terms, /refund-policy, /contact Static Pages */
-          <StaticPages
-            initialPage={staticPage}
-            onBackHome={handleNavigateHome}
-            onSelectPage={handleNavigateStatic}
-          />
-        ) : currentRoute === 'admin-creators' ? (
-          /* /admin/creators Verification Audit Table (Admin-only) */
-          <AdminCreatorsPage onBackHome={handleNavigateHome} />
-        ) : currentRoute === 'auth' ? (
-          /* /login & /signup with Role Selection & Onboarding */
-          <AuthPages
-            initialMode={authPageMode}
-            onAuthSuccess={handleAuthSuccess}
-            onBack={handleNavigateHome}
-            onNavigateTerms={() => handleNavigateStatic('terms')}
-            onNavigatePrivacy={() => handleNavigateStatic('privacy')}
-          />
-        ) : currentRoute === 'dashboard' ? (
-          /* /dashboard Creator Studio View (Offers, Students, Calendar, Earnings, Verification) */
-          <CreatorDashboard
-            onSwitchToBuyer={handleNavigateMySpace}
-            onPreviewPublicProfile={handleBookCoach}
-            onOpenMessages={handleOpenMessages}
-            onOpenSupport={handleOpenSupport}
-            initialTab={dashboardTab}
-          />
-        ) : currentRoute === 'myspace' ? (
-          /* /my-space Buyer Dashboard (Enrolled Courses, Bookings, Purchases, Saved) */
-          <MySpaceDashboard
-            onResumeCourse={handleNavigateCourse}
-            onExploreMore={handleNavigateDiscover}
-            onOpenMessages={handleOpenMessages}
-            onOpenSupport={handleOpenSupport}
-            onSelectCreator={handleBookCoach}
-          />
-        ) : currentRoute === 'community' ? (
-          /* /creator/[id]/community Feed & Reply Thread View */
-          <CommunityPage
-            creatorId={selectedCreatorId}
-            onBack={() => {
-              setCurrentRoute('creator');
-              window.history.pushState({}, '', `/creator/${encodeURIComponent(selectedCreatorId)}`);
-            }}
-          />
-        ) : currentRoute === 'course' ? (
-          /* /course/[id] Video Player & Lesson Sidebar View */
-          <CoursePlayerPage
-            courseId={selectedCourseId}
-            onBack={handleNavigateMySpace}
-          />
-        ) : currentRoute === 'checkout' ? (
-          /* /checkout Order & Razorpay View */
-          checkoutOffer && checkoutCreator ? (
-            <CheckoutPage
-              offer={checkoutOffer}
-              creator={checkoutCreator}
-              onBack={() => {
-                if (selectedCreatorId) {
-                  setCurrentRoute('creator');
-                  window.history.pushState({}, '', `/creator/${encodeURIComponent(selectedCreatorId)}`);
-                } else {
-                  handleNavigateDiscover();
-                }
-              }}
-              onSuccessNavigate={handleNavigateMySpace}
+        <Suspense fallback={<RouteLoadingFallback />}>
+          {currentRoute === 'not-found' ? (
+            /* Custom 404 Page Not Found */
+            <NotFound404
+              onBackHome={handleNavigateHome}
+              onNavigateDiscover={(cat) => handleNavigateDiscover(cat)}
             />
-          ) : (
+          ) : currentRoute === 'forbidden' ? (
+            /* HTTP 403 Forbidden Access Page */
+            <Forbidden403
+              requiredRole={forbiddenRequiredRole}
+              userRole={currentUser?.role || 'BUYER'}
+              onBackHome={handleNavigateHome}
+              onLoginDifferent={() => handleOpenAuth('login')}
+            />
+          ) : currentRoute === 'static' ? (
+            /* /privacy, /terms, /refund-policy, /contact Static Pages */
+            <StaticPages
+              initialPage={staticPage}
+              onBackHome={handleNavigateHome}
+              onSelectPage={handleNavigateStatic}
+            />
+          ) : currentRoute === 'admin-creators' ? (
+            /* /admin/creators Verification Audit Table (Admin-only) */
+            <AdminCreatorsPage onBackHome={handleNavigateHome} />
+          ) : currentRoute === 'auth' ? (
+            /* /login & /signup with Role Selection & Onboarding */
+            <AuthPages
+              initialMode={authPageMode}
+              onAuthSuccess={handleAuthSuccess}
+              onBack={handleNavigateHome}
+              onNavigateTerms={() => handleNavigateStatic('terms')}
+              onNavigatePrivacy={() => handleNavigateStatic('privacy')}
+            />
+          ) : currentRoute === 'dashboard' ? (
+            /* /dashboard Creator Studio View (Offers, Students, Calendar, Earnings, Verification) */
+            <CreatorDashboard
+              onSwitchToBuyer={handleNavigateMySpace}
+              onPreviewPublicProfile={handleBookCoach}
+              onOpenMessages={handleOpenMessages}
+              onOpenSupport={handleOpenSupport}
+              initialTab={dashboardTab}
+            />
+          ) : currentRoute === 'myspace' ? (
+            /* /my-space Buyer Dashboard (Enrolled Courses, Bookings, Purchases, Saved) */
+            <MySpaceDashboard
+              onResumeCourse={handleNavigateCourse}
+              onExploreMore={handleNavigateDiscover}
+              onOpenMessages={handleOpenMessages}
+              onOpenSupport={handleOpenSupport}
+              onSelectCreator={handleBookCoach}
+            />
+          ) : currentRoute === 'community' ? (
+            /* /creator/[id]/community Feed & Reply Thread View */
+            <CommunityPage
+              creatorId={selectedCreatorId}
+              onBack={() => {
+                setCurrentRoute('creator');
+                window.history.pushState({}, '', `/creator/${encodeURIComponent(selectedCreatorId)}`);
+              }}
+            />
+          ) : currentRoute === 'course' ? (
+            /* /course/[id] Video Player & Lesson Sidebar View */
+            <CoursePlayerPage
+              courseId={selectedCourseId}
+              onBack={handleNavigateMySpace}
+              onNavigateHome={handleNavigateHome}
+              onNavigateDiscover={(cat) => handleNavigateDiscover(cat)}
+              onNavigateCreator={(id) => {
+                setSelectedCreatorId(id);
+                setCurrentRoute('creator');
+                window.history.pushState({}, '', `/creator/${encodeURIComponent(id)}`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onSelectCourse={handleNavigateCourse}
+            />
+          ) : currentRoute === 'checkout' ? (
+            /* /checkout Order & Razorpay View */
+            checkoutOffer && checkoutCreator ? (
+              <CheckoutPage
+                offer={checkoutOffer}
+                creator={checkoutCreator}
+                onBack={() => {
+                  if (selectedCreatorId) {
+                    setCurrentRoute('creator');
+                    window.history.pushState({}, '', `/creator/${encodeURIComponent(selectedCreatorId)}`);
+                  } else {
+                    handleNavigateDiscover();
+                  }
+                }}
+                onSuccessNavigate={handleNavigateMySpace}
+              />
+            ) : (
+              <DiscoverPage
+                initialCategory={discoverCategory}
+                initialSearch={discoverSearch}
+                onBookCoach={handleBookCoach}
+                onSelectCourse={(courseId) => {
+                  setSelectedCourseId(courseId);
+                  setCurrentRoute('course');
+                  window.history.pushState({}, '', `/course/${encodeURIComponent(courseId)}`);
+                }}
+                onBackHome={handleNavigateHome}
+              />
+            )
+          ) : currentRoute === 'creator' ? (
+            /* /creator/[id] Profile View */
+            <CreatorProfilePage
+              creatorId={selectedCreatorId}
+              onBack={() => handleNavigateDiscover()}
+              onNavigateHome={handleNavigateHome}
+              onNavigateDiscover={(cat) => handleNavigateDiscover(cat)}
+              onSelectCourse={handleNavigateCourse}
+              onBookOffer={handleBookOffer}
+            />
+          ) : currentRoute === 'discover' ? (
+            /* /discover View with Filter Sidebar & Results Grid */
             <DiscoverPage
               initialCategory={discoverCategory}
               initialSearch={discoverSearch}
               onBookCoach={handleBookCoach}
-              onSelectCourse={(courseId) => {
-                setSelectedCourseId(courseId);
-                setCurrentRoute('course');
-                window.history.pushState({}, '', `/course/${encodeURIComponent(courseId)}`);
-              }}
+              onSelectCourse={handleNavigateCourse}
               onBackHome={handleNavigateHome}
             />
-          )
-        ) : currentRoute === 'creator' ? (
-          /* /creator/[id] Profile View */
-          <CreatorProfilePage
-            creatorId={selectedCreatorId}
-            onBack={() => handleNavigateDiscover()}
-            onBookOffer={handleBookOffer}
-          />
-        ) : currentRoute === 'discover' ? (
-          /* /discover View with Filter Sidebar & Results Grid */
-          <DiscoverPage
-            initialCategory={discoverCategory}
-            initialSearch={discoverSearch}
-            onBookCoach={handleBookCoach}
-            onSelectCourse={handleNavigateCourse}
-            onBackHome={handleNavigateHome}
-          />
-        ) : (
-          /* Landing Page View */
-          <>
-            {/* Hero with Fraunces headline & asymmetric coach visual */}
-            <Hero onGetStarted={() => handleOpenAuth('register')} />
+          ) : (
+            /* Landing Page View */
+            <>
+              {/* Hero with Fraunces headline & asymmetric coach visual */}
+              <Hero onGetStarted={() => handleOpenAuth('register')} />
 
-            {/* Trust Strip with accent-copper numerals & 4 stat cards */}
-            <TrustStrip />
+              {/* Trust Strip with accent-copper numerals & 4 stat cards */}
+              <TrustStrip />
 
-            {/* Explore by Goal */}
-            <ExploreByGoal onSelectCategory={handleSelectGoalCategory} />
+              {/* Explore by Goal */}
+              <ExploreByGoal onSelectCategory={handleSelectGoalCategory} />
 
-            {/* Verified Coaches, Real Results (editorial-style horizontal spotlight) */}
-            <VerifiedCoachesCarousel onBookCoach={handleBookCoach} />
+              {/* Verified Coaches, Real Results (editorial-style horizontal spotlight) */}
+              <VerifiedCoachesCarousel onBookCoach={handleBookCoach} />
 
-            {/* Testimonial Carousel with 5 India-context genuine quotes */}
-            <TestimonialCarousel />
+              {/* Testimonial Carousel with 5 India-context genuine quotes */}
+              <TestimonialCarousel />
 
-            {/* Join on the go Banner Section */}
-            <MobileAppBanner />
+              {/* Join on the go Banner Section */}
+              <MobileAppBanner />
 
-            {/* Explore Creators Section with Link to Discover */}
-            <div className="bg-[#121315] py-6 border-t border-white/[0.08] text-center">
-              <button
-                onClick={() => handleNavigateDiscover()}
-                className="inline-flex items-center gap-2 text-sm font-semibold text-[#B8703F] hover:text-[#d48b59] transition-colors cursor-pointer"
-              >
-                <span>Looking for advanced filters? Open Full Discover Experience &rarr;</span>
-              </button>
-            </div>
-            <CreatorsSection onBookCreator={handleBookCoach} />
-          </>
-        )}
+              {/* Explore Creators Section with Link to Discover */}
+              <div className="bg-[#121315] py-6 border-t border-white/[0.08] text-center">
+                <button
+                  onClick={() => handleNavigateDiscover()}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#B8703F] hover:text-[#d48b59] transition-colors cursor-pointer"
+                >
+                  <span>Looking for advanced filters? Open Full Discover Experience &rarr;</span>
+                </button>
+              </div>
+              <CreatorsSection onBookCreator={handleBookCoach} />
+            </>
+          )}
+        </Suspense>
       </main>
 
       {/* Multi-Column Footer */}
@@ -617,26 +717,36 @@ export function App() {
           onNavigateStatic={handleNavigateStatic}
           onNavigateAdmin={handleNavigateAdmin}
           onNavigateHome={handleNavigateHome}
+          onNavigateDiscover={handleNavigateDiscover}
+          onSelectCourse={handleNavigateCourse}
           onOpenSupport={() => handleOpenSupport('OTHER')}
         />
       )}
 
-      {/* Direct Creator-Buyer Messaging Modal (F15) */}
-      <MessagesModal
-        isOpen={isMessagesOpen}
-        onClose={() => setIsMessagesOpen(false)}
-        initialPartnerId={messagesPartnerId}
-        initialContextTitle={messagesContextTitle}
-      />
+      {/* Direct Creator-Buyer Messaging Modal (F15) - Lazy loaded */}
+      {isMessagesOpen && (
+        <Suspense fallback={null}>
+          <MessagesModal
+            isOpen={isMessagesOpen}
+            onClose={() => setIsMessagesOpen(false)}
+            initialPartnerId={messagesPartnerId}
+            initialContextTitle={messagesContextTitle}
+          />
+        </Suspense>
+      )}
 
-      {/* Support & Issue Resolution Desk Modal (F18) */}
-      <SupportTicketModal
-        isOpen={isSupportModalOpen}
-        onClose={() => setIsSupportModalOpen(false)}
-        initialCategory={supportCategory}
-        initialEnrollmentId={supportEnrollmentId}
-        initialBookingId={supportBookingId}
-      />
+      {/* Support & Issue Resolution Desk Modal (F18) - Lazy loaded */}
+      {isSupportModalOpen && (
+        <Suspense fallback={null}>
+          <SupportTicketModal
+            isOpen={isSupportModalOpen}
+            onClose={() => setIsSupportModalOpen(false)}
+            initialCategory={supportCategory}
+            initialEnrollmentId={supportEnrollmentId}
+            initialBookingId={supportBookingId}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

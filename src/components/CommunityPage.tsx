@@ -88,7 +88,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
         if (data) setPosts(data);
       })
       .catch((err) => {
-        console.warn('Community load error', err);
+        console.debug('Community load error', err);
         setError('Network interruption while loading community feed');
       })
       .finally(() => {
@@ -128,7 +128,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
         setIsComposerOpen(false);
       }
     } catch (err) {
-      console.warn('Error creating post', err);
+      console.debug('Error creating post', err);
     } finally {
       setIsSubmittingPost(false);
     }
@@ -150,7 +150,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
     try {
       await toggleLikePostApi(postId);
     } catch (err) {
-      console.warn('Error toggling like', err);
+      console.debug('Error toggling like', err);
     }
   };
 
@@ -182,7 +182,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
         setReplyInputs((prev) => ({ ...prev, [postId]: '' }));
       }
     } catch (err) {
-      console.warn('Error creating reply', err);
+      console.debug('Error creating reply', err);
     } finally {
       setIsSubmittingReply((prev) => ({ ...prev, [postId]: false }));
     }
@@ -197,7 +197,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
       );
       showPointsAlert(res.message || 'Post pin status updated.');
     } catch (err) {
-      console.warn('Pin error', err);
+      console.debug('Pin error', err);
     }
   };
 
@@ -209,7 +209,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
       setPosts((prev) => prev.filter((p) => p.id !== postId));
       showPointsAlert('Post removed from community.');
     } catch (err) {
-      console.warn('Delete post error', err);
+      console.debug('Delete post error', err);
     }
   };
 
@@ -232,7 +232,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
       );
       showPointsAlert('Reply removed.');
     } catch (err) {
-      console.warn('Delete reply error', err);
+      console.debug('Delete reply error', err);
     }
   };
 
@@ -262,7 +262,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
       setIsReportModalOpen(false);
       showPointsAlert('Post flagged for coach review. Thank you for keeping the community safe! 🛡️');
     } catch (err) {
-      console.warn('Report error', err);
+      console.debug('Report error', err);
     } finally {
       setIsSubmittingReport(false);
     }
@@ -277,7 +277,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
       );
       showPointsAlert('Flag dismissed.');
     } catch (err) {
-      console.warn('Dismiss error', err);
+      console.debug('Dismiss error', err);
     }
   };
 
@@ -311,9 +311,9 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
             <AlertCircle className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-display font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-display font-bold text-white tracking-tight">
               Community Space Unavailable
-            </h2>
+            </h1>
             <p className="text-xs sm:text-sm text-[#F7F4EF]/60 leading-relaxed">
               We were unable to load this creator's community squad. The profile may be private or unlisted.
             </p>
@@ -378,7 +378,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
               <div className="relative">
                 <img
                   src={creator.avatarUrl || ''}
-                  alt={creator.fullName}
+                  alt={`Coach ${creator.fullName} squad avatar`}
                   className="w-16 h-16 rounded-2xl object-cover ring-2 ring-white/15 shadow-md"
                 />
                 <span className="absolute -bottom-1 -right-1 bg-[#6E8B6F] text-black text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-sm">
@@ -652,7 +652,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
                         <div className="relative shrink-0">
                           <img
                             src={post.authorAvatar}
-                            alt={post.authorName}
+                            alt={`${post.authorName} avatar`}
                             className={`w-11 h-11 rounded-2xl object-cover ring-2 ${
                               isCoach ? 'ring-[#B8703F]' : 'ring-white/10'
                             }`}
@@ -795,7 +795,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({
                                     <div className="relative">
                                       <img
                                         src={reply.authorAvatar}
-                                        alt={reply.authorName}
+                                        alt={`${reply.authorName} avatar`}
                                         className="w-7 h-7 rounded-xl object-cover"
                                       />
                                       <div

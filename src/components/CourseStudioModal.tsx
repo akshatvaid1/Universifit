@@ -458,7 +458,7 @@ export const CourseStudioModal: React.FC<CourseStudioModalProps> = ({
                 <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center gap-4">
                   <img
                     src={thumbnailUrl}
-                    alt="Course Preview"
+                    alt={`Curriculum cover preview for ${courseTitle || 'Masterclass'}`}
                     className="w-24 h-16 rounded-xl object-cover border border-white/10 shrink-0"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
@@ -785,7 +785,7 @@ export const CourseStudioModal: React.FC<CourseStudioModalProps> = ({
                       Payout Setup Required to Publish Paid Course
                     </p>
                     <p className="text-xs text-amber-200/80 leading-relaxed">
-                      This is a paid course (${price} {currency}). You must connect your bank account or UPI ID before publishing so Ascend can process student payments.
+                      This is a paid course (${price} {currency}). You must connect your bank account or UPI ID before publishing so Universifit can process student payments.
                     </p>
                     {onOpenPayoutSetup && (
                       <button

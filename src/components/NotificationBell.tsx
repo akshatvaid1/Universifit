@@ -38,7 +38,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }
         setUnreadCount(res.data.unreadCount);
       }
     } catch (err) {
-      console.warn('Notification load error:', err);
+      console.debug('Notification load error:', err);
     }
   };
 

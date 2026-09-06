@@ -44,12 +44,12 @@
     <circle cx="26" cy="13" r="2.5" fill="#E29A68" />
     
     <!-- Wordmark -->
-    <text x="68" y="36" font-family="'Fraunces', Georgia, serif" font-size="34" font-weight="800" fill="#F7F4EF" letter-spacing="0.04em">ASCEND</text>
+    <text x="68" y="36" font-family="'Fraunces', Georgia, serif" font-size="34" font-weight="800" fill="#F7F4EF" letter-spacing="0.04em">UNIVERSIFIT</text>
 
     <!-- Verified Pill -->
-    <rect x="240" y="8" width="180" height="34" rx="17" fill="#6E8B6F" fill-opacity="0.15" stroke="#6E8B6F" stroke-width="1" stroke-opacity="0.3" />
-    <circle cx="258" cy="25" r="4" fill="#6E8B6F" />
-    <text x="270" y="30" font-family="'Inter', -apple-system, sans-serif" font-size="12" font-weight="700" fill="#6E8B6F" letter-spacing="0.06em">VERIFIED NETWORK</text>
+    <rect x="330" y="8" width="180" height="34" rx="17" fill="#6E8B6F" fill-opacity="0.15" stroke="#6E8B6F" stroke-width="1" stroke-opacity="0.3" />
+    <circle cx="348" cy="25" r="4" fill="#6E8B6F" />
+    <text x="360" y="30" font-family="'Inter', -apple-system, sans-serif" font-size="12" font-weight="700" fill="#6E8B6F" letter-spacing="0.06em">VERIFIED NETWORK</text>
   </g>
 
   <!-- Main Value Proposition Headline -->
@@ -100,7 +100,7 @@
     </text>
 
     <text x="1040" y="22" font-family="'Inter', sans-serif" font-size="16" font-weight="700" fill="#F7F4EF" fill-opacity="0.9" text-anchor="end">
-      ascend.io
+      universifit.vercel.app
     </text>
   </g>
 </svg>

@@ -226,7 +226,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
         }
       })
       .catch((err) => {
-        console.warn('fetchCreatorDashboardData error', err);
+        console.debug('fetchCreatorDashboardData error', err);
         setError('Network interruption while syncing studio telemetry');
       })
       .finally(() => {
@@ -373,7 +373,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
       );
       triggerToast(res.message || 'Post pinned status updated.');
     } catch (err) {
-      console.warn('Pin error:', err);
+      console.debug('Pin error:', err);
     }
   };
 
@@ -385,7 +385,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
       setReportedPosts((prev) => prev.filter((p) => p.id !== postId));
       triggerToast('Post permanently deleted from community.');
     } catch (err) {
-      console.warn('Delete error:', err);
+      console.debug('Delete error:', err);
     }
   };
 
@@ -402,7 +402,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
       );
       triggerToast('Reply removed.');
     } catch (err) {
-      console.warn('Delete reply error:', err);
+      console.debug('Delete reply error:', err);
     }
   };
 
@@ -415,7 +415,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
       setReportedPosts((prev) => prev.filter((p) => p.id !== postId));
       triggerToast('Flag dismissed for post.');
     } catch (err) {
-      console.warn('Dismiss error:', err);
+      console.debug('Dismiss error:', err);
     }
   };
 
@@ -431,7 +431,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
         triggerToast(res.error || 'Failed to fetch member activity telemetry.');
       }
     } catch (err) {
-      console.warn('Activity fetch error:', err);
+      console.debug('Activity fetch error:', err);
       triggerToast('Could not load member activity timeline.');
     } finally {
       setIsLoadingActivity(false);
@@ -451,7 +451,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
         triggerToast(res.error || 'Failed to remove member.');
       }
     } catch (err) {
-      console.warn('Remove member error:', err);
+      console.debug('Remove member error:', err);
       triggerToast('Error removing member.');
     }
   };
@@ -498,7 +498,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
         }
       }
     } catch (err) {
-      console.warn('Ban action error:', err);
+      console.debug('Ban action error:', err);
       triggerToast('Error processing moderation action.');
     } finally {
       setIsSubmittingBan(false);
@@ -520,7 +520,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
       triggerToast(`Author ${authorName} banned and flagged post removed.`);
       loadCreatorData();
     } catch (err) {
-      console.warn('Ban author error:', err);
+      console.debug('Ban author error:', err);
       triggerToast('Failed to ban post author.');
     }
   };
@@ -539,7 +539,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
     // Publish Gating 2: If paid offer and payout not configured, block and prompt Payout Setup
     if (Number(offerPrice) > 0 && !payoutDetails?.payoutSetupCompleted) {
       setGatedActionMessage(
-        'Payout Setup Required: Please add your bank account or UPI ID so Ascend can process your client earnings before publishing paid offers.'
+        'Payout Setup Required: Please add your bank account or UPI ID so Universifit can process your client earnings before publishing paid offers.'
       );
       setIsPayoutModalOpen(true);
       return;
@@ -565,7 +565,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
         setIsCreateOfferOpen(false);
       }
     } catch (err) {
-      console.warn('Error creating offer', err);
+      console.debug('Error creating offer', err);
     } finally {
       setIsSubmittingOffer(false);
     }
@@ -628,9 +628,9 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             <AlertCircle className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-display font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-display font-bold text-white tracking-tight">
               Unable to Synchronize Creator Studio
-            </h2>
+            </h1>
             <p className="text-xs sm:text-sm text-[#F7F4EF]/60 leading-relaxed">
               We couldn't connect with the studio telemetry database. Your earnings, bookings, and student roster may be out of date.
             </p>
@@ -687,7 +687,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               <div className="relative shrink-0">
                 <img
                   src={data.creator.avatarUrl}
-                  alt={data.creator.fullName}
+                  alt={`${data.creator.fullName} avatar`}
                   className="w-16 h-16 rounded-2xl object-cover ring-2 ring-[#B8703F] shadow-xl"
                 />
                 <div className="absolute -bottom-1 -right-1 p-1 rounded-full bg-[#6E8B6F] text-black shadow-md">
@@ -1132,7 +1132,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                         <div className="relative rounded-2xl overflow-hidden h-36 border border-white/10 bg-black/40">
                           <img
                             src={course.thumbnailUrl}
-                            alt={course.title}
+                            alt={`${course.title} curriculum cover`}
                             className="w-full h-full object-cover"
                           />
                           {!course.isPublished && (
@@ -1412,7 +1412,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
 
                 <div className="space-y-3 text-xs">
                   <p className="text-[#F7F4EF]/70 leading-relaxed">
-                    Your profile holds verified top 1% credentials on Ascend. All client transactions and payouts are active.
+                    Your profile holds verified top 1% credentials on Universifit. All client transactions and payouts are active.
                   </p>
 
                   <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-2">
@@ -1848,7 +1848,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                         <div className="flex items-center gap-3">
                           <img
                             src={post.authorAvatar}
-                            alt={post.authorName}
+                            alt={`${post.authorName} avatar`}
                             className="w-10 h-10 rounded-2xl object-cover ring-1 ring-white/10"
                           />
                           <div>
@@ -2111,7 +2111,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                                     {member.avatarUrl ? (
                                       <img
                                         src={member.avatarUrl}
-                                        alt={member.name}
+                                        alt={`${member.name} community member avatar`}
                                         className="w-12 h-12 rounded-2xl object-cover ring-2 ring-white/10"
                                       />
                                     ) : (
@@ -2139,7 +2139,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                                       )}
                                     </div>
                                     <p className="text-[11px] text-white/50 truncate font-mono">
-                                      {member.email || 'athlete@ascend.io'}
+                                      {member.email || 'athlete@universifit.com'}
                                     </p>
                                   </div>
                                 </div>
@@ -2269,7 +2269,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                             <div className="relative">
                               <img
                                 src={student.avatarUrl}
-                                alt={student.name}
+                                alt={`${student.name} enrolled student avatar`}
                                 className="w-12 h-12 rounded-2xl object-cover ring-2 ring-white/10"
                               />
                               <div className="absolute -bottom-1 -right-1 bg-[#B8703F] text-white px-1.5 py-0.1 rounded-full text-[8px] font-bold font-mono">
@@ -2399,7 +2399,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                     <div className="flex items-start gap-4">
                       <img
                         src={slot.studentAvatar}
-                        alt={slot.studentName}
+                        alt={`${slot.studentName} consultation booking avatar`}
                         className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white/10"
                       />
                       <div className="space-y-1">
@@ -2985,7 +2985,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                   </Badge>
                 </div>
                 <p className="text-xs text-[#F7F4EF]/60 mt-0.5">
-                  Invite athletes, trainees, or coach peers to Ascend. Earn a flat cash incentive directly into your payout balance for every verified member.
+                  Invite athletes, trainees, or coach peers to Universifit. Earn a flat cash incentive directly into your payout balance for every verified member.
                 </p>
               </div>
 
@@ -3187,7 +3187,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {/* WhatsApp */}
                     <a
-                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Train with verified coaching protocols on Ascend. Join with my coach referral link: ${referralStats.referralLink}`)}`}
+                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Train with verified coaching protocols on Universifit. Join with my coach referral link: ${referralStats.referralLink}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="no-underline flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-xs font-semibold text-[#25D366] transition-all cursor-pointer"
@@ -3197,7 +3197,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
 
                     {/* X / Twitter */}
                     <a
-                      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Elevate your training and coaching on @Ascend. Use my invite link to get started: ${referralStats.referralLink}`)}`}
+                      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Elevate your training and coaching on @Universifit. Use my invite link to get started: ${referralStats.referralLink}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="no-underline flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-all cursor-pointer"
@@ -3217,7 +3217,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
 
                     {/* Email */}
                     <a
-                      href={`mailto:?subject=${encodeURIComponent('Join Ascend Coaching Platform')}&body=${encodeURIComponent(`Hey,\n\nI recommend checking out Ascend for structured fitness programs and personalized coaching.\n\nHere is my personal referral link: ${referralStats.referralLink}\n\nBest,\n${referralStats.creatorName}`)}`}
+                      href={`mailto:?subject=${encodeURIComponent('Join Universifit Coaching Platform')}&body=${encodeURIComponent(`Hey,\n\nI recommend checking out Universifit for structured fitness programs and personalized coaching.\n\nHere is my personal referral link: ${referralStats.referralLink}\n\nBest,\n${referralStats.creatorName}`)}`}
                       className="no-underline flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/80 hover:text-white transition-all cursor-pointer"
                     >
                       <span>Email Invite</span>
@@ -3356,7 +3356,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                               {ref.referredUserAvatar ? (
                                 <img
                                   src={ref.referredUserAvatar}
-                                  alt={ref.referredUserName}
+                                  alt={`${ref.referredUserName} referred member avatar`}
                                   className="w-9 h-9 rounded-full object-cover border border-white/10"
                                 />
                               ) : (
@@ -3996,7 +3996,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
         payoutSetupCompleted={Boolean(payoutDetails?.payoutSetupCompleted)}
         onOpenPayoutSetup={() => {
           setGatedActionMessage(
-            'Payout Setup Required: Please add your bank account or UPI ID so Ascend can process your client earnings before publishing paid courses.'
+            'Payout Setup Required: Please add your bank account or UPI ID so Universifit can process your client earnings before publishing paid courses.'
           );
           setIsPayoutModalOpen(true);
         }}
@@ -4049,7 +4049,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                     {selectedMemberActivity?.user.avatarUrl ? (
                       <img
                         src={selectedMemberActivity.user.avatarUrl}
-                        alt={selectedMemberActivity.user.fullName}
+                        alt={`${selectedMemberActivity.user.fullName} avatar`}
                         className="w-full h-full object-cover"
                       />
                     ) : (

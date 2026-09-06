@@ -123,7 +123,7 @@ export const CreatorOnboardingWizard: React.FC<CreatorOnboardingWizardProps> = (
 
       if (onComplete) onComplete();
     } catch (err) {
-      console.warn('Error during onboarding submit', err);
+      console.debug('Error during onboarding submit', err);
       if (onComplete) onComplete();
     } finally {
       setIsSubmitting(false);
@@ -191,7 +191,7 @@ export const CreatorOnboardingWizard: React.FC<CreatorOnboardingWizardProps> = (
                   Tell us about your coaching expertise
                 </h1>
                 <p className="text-xs sm:text-sm text-[#F7F4EF]/60 font-normal">
-                  This public profile dossier is displayed to prospective clients on your Ascend storefront.
+                  This public profile dossier is displayed to prospective clients on your Universifit storefront.
                 </p>
               </div>
 
@@ -294,7 +294,7 @@ export const CreatorOnboardingWizard: React.FC<CreatorOnboardingWizardProps> = (
                   Tag your specialties and certifications
                 </h1>
                 <p className="text-xs sm:text-sm text-[#F7F4EF]/60 font-normal">
-                  Ascend matches buyers by goal based on your verified discipline tags.
+                  Universifit matches buyers by goal based on your verified discipline tags.
                 </p>
               </div>
 
@@ -426,7 +426,7 @@ export const CreatorOnboardingWizard: React.FC<CreatorOnboardingWizardProps> = (
                   Upload accreditation & identity proof
                 </h1>
                 <p className="text-xs sm:text-sm text-[#F7F4EF]/60 font-normal">
-                  Ascend streams verification files directly to secure S3/Cloudflare R2 storage for administrative review.
+                  Universifit streams verification files directly to secure S3/Cloudflare R2 storage for administrative review.
                 </p>
               </div>
 
@@ -513,7 +513,7 @@ export const CreatorOnboardingWizard: React.FC<CreatorOnboardingWizardProps> = (
                   Step 4: Creator Terms & Revenue Share Agreement
                 </Badge>
                 <h1 className="text-2xl sm:text-3xl font-display font-bold text-[#F7F4EF] mt-1">
-                  Ascend Creator Terms of Service
+                  Universifit Creator Terms of Service
                 </h1>
                 <p className="text-xs sm:text-sm text-[#F7F4EF]/60 font-normal">
                   Review the revenue share schedule, refund liabilities, content ownership rights, and professional conduct policy before launching your studio.
@@ -534,7 +534,7 @@ export const CreatorOnboardingWizard: React.FC<CreatorOnboardingWizardProps> = (
                       <span>1. Revenue Share & Escrow Payouts (85% Creator / 15% Platform)</span>
                     </div>
                     <p className="text-xs text-[#F7F4EF]/75 leading-relaxed pl-7">
-                      The Creator receives <strong>85% of Gross Merchandise Value (GMV)</strong> on all course sales, 1-on-1 coaching consultations, and community memberships. Ascend retains a <strong>15% platform and payment infrastructure fee</strong>. Net creator earnings are disbursed automatically on a rolling 7-day escrow schedule to your verified bank account or UPI ID configured in Payout Settings.
+                      The Creator receives <strong>85% of Gross Merchandise Value (GMV)</strong> on all course sales, 1-on-1 coaching consultations, and community memberships. Universifit retains a <strong>15% platform and payment infrastructure fee</strong>. Net creator earnings are disbursed automatically on a rolling 7-day escrow schedule to your verified bank account or UPI ID configured in Payout Settings.
                     </p>
                   </div>
 
@@ -547,7 +547,7 @@ export const CreatorOnboardingWizard: React.FC<CreatorOnboardingWizardProps> = (
                       <span>2. Refund Liability & Chargeback Protocol</span>
                     </div>
                     <p className="text-xs text-[#F7F4EF]/75 leading-relaxed pl-7">
-                      Ascend maintains a mandatory <strong>14-day student satisfaction guarantee</strong> for on-demand courses and a <strong>24-hour rescheduling window</strong> for 1-on-1 calls. In the event of unfulfilled coaching bookings, missed video sessions, or legitimate buyer dispute claims, the associated refund liability will be debited from your upcoming rolling escrow payout balance.
+                      Universifit maintains a mandatory <strong>14-day student satisfaction guarantee</strong> for on-demand courses and a <strong>24-hour rescheduling window</strong> for 1-on-1 calls. In the event of unfulfilled coaching bookings, missed video sessions, or legitimate buyer dispute claims, the associated refund liability will be debited from your upcoming rolling escrow payout balance.
                     </p>
                   </div>
 
@@ -560,7 +560,7 @@ export const CreatorOnboardingWizard: React.FC<CreatorOnboardingWizardProps> = (
                       <span>3. 100% Intellectual Property & Content Ownership</span>
                     </div>
                     <p className="text-xs text-[#F7F4EF]/75 leading-relaxed pl-7">
-                      You retain <strong>100% exclusive copyright and ownership</strong> over all video masterclasses, curriculum assets, PDF protocols, and coaching methodologies uploaded to the platform. You grant Ascend a limited, revocable, non-exclusive license strictly necessary to host, transcode (via Cloudflare/Mux), and stream content to authorized paying students.
+                      You retain <strong>100% exclusive copyright and ownership</strong> over all video masterclasses, curriculum assets, PDF protocols, and coaching methodologies uploaded to the platform. You grant Universifit a limited, revocable, non-exclusive license strictly necessary to host, transcode (via Cloudflare/Mux), and stream content to authorized paying students.
                     </p>
                   </div>
 
@@ -593,7 +593,7 @@ export const CreatorOnboardingWizard: React.FC<CreatorOnboardingWizardProps> = (
                     />
                     <div className="space-y-1">
                       <span className="text-xs font-semibold text-white block">
-                        I have read, understand, and agree to the Ascend Creator Terms of Service, 85/15 Revenue Share Schedule, Refund Liabilities, and Conduct Guidelines.
+                        I have read, understand, and agree to the Universifit Creator Terms of Service, 85/15 Revenue Share Schedule, Refund Liabilities, and Conduct Guidelines.
                       </span>
                       <span className="text-[11px] text-[#F7F4EF]/50 block">
                         Acceptance is legally binding and recorded on your immutable Creator Profile before offer publishing is enabled.

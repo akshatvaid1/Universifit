@@ -4,3 +4,4 @@ export * from './Card';
 export * from './Input';
 export * from './ProgressBar';
 export * from './JoinCallButton';
+export * from './Breadcrumbs';

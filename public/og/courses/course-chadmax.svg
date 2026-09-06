@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" fill="none">
+  <rect width="1200" height="630" fill="#121315" />
+  
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-opacity="0.025" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="glow" cx="80%" cy="20%" r="60%">
+      <stop offset="0%" stop-color="#B8703F" stop-opacity="0.22" />
+      <stop offset="60%" stop-color="#B8703F" stop-opacity="0.04" />
+      <stop offset="100%" stop-color="#121315" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="bottomGlow" cx="20%" cy="85%" r="50%">
+      <stop offset="0%" stop-color="#6E8B6F" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#121315" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="copperText" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E29A68" />
+      <stop offset="50%" stop-color="#B8703F" />
+      <stop offset="100%" stop-color="#8F5128" />
+    </linearGradient>
+    <linearGradient id="borderGrad" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#B8703F" stop-opacity="0.5" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#6E8B6F" stop-opacity="0.3" />
+    </linearGradient>
+    <clipPath id="coachClip">
+      <circle cx="28" cy="28" r="28" />
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#grid)" />
+  <rect width="1200" height="630" fill="url(#glow)" />
+  <rect width="1200" height="630" fill="url(#bottomGlow)" />
+  <rect x="24" y="24" width="1152" height="582" rx="28" stroke="url(#borderGrad)" stroke-width="2" />
+
+  <g transform="translate(80, 70)">
+    <rect width="50" height="50" rx="14" fill="#16171A" stroke="#B8703F" stroke-width="1.5" stroke-opacity="0.5" />
+    <path d="M17 14V28C17 32.4 20.6 36 25 36C29.4 36 33 32.4 33 28V14" stroke="url(#copperText)" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="25" cy="14" r="2.5" fill="#E29A68" />
+    <text x="68" y="35" font-family="'Fraunces', Georgia, serif" font-size="32" font-weight="800" fill="#F7F4EF" letter-spacing="0.04em">UNIVERSIFIT</text>
+    <rect x="330" y="8" width="200" height="34" rx="17" fill="#B8703F" fill-opacity="0.15" stroke="#B8703F" stroke-width="1" stroke-opacity="0.4" />
+    <circle cx="348" cy="25" r="4" fill="#E29A68" />
+    <text x="360" y="30" font-family="'Inter', sans-serif" font-size="12" font-weight="700" fill="#E29A68" letter-spacing="0.06em">VERIFIED CURRICULUM</text>
+  </g>
+
+  <g transform="translate(80, 180)">
+    <text x="0" y="50" font-family="'Fraunces', Georgia, serif" font-size="52" font-weight="800" fill="#F7F4EF" letter-spacing="-0.02em">
+      ChadMax Biomechanics &amp; Strength Foundation
+    </text>
+
+    <g transform="translate(0, 95)">
+      <g clip-path="url(#coachClip)">
+        <image href="https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=400&amp;auto=format&amp;fit=crop&amp;q=80" width="56" height="56" preserveAspectRatio="xMidYMid slice" />
+      </g>
+      <circle cx="28" cy="28" r="28" fill="none" stroke="#B8703F" stroke-width="2" stroke-opacity="0.6"/>
+      <text x="74" y="24" font-family="'Inter', sans-serif" font-size="13" font-weight="600" fill="#F7F4EF" fill-opacity="0.6" letter-spacing="0.05em">
+        INSTRUCTED BY
+      </text>
+      <text x="74" y="47" font-family="'Inter', sans-serif" font-size="20" font-weight="700" fill="#F7F4EF">
+        Coach Chad Tagemb
+      </text>
+    </g>
+
+    <g transform="translate(0, 195)">
+      <rect x="0" y="0" width="210" height="42" rx="21" fill="#16171A" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1" />
+      <text x="105" y="26" font-family="'Inter', sans-serif" font-size="14" font-weight="600" fill="#F7F4EF" text-anchor="middle">🎥 16 HD Video Modules</text>
+
+      <rect x="226" y="0" width="230" height="42" rx="21" fill="#16171A" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1" />
+      <text x="341" y="26" font-family="'Inter', sans-serif" font-size="14" font-weight="600" fill="#F7F4EF" text-anchor="middle">📊 Biomechanics Protocols</text>
+
+      <rect x="472" y="0" width="200" height="42" rx="21" fill="#16171A" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1" />
+      <text x="572" y="26" font-family="'Inter', sans-serif" font-size="14" font-weight="600" fill="#F7F4EF" text-anchor="middle">💬 Weekly Form Checks</text>
+    </g>
+  </g>
+
+  <g transform="translate(80, 528)">
+    <text x="0" y="22" font-family="'Inter', monospace" font-size="15" font-weight="700" fill="#6E8B6F">
+      ✓ 30-DAY SATISFACTION GUARANTEE
+    </text>
+    <text x="330" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="500" fill="#ffffff" fill-opacity="0.35">|</text>
+    <text x="355" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="600" fill="#F7F4EF" fill-opacity="0.85">
+      Lifetime Curriculum Access
+    </text>
+    <text x="600" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="500" fill="#ffffff" fill-opacity="0.35">|</text>
+    <text x="625" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="600" fill="#E29A68">
+      Certificate of Mastery
+    </text>
+    <text x="1040" y="22" font-family="'Inter', sans-serif" font-size="16" font-weight="700" fill="#F7F4EF" fill-opacity="0.9" text-anchor="end">
+      universifit.vercel.app
+    </text>
+  </g>
+</svg>

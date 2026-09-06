@@ -108,7 +108,7 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
       setSupportTickets(res.data);
       setSupportCounts(res.counts);
     } catch (err) {
-      console.warn('Error loading support tickets in admin:', err);
+      console.debug('Error loading support tickets in admin:', err);
     } finally {
       setIsLoadingSupport(false);
     }
@@ -160,10 +160,10 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
   const handleDemoAdminLogin = async () => {
     setIsLoggingInAdmin(true);
     try {
-      const res = await loginUserApi('admin@ascend.io', 'admin123');
+      const res = await loginUserApi('admin@universifit.com', 'admin123');
       if (res.success && res.user) {
         setCurrentUser(res.user);
-        showToast('Authenticated as Administrator (admin@ascend.io)', 'success');
+        showToast('Authenticated as Administrator (admin@universifit.com)', 'success');
       }
     } catch (err: any) {
       showToast(err.message || 'Could not authenticate admin.', 'error');
@@ -185,7 +185,7 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
               : c
           )
         );
-        showToast(`Approved ${creator.user.fullName} as a Verified Ascend Coach!`, 'success');
+        showToast(`Approved ${creator.user.fullName} as a Verified Universifit Coach!`, 'success');
       } else {
         showToast(res.error || 'Failed to approve creator application.', 'error');
       }
@@ -254,9 +254,9 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
             </button>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-xl bg-white text-black font-display font-black text-sm flex items-center justify-center">
-                A
+                U
               </div>
-              <span className="font-display font-bold text-base text-white tracking-tight">Ascend Admin</span>
+              <span className="font-display font-bold text-base text-white tracking-tight">Universifit Admin</span>
             </div>
             <div className="w-20" />
           </div>
@@ -315,7 +315,7 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Authenticate Demo Administrator (admin@ascend.io)</span>
+                  <span>Authenticate Demo Administrator (admin@universifit.com)</span>
                 </>
               )}
             </button>
@@ -324,7 +324,7 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
 
         {/* Footer */}
         <div className="py-6 text-center text-xs text-[#F7F4EF]/40 font-mono border-t border-white/[0.06]">
-          Ascend Administrator Gateway • RBAC Protected
+          Universifit Administrator Gateway • RBAC Protected
         </div>
       </div>
     );
@@ -372,7 +372,7 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
 
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#B8703F] to-[#7c441f] text-white font-display font-black text-lg flex items-center justify-center shadow-md">
-                A
+                U
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -611,7 +611,7 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
                             <div className="flex items-center gap-3">
                               <img
                                 src={c.user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'}
-                                alt={c.user.fullName}
+                                alt={`${c.user.fullName} profile photo`}
                                 className="w-10 h-10 rounded-2xl object-cover ring-1 ring-white/10"
                               />
                               <div>
@@ -875,7 +875,7 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
                                 {tkt.user?.fullName || 'Platform User'}
                               </span>
                               <span className="text-[11px] text-[#F7F4EF]/50 block">
-                                {tkt.user?.email || 'user@ascend.io'}
+                                {tkt.user?.email || 'user@universifit.com'}
                               </span>
                               <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-white/[0.06] text-white/70">
                                 {tkt.user?.role || 'BUYER'}
@@ -1152,7 +1152,7 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
               <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-black/50 min-h-[300px]">
                 <img
                   src={previewDocUrl.split('#')[0]}
-                  alt="Verification Document"
+                  alt={`${previewDocUrl.split('#')[1] || 'Coach credential verification document'} preview`}
                   className="max-w-full max-h-[60vh] object-contain rounded-xl border border-white/10 shadow-lg"
                 />
               </div>
@@ -1163,7 +1163,7 @@ export const AdminCreatorsPage: React.FC<AdminCreatorsPageProps> = ({ onBackHome
 
       {/* Footer */}
       <footer className="py-6 text-center text-xs text-[#F7F4EF]/40 font-mono border-t border-white/[0.06]">
-        Ascend Coaching Ecosystem • Administrator Audit Interface
+        Universifit Coaching Ecosystem • Administrator Audit Interface
       </footer>
     </div>
   );

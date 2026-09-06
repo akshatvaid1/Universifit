@@ -27,6 +27,8 @@ import analyticsRoutes from './routes/analytics.routes.js';
 import referralRoutes from './routes/referral.routes.js';
 import eventRoutes from './routes/event.routes.js';
 import membershipRoutes from './routes/membership.routes.js';
+import sitemapRoutes from './routes/sitemap.routes.js';
+import ogRoutes from './routes/og.routes.js';
 import passport from './config/passport.js';
 import prisma from './config/db.js';
 import { CronService } from './services/cron.service.js';
@@ -143,6 +145,12 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/membership', membershipRoutes);
+
+// SEO & AI Crawlers (sitemap.xml, llms.txt, and dynamic OG share images)
+app.use(sitemapRoutes);
+app.use('/api', sitemapRoutes);
+app.use(ogRoutes);
+app.use('/api', ogRoutes);
 
 // 404 Route Handler
 app.use((req: Request, res: Response) => {

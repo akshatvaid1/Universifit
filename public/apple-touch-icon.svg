@@ -1,19 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <!-- Rounded Apple Touch Squircle Background -->
   <rect width="180" height="180" rx="40" fill="#121315" />
   <rect x="2" y="2" width="176" height="176" rx="38" stroke="#B8703F" stroke-opacity="0.35" stroke-width="4" />
   
-  <!-- Stylized Geometric Mountain Apex / Ascend 'A' -->
-  <path d="M90 32L40 142H68L90 92L112 142H140L90 32Z" fill="url(#copperGradLarge)" />
-  <path d="M90 62L62 124H78L90 98L102 124H118L90 62Z" fill="#121315" fill-opacity="0.95" />
-  
-  <!-- Peak Glow Accent -->
-  <circle cx="90" cy="34" r="7" fill="#E29A68" />
+  <!-- Universifit Athletic Geometric 'U' Mark -->
+  <path d="M45 42 H73 V100 C73 110 80 116 90 116 C100 116 107 110 107 100 V42 H135 V100 C135 128 115 144 90 144 C65 144 45 128 45 100 Z" fill="url(#universifitCopperGradLarge)" />
+
+  <!-- Core Accent Highlight -->
+  <circle cx="90" cy="62" r="7" fill="#E29A68" fill-opacity="0.9" />
 
   <defs>
-    <linearGradient id="copperGradLarge" x1="40" y1="142" x2="140" y2="32" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#8F5128" />
-      <stop offset="0.5" stop-color="#B8703F" />
-      <stop offset="1" stop-color="#E29A68" />
+    <linearGradient id="universifitCopperGradLarge" x1="45" y1="42" x2="135" y2="144" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E29A68" />
+      <stop offset="50%" stop-color="#B8703F" />
+      <stop offset="100%" stop-color="#8F5128" />
     </linearGradient>
   </defs>
 </svg>

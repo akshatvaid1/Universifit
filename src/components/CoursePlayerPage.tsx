@@ -17,7 +17,7 @@ import {
   Star,
   Award,
 } from 'lucide-react';
-import { Card, Badge, Button, ProgressBar } from './ui';
+import { Card, Badge, Button, ProgressBar, Breadcrumbs } from './ui';
 import { ReviewModal } from './ReviewModal';
 import {
   fetchCourseById,
@@ -28,15 +28,24 @@ import {
   type LessonItem,
   type CertificateItem,
 } from '../services/api';
+import { updatePageMetadata, setCourseSchema, clearCourseSchema, getCourseOgImageUrl } from '../utils/seo';
 
 interface CoursePlayerPageProps {
   courseId?: string;
   onBack?: () => void;
+  onNavigateHome?: () => void;
+  onNavigateDiscover?: (category?: string) => void;
+  onNavigateCreator?: (creatorId: string) => void;
+  onSelectCourse?: (courseId: string) => void;
 }
 
 export const CoursePlayerPage: React.FC<CoursePlayerPageProps> = ({
   courseId = '',
   onBack,
+  onNavigateHome,
+  onNavigateDiscover,
+  onNavigateCreator,
+  onSelectCourse,
 }) => {
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [activeLessonId, setActiveLessonId] = useState<string>('');
@@ -78,7 +87,7 @@ export const CoursePlayerPage: React.FC<CoursePlayerPageProps> = ({
         }
       })
       .catch((err) => {
-        console.warn('fetchCourseById error', err);
+        console.debug('fetchCourseById error', err);
         setError('Network interruption while streaming course data');
       })
       .finally(() => {
@@ -90,6 +99,58 @@ export const CoursePlayerPage: React.FC<CoursePlayerPageProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
     loadCourse();
   }, [courseId]);
+
+  // Dynamic Course SEO Metadata Injection (Title, Description, Canonical URL)
+  useEffect(() => {
+    if (course && course.title) {
+      const activeLesson = course.lessons.find((l) => l.id === activeLessonId) || course.lessons[0];
+      const lessonPart = activeLesson?.title ? ` — ${activeLesson.title}` : '';
+      const descSnippet = course.description
+        ? course.description.length > 140
+          ? `${course.description.slice(0, 137)}...`
+          : course.description
+        : `Master ${course.title} by Coach ${course.coachName}. Video syllabus, spreadsheet protocols, and coach form checks.`;
+
+      const ogImage = getCourseOgImageUrl({
+        id: course.id || courseId,
+        title: course.title,
+        coachName: course.coachName,
+        coachAvatar: course.coachAvatar,
+      });
+
+      updatePageMetadata({
+        title: `${course.title}${lessonPart} | Universifit Curriculum`,
+        description: `${descSnippet} Verified coaching protocol on Universifit.`,
+        ogImage,
+        ogType: 'article',
+        canonicalUrl: `${window.location.origin}/course/${encodeURIComponent(course.id || courseId)}`,
+      });
+
+      // Inject Schema.org Course Structured Data
+      setCourseSchema({
+        id: course.id || courseId,
+        title: course.title,
+        description: course.description || undefined,
+        coachName: course.coachName,
+        thumbnailUrl: course.coachAvatar,
+        price: 150,
+        currency: 'USD',
+      });
+    } else if (error) {
+      clearCourseSchema();
+      updatePageMetadata({
+        title: 'Curriculum Stream Unavailable | Universifit',
+        description: 'Unable to load course modules or streaming media on Universifit.',
+        ogImage: '/og-image.svg',
+        ogType: 'article',
+        canonicalUrl: `${window.location.origin}/course/${encodeURIComponent(courseId)}`,
+      });
+    }
+
+    return () => {
+      clearCourseSchema();
+    };
+  }, [course, activeLessonId, error, courseId]);
 
   if (isLoading) {
     return (
@@ -154,9 +215,9 @@ export const CoursePlayerPage: React.FC<CoursePlayerPageProps> = ({
             <AlertCircle className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-display font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-display font-bold text-white tracking-tight">
               Unable to Load Curriculum Stream
-            </h2>
+            </h1>
             <p className="text-xs sm:text-sm text-[#F7F4EF]/60 leading-relaxed">
               We were unable to load the modules for this course. Your session token may need renewal or the streaming server is momentarily unreachable.
             </p>
@@ -194,9 +255,9 @@ export const CoursePlayerPage: React.FC<CoursePlayerPageProps> = ({
             <Film className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-display font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-display font-bold text-white tracking-tight">
               No curriculum lessons published yet
-            </h2>
+            </h1>
             <p className="text-xs sm:text-sm text-[#F7F4EF]/60 leading-relaxed">
               The coach has registered this course syllabus but has not yet published active video lessons. Check back soon for module drops.
             </p>
@@ -259,7 +320,7 @@ export const CoursePlayerPage: React.FC<CoursePlayerPageProps> = ({
         }
       }
     } catch (err) {
-      console.warn('Error marking lesson complete', err);
+      console.debug('Error marking lesson complete', err);
     } finally {
       setIsMarkingComplete(false);
     }
@@ -268,38 +329,59 @@ export const CoursePlayerPage: React.FC<CoursePlayerPageProps> = ({
   return (
     <div className="min-h-screen bg-[#121315] text-[#F7F4EF] font-sans pb-28">
       
-      {/* Top Navbar Bar */}
+      {/* Top Navbar Bar with Breadcrumb Navigation */}
       <div className="border-b border-white/[0.08] bg-[#16171A] sticky top-20 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-xs font-semibold text-[#F7F4EF]/70 hover:text-white transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded-lg px-2 py-1"
-          >
-            <ChevronLeft className="w-4 h-4 text-[#B8703F]" />
-            <span>Back to Dashboard</span>
-          </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#F7F4EF]/70 hover:text-white transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded-lg px-2 py-1 shrink-0"
+              title="Return to Dashboard"
+            >
+              <ChevronLeft className="w-4 h-4 text-[#B8703F]" />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+            <div className="h-4 w-px bg-white/10 hidden sm:block shrink-0" />
+            <Breadcrumbs
+              items={[
+                { label: 'Home', onClick: onNavigateHome },
+                { label: 'Discover', onClick: () => onNavigateDiscover ? onNavigateDiscover() : onBack?.() },
+                {
+                  label: course.coachName ? `Coach ${course.coachName}` : 'Curriculums',
+                  onClick: course.coachId && onNavigateCreator ? () => onNavigateCreator(course.coachId) : undefined,
+                },
+                { label: course.title, isCurrent: true },
+              ]}
+              className="min-w-0"
+            />
+          </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => course.coachId && onNavigateCreator ? onNavigateCreator(course.coachId) : undefined}
+              className="flex items-center gap-2 hover:opacity-85 transition-opacity cursor-pointer text-left"
+              title={`View ${course.coachName} profile`}
+            >
               <img
                 src={course.coachAvatar}
-                alt={course.coachName}
+                alt={`Coach ${course.coachName} avatar`}
                 className="w-7 h-7 rounded-full object-cover ring-1 ring-white/20"
               />
               <span className="text-xs font-semibold text-[#F7F4EF]/90 hidden sm:inline">
                 {course.coachName}
               </span>
-            </div>
+            </button>
             <button
               onClick={() => setIsReviewModalOpen(true)}
               className="px-3 py-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 hover:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Star className="w-3.5 h-3.5 fill-current" />
-              <span>Rate Course</span>
+              <span className="hidden xs:inline">Rate Course</span>
             </button>
 
             <Badge variant="verified" size="sm">
-              Verified Curriculum
+              Verified
             </Badge>
           </div>
         </div>
@@ -494,7 +576,7 @@ export const CoursePlayerPage: React.FC<CoursePlayerPageProps> = ({
                         href={res.url}
                         onClick={(e) => {
                           e.preventDefault();
-                          const content = `# ASCEND TRAINING RESOURCE\n\nTitle: ${res.title}\nLesson: ${activeLesson.title}\nCourse: ${course.title}\nCoach: ${course.coachName || 'Verified Coach'}\n\nKey Action Items:\n- Review biomechanics cues covered in the video\n- Log your working sets with target RPE\n- Upload your top set video for weekly form audit\n\nGenerated by Ascend Academy Platform.`;
+                          const content = `# UNIVERSIFIT TRAINING RESOURCE\n\nTitle: ${res.title}\nLesson: ${activeLesson.title}\nCourse: ${course.title}\nCoach: ${course.coachName || 'Verified Coach'}\n\nKey Action Items:\n- Review biomechanics cues covered in the video\n- Log your working sets with target RPE\n- Upload your top set video for weekly form audit\n\nGenerated by Universifit Academy Platform.`;
                           const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
                           const url = URL.createObjectURL(blob);
                           const link = document.createElement('a');
@@ -573,7 +655,7 @@ export const CoursePlayerPage: React.FC<CoursePlayerPageProps> = ({
                     </div>
 
                     <p className="text-[11px] text-[#F7F4EF]/60 leading-relaxed">
-                      Official tamper-evident credential verified by Ascend & {course.coachName}.
+                      Official tamper-evident credential verified by Universifit & {course.coachName}.
                     </p>
 
                     <a
@@ -671,6 +753,142 @@ export const CoursePlayerPage: React.FC<CoursePlayerPageProps> = ({
           </aside>
 
         </div>
+
+        {/* ========================================================================= */}
+        {/* RELATED COURSES & MASTERCLASSES (Contextual Internal Links) */}
+        {/* ========================================================================= */}
+        <section className="pt-16 mt-16 border-t border-white/[0.08]">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+            <div>
+              <Badge variant="copper" size="sm" className="mb-2">
+                Curated Masterclasses
+              </Badge>
+              <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
+                Related Training Curriculums
+              </h2>
+              <p className="text-xs sm:text-sm text-[#F7F4EF]/60 mt-1">
+                Deepen your athlete progression with complementary protocols taught by top 1% vetted practitioners.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onNavigateDiscover ? onNavigateDiscover('All') : undefined}
+              className="text-xs font-semibold text-[#B8703F] hover:text-[#E29A68] transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              <span>Explore All Masterclasses</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                id: 'c-big3-mechanics',
+                title: 'Big 3 Biomechanics: Squat, Bench & Deadlift',
+                description: 'Evidence-based biomechanics, moment arm physics, and bar path trajectories for injury-free powerlifting.',
+                coachId: 'marcus.vance',
+                coachName: 'Marcus Vance',
+                coachAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+                thumbnail: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80',
+                category: 'Strength & Biomechanics',
+                lessonsCount: 4,
+              },
+              {
+                id: 'course-chadmax',
+                title: 'ChadMax: Aesthetics & Stature Masterclass',
+                description: 'Complete protocol covering facial aesthetics, clean bulking nutrition, V-taper symmetry, and posture reset.',
+                coachId: 'chadtag',
+                coachName: 'Chadtag',
+                coachAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80',
+                thumbnail: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80',
+                category: 'Aesthetics & Stature',
+                lessonsCount: 5,
+              },
+              {
+                id: 'course-nutrition-recomp',
+                title: 'Metabolic Nutrition & Lean Recomposition',
+                description: 'Biomarker tracking, carb cycling, and clinical gut health protocols for optimal body composition.',
+                coachId: 'dr.elena.metabolism',
+                coachName: 'Dr. Elena Rostova',
+                coachAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80',
+                thumbnail: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop&q=80',
+                category: 'Metabolic Diet',
+                lessonsCount: 6,
+              },
+            ]
+              .filter((c) => c.id !== (course.id || courseId))
+              .map((relCourse) => (
+                <Card
+                  key={relCourse.id}
+                  variant="charcoal"
+                  interactive
+                  className="p-5 bg-[#16171A] border-white/[0.08] hover:border-[#B8703F]/40 flex flex-col justify-between space-y-4 group transition-all"
+                >
+                  <div className="space-y-3">
+                    <div className="relative rounded-2xl overflow-hidden aspect-video bg-[#121315]">
+                      <img
+                        src={relCourse.thumbnail}
+                        alt={relCourse.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute top-3 left-3">
+                        <Badge variant="verified" size="sm">
+                          {relCourse.category}
+                        </Badge>
+                      </div>
+                      <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-sm text-[10px] font-semibold text-white">
+                        {relCourse.lessonsCount} Modules
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-display font-bold text-base text-white group-hover:text-[#E29A68] transition-colors line-clamp-1">
+                        {relCourse.title}
+                      </h3>
+                      <p className="text-xs text-[#F7F4EF]/60 mt-1 line-clamp-2 leading-relaxed">
+                        {relCourse.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (relCourse.coachId && onNavigateCreator) {
+                          onNavigateCreator(relCourse.coachId);
+                        }
+                      }}
+                      className="flex items-center gap-2 text-left hover:opacity-80 transition-opacity cursor-pointer min-w-0"
+                      title={`View Coach ${relCourse.coachName}`}
+                    >
+                      <img
+                        src={relCourse.coachAvatar}
+                        alt={relCourse.coachName}
+                        className="w-6 h-6 rounded-full object-cover ring-1 ring-white/10 shrink-0"
+                      />
+                      <span className="text-xs text-[#F7F4EF]/80 font-medium truncate">
+                        Coach {relCourse.coachName}
+                      </span>
+                    </button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs shrink-0"
+                      onClick={() => onSelectCourse && onSelectCourse(relCourse.id)}
+                      rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+                    >
+                      Start Course
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+          </div>
+        </section>
+
       </div>
 
       {/* Review Modal for Course Rating (F16) */}

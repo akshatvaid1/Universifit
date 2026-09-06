@@ -37,7 +37,7 @@ export const TrustStrip: React.FC = () => {
       icon: Users,
       number: '48,000+',
       label: 'Active Members',
-      description: 'High-performing community members training and ascending together',
+      description: 'High-performing community members training and advancing together',
       iconColor: 'bg-[#6E8B6F]/15 text-[#8cb08d] border-[#6E8B6F]/30',
       tag: 'Global community',
     },

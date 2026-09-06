@@ -601,7 +601,7 @@ export const EngagementRateGauge: React.FC<{
           <div className="flex items-center justify-between text-xs py-2">
             <span className="text-white/60">Retention Index</span>
             <span className="font-bold text-[#6E8B6F] font-mono text-sm">
-              High (Top 10% on Ascend)
+              High (Top 10% on Universifit)
             </span>
           </div>
         </div>
@@ -766,7 +766,7 @@ export const TopContributorsLeaderboard: React.FC<{
 
               {/* Avatar & Name */}
               {member.avatarUrl ? (
-                <img src={member.avatarUrl} alt={member.name} className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10" />
+                <img src={member.avatarUrl} alt={`${member.name}, ranked #${member.rank} squad member`} className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10" />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white">
                   {member.name.charAt(0)}

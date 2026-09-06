@@ -1,13 +1,15 @@
-# robots.txt for Ascend (https://ascend.io)
+# robots.txt for Universifit (https://universifit.vercel.app)
 User-agent: *
 Allow: /
 Allow: /discover
 Allow: /creator/*
+Allow: /course/*
 Allow: /community
 Allow: /privacy
 Allow: /terms
 Allow: /refund-policy
 Allow: /contact
+Allow: /llms.txt
 
 # Disallow Private Athlete & Creator Portals
 Disallow: /admin/
@@ -22,4 +24,4 @@ Disallow: /api/
 Disallow: /api/*
 
 # XML Sitemap Location
-Sitemap: https://ascend.io/sitemap.xml
+Sitemap: https://universifit.vercel.app/sitemap.xml

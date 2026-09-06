@@ -44,9 +44,9 @@ export const Forbidden403: React.FC<Forbidden403Props> = ({
               HTTP 403 FORBIDDEN
             </Badge>
           </div>
-          <h2 className="text-2xl font-display font-bold text-white tracking-tight">
+          <h1 className="text-2xl font-display font-bold text-white tracking-tight">
             Restricted Area Access
-          </h2>
+          </h1>
           <p className="text-xs sm:text-sm text-[#F7F4EF]/70 leading-relaxed max-w-md mx-auto">
             This module is reserved exclusively for{' '}
             <strong className="text-[#B8703F]">{getRoleTitle(requiredRole)}</strong> accounts.

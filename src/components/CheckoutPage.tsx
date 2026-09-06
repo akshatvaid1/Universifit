@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Card, Badge, Button, Input } from './ui';
 import { validateCouponApi, type CreatorItem, type CreatorOffer } from '../services/api';
+import { updatePageMetadata } from '../utils/seo';
 
 declare global {
   interface Window {
@@ -74,6 +75,40 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponMessage, setCouponMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Dynamically load Razorpay checkout script (unconditional hook)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (!document.getElementById('razorpay-checkout-script')) {
+      const script = document.createElement('script');
+      script.id = 'razorpay-checkout-script';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Dynamic Checkout SEO Metadata Injection (unconditional hook)
+  useEffect(() => {
+    if (offer && creator) {
+      updatePageMetadata({
+        title: `Checkout: ${offer.title} with Coach ${creator.fullName} | Universifit`,
+        description: `Complete your secure 256-bit encrypted checkout for ${offer.title} guided by ${creator.fullName}. 30-day satisfaction guarantee on Universifit.`,
+        ogImage: '/og-image.svg',
+        ogType: 'website',
+        canonicalUrl: `${window.location.origin}/checkout`,
+      });
+    } else {
+      updatePageMetadata({
+        title: 'Secure Checkout | Universifit',
+        description: 'Secure 256-bit encrypted checkout with buyer protection and money-back guarantee on Universifit.',
+        ogImage: '/og-image.svg',
+        ogType: 'website',
+        canonicalUrl: `${window.location.origin}/checkout`,
+      });
+    }
+  }, [offer, creator]);
+
   if (!offer || !creator) {
     return (
       <div className="min-h-screen bg-[#16171A] text-[#F7F4EF] font-sans pb-28 flex flex-col justify-center items-center px-4">
@@ -82,9 +117,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             <Lock className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-display font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-display font-bold text-white tracking-tight">
               No Offer Selected
-            </h2>
+            </h1>
             <p className="text-xs sm:text-sm text-[#F7F4EF]/60 leading-relaxed">
               Please select a coaching program, video curriculum, or community cohort to proceed with checkout.
             </p>
@@ -146,19 +181,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     setCouponMessage(null);
   };
 
-  // Dynamically load Razorpay checkout script
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    if (!document.getElementById('razorpay-checkout-script')) {
-      const script = document.createElement('script');
-      script.id = 'razorpay-checkout-script';
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
   const validateForm = (): boolean => {
     const errs: Record<string, string> = {};
     if (!fullName.trim()) errs.fullName = 'Full name is required.';
@@ -212,7 +234,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           if (json.data) orderData = json.data;
         }
       } catch (err) {
-        console.warn('Backend API connection warning, initializing simulated Razorpay gateway', err);
+        console.debug('Backend API connection warning, initializing simulated Razorpay gateway', err);
       }
 
       // If backend mock or dev fallback
@@ -226,7 +248,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           key: razorpayKey,
           amount: amountInSubunits,
           currency: currentOffer.currency || 'USD',
-          name: 'Ascend Coaching',
+          name: 'Universifit Coaching',
           description: `${currentOffer.title} with ${currentCreator.fullName}`,
           image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=200&auto=format&fit=crop&q=80',
           order_id: orderId,
@@ -267,7 +289,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 }),
               });
               setCheckoutStatus('success');
-            } catch (vErr) {
+            } catch {
               setPaymentDetails({
                 paymentId: `pay_${Date.now().toString(36)}`,
                 orderId,
@@ -478,14 +500,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   onClick={() => {
                     const receiptContent = [
                       '========================================================',
-                      '                   ASCEND ENROLLMENT RECEIPT             ',
+                      '                 UNIVERSIFIT ENROLLMENT RECEIPT           ',
                       '========================================================',
                       `Transaction ID     : ${paymentDetails?.paymentId || 'TXN-' + Date.now()}`,
                       `Payment Gateway    : Razorpay / Stripe Confirmed`,
                       `Timestamp          : ${new Date().toISOString()}`,
                       '--------------------------------------------------------',
-                      `Offer / Masterclass: ${offer?.title || 'Ascend Masterclass'}`,
-                      `Coach / Instructor : ${creator?.fullName || 'Ascend Coach'}`,
+                      `Offer / Masterclass: ${offer?.title || 'Universifit Masterclass'}`,
+                      `Coach / Instructor : ${creator?.fullName || 'Universifit Coach'}`,
                       `Amount Paid        : $${offer?.price || '180'} USD`,
                       `Status             : SUCCESSFUL & ACTIVE`,
                       '--------------------------------------------------------',
@@ -496,7 +518,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.setAttribute('download', `Ascend-Receipt-${paymentDetails?.paymentId || 'order'}.txt`);
+                    link.setAttribute('download', `Universifit-Receipt-${paymentDetails?.paymentId || 'order'}.txt`);
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -533,9 +555,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <Badge variant="copper" size="sm">
                   Payment Authorization Declined
                 </Badge>
-                <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#F7F4EF] tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-display font-bold text-[#F7F4EF] tracking-tight">
                   We Couldn't Complete Your Transaction
-                </h2>
+                </h1>
                 <p className="text-sm text-rose-300/90 font-medium max-w-md mx-auto leading-relaxed">
                   {failureReason ||
                     'Your bank declined the payment during 3D Secure authentication or the session timed out.'}
@@ -569,7 +591,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-[#B8703F] font-bold">•</span>
-                    <span>Need concierge billing support? Email <span className="text-[#B8703F]">billing@ascend.io</span>.</span>
+                    <span>Need concierge billing support? Email <span className="text-[#B8703F]">billing@universifit.com</span>.</span>
                   </li>
                 </ul>
               </div>
@@ -610,9 +632,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <Badge variant="copper" size="sm">
                   Step 1 of 2
                 </Badge>
-                <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#F7F4EF] tracking-tight mt-1">
+                <h1 className="text-2xl sm:text-3xl font-display font-bold text-[#F7F4EF] tracking-tight mt-1">
                   Buyer & Member Information
-                </h2>
+                </h1>
                 <p className="text-xs sm:text-sm text-[#F7F4EF]/60 font-normal">
                   Your credentials and coach communication channel will be registered under these details.
                 </p>
@@ -710,7 +732,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <div className="flex items-start gap-3.5 pb-5 border-b border-white/[0.08]">
                   <img
                     src={currentCreator.avatarUrl || ''}
-                    alt={currentCreator.fullName}
+                    alt={`Coach ${currentCreator.fullName}`}
                     className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white/10 shrink-0"
                   />
                   <div className="min-w-0">

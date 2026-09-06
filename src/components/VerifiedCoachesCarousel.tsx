@@ -28,7 +28,7 @@ export const VerifiedCoachesCarousel: React.FC<VerifiedCoachesProps> = ({ onBook
         }
       })
       .catch((err) => {
-        console.warn('Could not query coaches for carousel', err);
+        console.debug('Could not query coaches for carousel', err);
       });
   }, []);
 
@@ -152,7 +152,7 @@ export const VerifiedCoachesCarousel: React.FC<VerifiedCoachesProps> = ({ onBook
                 <div className="lg:col-span-5 relative min-h-[380px] sm:min-h-[460px] lg:min-h-[520px] bg-neutral-900 overflow-hidden">
                   <img
                     src={currentCoach.avatarUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&auto=format&fit=crop&q=80'}
-                    alt={currentCoach.fullName}
+                    alt={`${currentCoach.fullName} — Verified Coach Profile`}
                     className="w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-700"
                   />
                   
@@ -312,7 +312,7 @@ export const VerifiedCoachesCarousel: React.FC<VerifiedCoachesProps> = ({ onBook
             >
               <img
                 src={c.avatarUrl || ''}
-                alt={c.fullName}
+                alt={`${c.fullName} thumbnail`}
                 className="w-7 h-7 rounded-full object-cover border border-white/20"
               />
               <span className="text-xs font-semibold">{c.fullName.split(' ')[0]}</span>

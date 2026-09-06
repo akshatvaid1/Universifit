@@ -19,7 +19,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { CoachCard } from './CoachCard';
-import { Card, Input, Button, Badge } from './ui';
+import { Card, Input, Button, Badge, Breadcrumbs } from './ui';
 import {
   fetchDiscoverCreators,
   searchGlobalApi,
@@ -111,7 +111,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
         setMatchingCourses([]);
       }
     } catch (err) {
-      console.warn('Discovery search API error, using fallback dataset', err);
+      console.debug('Discovery search API error, using fallback dataset', err);
     } finally {
       setIsLoading(false);
     }
@@ -174,16 +174,40 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-xs text-[#F7F4EF]/50 mb-2">
-                <button
-                  onClick={onBackHome}
-                  className="hover:text-white transition-colors cursor-pointer"
-                >
-                  Home
-                </button>
-                <span>/</span>
-                <span className="text-[#B8703F] font-semibold">Discover Coaches</span>
-              </div>
+              <Breadcrumbs
+                items={[
+                  { label: 'Home', onClick: onBackHome },
+                  ...(selectedGoal !== 'All' || searchQuery.trim()
+                    ? [
+                        {
+                          label: 'Discover',
+                          onClick: () => {
+                            setSelectedGoal('All');
+                            setSearchQuery('');
+                          },
+                        },
+                      ]
+                    : [{ label: 'Discover Coaches', isCurrent: true }]),
+                  ...(selectedGoal !== 'All'
+                    ? [
+                        {
+                          label: selectedGoal,
+                          isCurrent: !searchQuery.trim(),
+                          onClick: searchQuery.trim() ? () => setSearchQuery('') : undefined,
+                        },
+                      ]
+                    : []),
+                  ...(searchQuery.trim()
+                    ? [
+                        {
+                          label: `Search: "${searchQuery.trim()}"`,
+                          isCurrent: true,
+                        },
+                      ]
+                    : []),
+                ]}
+                className="mb-3"
+              />
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-[#F7F4EF] tracking-tight">
                 Discover <span className="italic text-[#B8703F]">Vetted Coaches</span>
@@ -454,7 +478,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                     </h3>
                   </div>
                   <span className="text-[11px] font-mono text-[#F7F4EF]/50">
-                    Direct access via Ascend Player
+                    Direct access via Universifit Player
                   </span>
                 </div>
 
@@ -593,7 +617,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                     <p className="text-sm text-[#F7F4EF]/60 leading-relaxed font-normal">
                       {hasActiveFilters
                         ? "We couldn't find any coaches for your exact filter combination. Try broadening your budget range, clearing the format filter, or searching for broader terms like 'Strength' or 'Nutrition'."
-                        : 'New expert practitioners are currently completing the Ascend credential verification review. Check back soon or apply to join as a verified coach.'}
+                        : 'New expert practitioners are currently completing the Universifit credential verification review. Check back soon or apply to join as a verified coach.'}
                     </p>
                   </div>
 

@@ -94,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
           setSearchResults(res.results);
         }
       } catch (err) {
-        console.warn('Global search query error:', err);
+        console.debug('Global search query error:', err);
       } finally {
         setIsSearching(false);
       }
@@ -201,11 +201,11 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-3 group cursor-pointer"
           >
             <div className="w-10 h-10 rounded-2xl bg-[#F7F4EF] text-[#16171A] font-display font-black text-xl flex items-center justify-center tracking-tighter transition-transform group-hover:scale-105 shadow-sm">
-              A
+              U
             </div>
             <div className="flex flex-col">
               <span className="font-display font-extrabold text-2xl tracking-tight text-[#F7F4EF] leading-none">
-                Ascend
+                Universifit
               </span>
               <span className="text-[10px] font-semibold text-[#F7F4EF]/50 uppercase tracking-widest mt-0.5">
                 Vetted Coaching
@@ -408,7 +408,7 @@ export const Header: React.FC<HeaderProps> = ({
                             >
                               <img
                                 src={creator.avatarUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900'}
-                                alt={creator.fullName}
+                                alt={`${creator.fullName} profile photo`}
                                 className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/10 shrink-0"
                               />
                               <div className="flex-1 min-w-0">
@@ -520,7 +520,7 @@ export const Header: React.FC<HeaderProps> = ({
                 size="sm"
                 onClick={() => onOpenAuth('register')}
               >
-                Join Ascend
+                Join Universifit
               </Button>
             </>
           ) : (
@@ -712,7 +712,7 @@ export const Header: React.FC<HeaderProps> = ({
                     onOpenAuth('register');
                   }}
                 >
-                  Join Ascend
+                  Join Universifit
                 </Button>
               </div>
             ) : (

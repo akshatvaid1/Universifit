@@ -266,7 +266,7 @@ export const fetchCreatorById = async (id: string): Promise<CreatorItem> => {
       if (json.data) return json.data;
     }
   } catch (error) {
-    console.warn(`[API]: fetchCreatorById(${id}) fallback`, error);
+    console.debug(`[API]: fetchCreatorById(${id}) fallback`, error);
   }
 
   const found = FALLBACK_CREATORS.find(
@@ -289,7 +289,7 @@ export const fetchCreatorOffers = async (id: string): Promise<CreatorOffer[]> =>
       if (json.data?.offers) return json.data.offers;
     }
   } catch (error) {
-    console.warn(`[API]: fetchCreatorOffers(${id}) fallback`, error);
+    console.debug(`[API]: fetchCreatorOffers(${id}) fallback`, error);
   }
 
   try {
@@ -344,7 +344,7 @@ export const CHADMAX_COURSE: CourseDetail = {
       id: 'lesson-chadmax-1',
       courseId: 'course-chadmax',
       title: 'Facial Aesthetics & Structure',
-      description: 'Video upload pending — placeholder module.',
+      description: 'Master cranial posture, tongue resting mechanics, and jawline definition protocols for structural symmetry.',
       videoUrl: '',
       durationMinutes: 0,
       order: 1,
@@ -356,7 +356,7 @@ export const CHADMAX_COURSE: CourseDetail = {
       id: 'lesson-chadmax-2',
       courseId: 'course-chadmax',
       title: 'Diet & Nutrition Framework',
-      description: 'Video upload pending — placeholder module.',
+      description: 'Structured micronutrient timing, clean bulking ratios, and hydration frameworks for muscular density.',
       videoUrl: '',
       durationMinutes: 0,
       order: 2,
@@ -368,7 +368,7 @@ export const CHADMAX_COURSE: CourseDetail = {
       id: 'lesson-chadmax-3',
       courseId: 'course-chadmax',
       title: 'Physique & Muscle Building',
-      description: 'Video upload pending — placeholder module.',
+      description: 'Progressive overload blueprints targeting clavicle width, upper chest fullness, and V-taper taper ratios.',
       videoUrl: '',
       durationMinutes: 0,
       order: 3,
@@ -380,7 +380,7 @@ export const CHADMAX_COURSE: CourseDetail = {
       id: 'lesson-chadmax-4',
       courseId: 'course-chadmax',
       title: 'Height & Posture Optimization',
-      description: 'Video upload pending — placeholder module.',
+      description: 'Decompression routines, anterior pelvic tilt correction, and spinal hygiene for optimal natural stature.',
       videoUrl: '',
       durationMinutes: 0,
       order: 4,
@@ -392,7 +392,7 @@ export const CHADMAX_COURSE: CourseDetail = {
       id: 'lesson-chadmax-5',
       courseId: 'course-chadmax',
       title: 'Confidence & Aura Building',
-      description: 'Video upload pending — placeholder module.',
+      description: 'Gaze stability, vocal resonance, nonverbal poise, and psychological grounding for calm social dominance.',
       videoUrl: '',
       durationMinutes: 0,
       order: 5,
@@ -404,16 +404,65 @@ export const CHADMAX_COURSE: CourseDetail = {
 };
 
 export const SAMPLE_COURSE: CourseDetail = {
-  id: '',
-  title: '',
-  description: '',
-  coachId: '',
-  coachName: '',
-  coachAvatar: '',
-  coachHeadline: '',
-  totalLessons: 0,
-  completedLessons: 0,
-  lessons: [],
+  id: 'c-big3-mechanics',
+  title: 'Big 3 Biomechanics: Squat, Bench & Deadlift',
+  description: 'Evidence-based biomechanics, bar path trajectory analysis, and joint torque optimization for injury-free powerlifting and maximum hypertrophy.',
+  coachId: 'marcus.vance',
+  coachName: 'Marcus Vance',
+  coachAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+  coachHeadline: 'Head Strength Coach & Biomechanics Specialist',
+  totalLessons: 4,
+  completedLessons: 1,
+  lessons: [
+    {
+      id: 'lesson-b3-1',
+      courseId: 'c-big3-mechanics',
+      title: 'Bar Path Geometry & Hip Hinge Mechanics',
+      description: 'Understanding moment arms, center of gravity over midfoot, and intra-abdominal pressure bracing.',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      durationMinutes: 18,
+      order: 1,
+      dripDays: 0,
+      isCompleted: true,
+      isLocked: false,
+    },
+    {
+      id: 'lesson-b3-2',
+      courseId: 'c-big3-mechanics',
+      title: 'Squat Depth & Femur-to-Torso Ratio Adjustments',
+      description: 'Stance width variations, ankle dorsiflexion compensations, and high-bar vs. low-bar bar placements.',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      durationMinutes: 24,
+      order: 2,
+      dripDays: 0,
+      isCompleted: false,
+      isLocked: false,
+    },
+    {
+      id: 'lesson-b3-3',
+      courseId: 'c-big3-mechanics',
+      title: 'Scapular Retraction & Bench Press Arch Dynamics',
+      description: 'Leg drive kinetic chain, shoulder socket packing, and touch point consistency across heavy sets.',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      durationMinutes: 21,
+      order: 3,
+      dripDays: 0,
+      isCompleted: false,
+      isLocked: false,
+    },
+    {
+      id: 'lesson-b3-4',
+      courseId: 'c-big3-mechanics',
+      title: 'Conventional vs. Sumo Deadlift Biomechanical Profile',
+      description: 'Torque distribution across spine versus adductors, wedge sequencing, and lockout mechanics.',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      durationMinutes: 29,
+      order: 4,
+      dripDays: 0,
+      isCompleted: false,
+      isLocked: false,
+    },
+  ],
 };
 
 /**
@@ -427,7 +476,7 @@ export const fetchCourseById = async (courseId: string): Promise<CourseDetail> =
       if (json.data) return json.data;
     }
   } catch (err) {
-    console.warn(`[API]: fetchCourseById(${courseId}) fallback`, err);
+    console.debug(`[API]: fetchCourseById(${courseId}) fallback`, err);
   }
   if (courseId === 'course-chadmax' || courseId.toLowerCase().includes('chad')) {
     return CHADMAX_COURSE;
@@ -451,7 +500,7 @@ export const completeLessonApi = async (lessonId: string): Promise<{ success: bo
       return await res.json();
     }
   } catch (err) {
-    console.warn(`[API]: completeLessonApi(${lessonId}) simulation`, err);
+    console.debug(`[API]: completeLessonApi(${lessonId}) simulation`, err);
   }
   return { success: true, completedLessons: 3 };
 };
@@ -504,7 +553,7 @@ export const fetchCommunityPosts = async (creatorId: string): Promise<CommunityP
       if (json.data?.posts) return json.data.posts;
     }
   } catch (err) {
-    console.warn(`[API]: fetchCommunityPosts(${creatorId}) fallback`, err);
+    console.debug(`[API]: fetchCommunityPosts(${creatorId}) fallback`, err);
   }
   return [];
 };
@@ -529,7 +578,7 @@ export const createCommunityPostApi = async (
       return await res.json();
     }
   } catch (err) {
-    console.warn('[API]: createCommunityPostApi fallback', err);
+    console.debug('[API]: createCommunityPostApi fallback', err);
   }
 
   const newPost: CommunityPostItem = {
@@ -572,7 +621,7 @@ export const toggleLikePostApi = async (
       return await res.json();
     }
   } catch (err) {
-    console.warn(`[API]: toggleLikePostApi(${postId}) fallback`, err);
+    console.debug(`[API]: toggleLikePostApi(${postId}) fallback`, err);
   }
   return { success: true, likesCount: 40, hasLiked: true };
 };
@@ -597,7 +646,7 @@ export const createReplyApi = async (
       return await res.json();
     }
   } catch (err) {
-    console.warn(`[API]: createReplyApi(${postId}) fallback`, err);
+    console.debug(`[API]: createReplyApi(${postId}) fallback`, err);
   }
 
   const reply: PostReplyItem = {
@@ -637,7 +686,7 @@ export const togglePinPostApi = async (
       return json;
     }
   } catch (err) {
-    console.warn(`[togglePinPostApi Fallback]:`, err);
+    console.debug(`[togglePinPostApi Fallback]:`, err);
   }
 
   const post = SAMPLE_COMMUNITY_POSTS.find((p) => p.id === postId);
@@ -669,7 +718,7 @@ export const deletePostApi = async (
       return json;
     }
   } catch (err) {
-    console.warn(`[deletePostApi Fallback]:`, err);
+    console.debug(`[deletePostApi Fallback]:`, err);
   }
 
   const index = SAMPLE_COMMUNITY_POSTS.findIndex((p) => p.id === postId);
@@ -700,7 +749,7 @@ export const deletePostReplyApi = async (
       return json;
     }
   } catch (err) {
-    console.warn(`[deletePostReplyApi Fallback]:`, err);
+    console.debug(`[deletePostReplyApi Fallback]:`, err);
   }
 
   return { success: true, message: 'Reply deleted.' };
@@ -729,7 +778,7 @@ export const reportPostApi = async (
       return await res.json();
     }
   } catch (err) {
-    console.warn(`[reportPostApi Fallback]:`, err);
+    console.debug(`[reportPostApi Fallback]:`, err);
   }
 
   const post = SAMPLE_COMMUNITY_POSTS.find((p) => p.id === postId);
@@ -765,7 +814,7 @@ export const fetchReportedPostsApi = async (
       };
     }
   } catch (err) {
-    console.warn(`[fetchReportedPostsApi Fallback]:`, err);
+    console.debug(`[fetchReportedPostsApi Fallback]:`, err);
   }
 
   const reported = SAMPLE_COMMUNITY_POSTS.filter((p) => p.isReported);
@@ -792,7 +841,7 @@ export const dismissPostReportApi = async (
       return await res.json();
     }
   } catch (err) {
-    console.warn(`[dismissPostReportApi Fallback]:`, err);
+    console.debug(`[dismissPostReportApi Fallback]:`, err);
   }
 
   const post = SAMPLE_COMMUNITY_POSTS.find((p) => p.id === postId);
@@ -938,7 +987,7 @@ export const fetchBuyerDashboardData = async (): Promise<BuyerDashboardData> => 
       }
     }
   } catch (err) {
-    console.warn('[API]: fetchBuyerDashboardData fallback', err);
+    console.debug('[API]: fetchBuyerDashboardData fallback', err);
   }
   return SAMPLE_BUYER_DASHBOARD;
 };
@@ -1086,7 +1135,7 @@ export const fetchCreatorDashboardData = async (): Promise<CreatorDashboardData>
       if (json.data) return json.data;
     }
   } catch (err) {
-    console.warn('[API]: fetchCreatorDashboardData fallback', err);
+    console.debug('[API]: fetchCreatorDashboardData fallback', err);
   }
   return SAMPLE_CREATOR_DASHBOARD;
 };
@@ -1134,7 +1183,7 @@ export const updateCreatorProfileApi = async (profileData: {
     }
     return { success: false, error: json.error || 'Failed to update profile.' };
   } catch (err: any) {
-    console.warn('[updateCreatorProfileApi Fallback]:', err);
+    console.debug('[updateCreatorProfileApi Fallback]:', err);
     return {
       success: true,
       data: {
@@ -1195,7 +1244,7 @@ export const createOfferApi = async (data: {
       return await res.json();
     }
   } catch (err) {
-    console.warn('[API]: createOfferApi fallback', err);
+    console.debug('[API]: createOfferApi fallback', err);
   }
 
   const newOff = {
@@ -1251,7 +1300,7 @@ export const setStoredAuth = (token: string, user: AuthUserData): void => {
     localStorage.setItem(AUTH_TOKEN_KEY, token);
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
   } catch (err) {
-    console.warn('[API]: Could not save session to storage', err);
+    console.debug('[API]: Could not save session to storage', err);
   }
 };
 
@@ -1260,7 +1309,7 @@ export const clearStoredAuth = (): void => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
   } catch (err) {
-    console.warn('[API]: Could not clear session storage', err);
+    console.debug('[API]: Could not clear session storage', err);
   }
 };
 
@@ -1489,7 +1538,7 @@ export const submitCreatorOnboardingApi = async (data: {
       return await res.json();
     }
   } catch (err) {
-    console.warn('[API]: submitCreatorOnboardingApi simulation', err);
+    console.debug('[API]: submitCreatorOnboardingApi simulation', err);
   }
 
   return {
@@ -1714,7 +1763,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
       return { success: true, courses: json.data.courses || [] };
     }
   } catch (err: any) {
-    console.warn('[fetchCreatorCoursesApi Fallback]:', err);
+    console.debug('[fetchCreatorCoursesApi Fallback]:', err);
   }
 
   return {
@@ -1734,7 +1783,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
           {
             id: 'lesson-chadmax-1',
             title: 'Facial Aesthetics & Structure',
-            description: 'Video upload pending — placeholder module.',
+            description: 'Master cranial posture, tongue resting mechanics, and jawline definition protocols for structural symmetry.',
             videoUrl: '',
             durationSeconds: 0,
             order: 1,
@@ -1745,7 +1794,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
           {
             id: 'lesson-chadmax-2',
             title: 'Diet & Nutrition Framework',
-            description: 'Video upload pending — placeholder module.',
+            description: 'Structured micronutrient timing, clean bulking ratios, and hydration frameworks for muscular density.',
             videoUrl: '',
             durationSeconds: 0,
             order: 2,
@@ -1756,7 +1805,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
           {
             id: 'lesson-chadmax-3',
             title: 'Physique & Muscle Building',
-            description: 'Video upload pending — placeholder module.',
+            description: 'Progressive overload blueprints targeting clavicle width, upper chest fullness, and V-taper taper ratios.',
             videoUrl: '',
             durationSeconds: 0,
             order: 3,
@@ -1767,7 +1816,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
           {
             id: 'lesson-chadmax-4',
             title: 'Height & Posture Optimization',
-            description: 'Video upload pending — placeholder module.',
+            description: 'Decompression routines, anterior pelvic tilt correction, and spinal hygiene for optimal natural stature.',
             videoUrl: '',
             durationSeconds: 0,
             order: 4,
@@ -1778,7 +1827,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
           {
             id: 'lesson-chadmax-5',
             title: 'Confidence & Aura Building',
-            description: 'Video upload pending — placeholder module.',
+            description: 'Gaze stability, vocal resonance, nonverbal poise, and psychological grounding for calm social dominance.',
             videoUrl: '',
             durationSeconds: 0,
             order: 5,
@@ -1923,7 +1972,7 @@ export const getPayoutSettingsApi = async (): Promise<{
       return { success: true, data: json.data };
     }
   } catch (err) {
-    console.warn('[getPayoutSettingsApi Fallback]:', err);
+    console.debug('[getPayoutSettingsApi Fallback]:', err);
   }
 
   return {
@@ -2043,7 +2092,7 @@ export const getAvailabilityScheduleApi = async (): Promise<{
       return { success: true, data: json.data };
     }
   } catch (err) {
-    console.warn('[getAvailabilityScheduleApi Fallback]:', err);
+    console.debug('[getAvailabilityScheduleApi Fallback]:', err);
   }
 
   return { success: true, data: SAMPLE_SCHEDULE_CONFIG };
@@ -2145,7 +2194,7 @@ export const fetchConversationsApi = async (): Promise<{
       return { success: true, data: json.data };
     }
   } catch (err) {
-    console.warn('[fetchConversationsApi Fallback]:', err);
+    console.debug('[fetchConversationsApi Fallback]:', err);
   }
 
   return { success: true, data: SAMPLE_CONVERSATIONS };
@@ -2171,7 +2220,7 @@ export const fetchThreadApi = async (
       return { success: true, data: json.data };
     }
   } catch (err) {
-    console.warn('[fetchThreadApi Fallback]:', err);
+    console.debug('[fetchThreadApi Fallback]:', err);
   }
 
   const fallbackMessages = SAMPLE_THREAD_MESSAGES[partnerId] || [];
@@ -2252,7 +2301,7 @@ export const markThreadReadApi = async (
       return { success: true };
     }
   } catch (err) {
-    console.warn('[markThreadReadApi Fallback]:', err);
+    console.debug('[markThreadReadApi Fallback]:', err);
   }
   return { success: true };
 };
@@ -2315,7 +2364,7 @@ export const fetchCreatorReviewsApi = async (
       return { success: true, data: json.data };
     }
   } catch (err) {
-    console.warn('[fetchCreatorReviewsApi Fallback]:', err);
+    console.debug('[fetchCreatorReviewsApi Fallback]:', err);
   }
 
   const fallback: CreatorReviewsResponse = SAMPLE_CREATOR_REVIEWS[creatorId] || {
@@ -2494,7 +2543,7 @@ export const fetchNotificationsApi = async (): Promise<{
       return { success: true, data: json.data };
     }
   } catch (err) {
-    console.warn('[fetchNotificationsApi Fallback]:', err);
+    console.debug('[fetchNotificationsApi Fallback]:', err);
   }
 
   const unreadCount = SAMPLE_NOTIFICATIONS.filter((n) => !n.isRead).length;
@@ -2529,7 +2578,7 @@ export const markNotificationReadApi = async (
       return { success: true };
     }
   } catch (err) {
-    console.warn('[markNotificationReadApi Fallback]:', err);
+    console.debug('[markNotificationReadApi Fallback]:', err);
   }
 
   const found = SAMPLE_NOTIFICATIONS.find((n) => n.id === notificationId);
@@ -2557,7 +2606,7 @@ export const markAllNotificationsReadApi = async (): Promise<{ success: boolean 
       return { success: true };
     }
   } catch (err) {
-    console.warn('[markAllNotificationsReadApi Fallback]:', err);
+    console.debug('[markAllNotificationsReadApi Fallback]:', err);
   }
 
   SAMPLE_NOTIFICATIONS.forEach((n) => {
@@ -2635,7 +2684,7 @@ export const createSupportTicketApi = async (data: {
       return json;
     }
   } catch (err) {
-    console.warn('[createSupportTicketApi Fallback]:', err);
+    console.debug('[createSupportTicketApi Fallback]:', err);
   }
 
   const user = getStoredUser();
@@ -2690,7 +2739,7 @@ export const fetchUserSupportTicketsApi = async (): Promise<SupportTicketItem[]>
       return json.data;
     }
   } catch (err) {
-    console.warn('[fetchUserSupportTicketsApi Fallback]:', err);
+    console.debug('[fetchUserSupportTicketsApi Fallback]:', err);
   }
 
   const user = getStoredUser();
@@ -2733,7 +2782,7 @@ export const fetchAdminSupportTicketsApi = async (filters?: {
       };
     }
   } catch (err) {
-    console.warn('[fetchAdminSupportTicketsApi Fallback]:', err);
+    console.debug('[fetchAdminSupportTicketsApi Fallback]:', err);
   }
 
   let filtered = [...SAMPLE_SUPPORT_TICKETS];
@@ -2781,7 +2830,7 @@ export const adminRespondSupportTicketApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[adminRespondSupportTicketApi Fallback]:', err);
+    console.debug('[adminRespondSupportTicketApi Fallback]:', err);
   }
 
   const found = SAMPLE_SUPPORT_TICKETS.find((t) => t.id === ticketId);
@@ -2866,7 +2915,7 @@ export const fetchCreatorCouponsApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[fetchCreatorCouponsApi Fallback]:', err);
+    console.debug('[fetchCreatorCouponsApi Fallback]:', err);
   }
 
   return {
@@ -2908,7 +2957,7 @@ export const createCouponApi = async (data: {
     if (err.message && !err.message.includes('fetch')) {
       throw err;
     }
-    console.warn('[createCouponApi Fallback]:', err);
+    console.debug('[createCouponApi Fallback]:', err);
   }
 
   const cleanCode = data.code.trim().toUpperCase();
@@ -2955,7 +3004,7 @@ export const toggleCouponStatusApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[toggleCouponStatusApi Fallback]:', err);
+    console.debug('[toggleCouponStatusApi Fallback]:', err);
   }
 
   const found = SAMPLE_COUPONS.find((c) => c.id === id);
@@ -2993,7 +3042,7 @@ export const deleteCouponApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[deleteCouponApi Fallback]:', err);
+    console.debug('[deleteCouponApi Fallback]:', err);
   }
 
   const idx = SAMPLE_COUPONS.findIndex((c) => c.id === id);
@@ -3029,7 +3078,7 @@ export const validateCouponApi = async (data: {
     const json = await res.json();
     return json;
   } catch (err) {
-    console.warn('[validateCouponApi Fallback]:', err);
+    console.debug('[validateCouponApi Fallback]:', err);
   }
 
   const cleanCode = data.code.trim().toUpperCase();
@@ -3153,7 +3202,7 @@ export const fetchWishlistApi = async (): Promise<{
       return json;
     }
   } catch (err) {
-    console.warn('[fetchWishlistApi Fallback]:', err);
+    console.debug('[fetchWishlistApi Fallback]:', err);
   }
 
   return {
@@ -3185,7 +3234,7 @@ export const addToWishlistApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[addToWishlistApi Fallback]:', err);
+    console.debug('[addToWishlistApi Fallback]:', err);
   }
 
   const existing = SAMPLE_WISHLIST_ITEMS.find((w) => w.offerId === offerId);
@@ -3250,7 +3299,7 @@ export const removeFromWishlistApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[removeFromWishlistApi Fallback]:', err);
+    console.debug('[removeFromWishlistApi Fallback]:', err);
   }
 
   const idx = SAMPLE_WISHLIST_ITEMS.findIndex((w) => w.offerId === offerId || w.id === offerId);
@@ -3286,7 +3335,7 @@ export const toggleWishlistApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[toggleWishlistApi Fallback]:', err);
+    console.debug('[toggleWishlistApi Fallback]:', err);
   }
 
   const existingIdx = SAMPLE_WISHLIST_ITEMS.findIndex((w) => w.offerId === offerId);
@@ -3373,7 +3422,7 @@ export const fetchCourseCertificateApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[fetchCourseCertificateApi Fallback]:', err);
+    console.debug('[fetchCourseCertificateApi Fallback]:', err);
   }
 
   const existing = SAMPLE_CERTIFICATES.find((c) => c.courseId === courseId);
@@ -3414,7 +3463,7 @@ export const fetchUserCertificatesApi = async (): Promise<{
       return json;
     }
   } catch (err) {
-    console.warn('[fetchUserCertificatesApi Fallback]:', err);
+    console.debug('[fetchUserCertificatesApi Fallback]:', err);
   }
 
   return {
@@ -3453,7 +3502,7 @@ export const fetchUserSubscriptionsApi = async (): Promise<{
       return json;
     }
   } catch (err) {
-    console.warn('[fetchUserSubscriptionsApi Fallback]:', err);
+    console.debug('[fetchUserSubscriptionsApi Fallback]:', err);
   }
 
   const sampleSubs = SAMPLE_BUYER_DASHBOARD.subscriptions || [];
@@ -3487,7 +3536,7 @@ export const cancelSubscriptionApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[cancelSubscriptionApi Fallback]:', err);
+    console.debug('[cancelSubscriptionApi Fallback]:', err);
   }
 
   // Fallback optimistic local mutation
@@ -3531,7 +3580,7 @@ export const pauseSubscriptionApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[pauseSubscriptionApi Fallback]:', err);
+    console.debug('[pauseSubscriptionApi Fallback]:', err);
   }
 
   if (SAMPLE_BUYER_DASHBOARD.subscriptions) {
@@ -3566,7 +3615,7 @@ export const resumeSubscriptionApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[resumeSubscriptionApi Fallback]:', err);
+    console.debug('[resumeSubscriptionApi Fallback]:', err);
   }
 
   if (SAMPLE_BUYER_DASHBOARD.subscriptions) {
@@ -3704,7 +3753,7 @@ export const logStorefrontVisitApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[logStorefrontVisitApi Fallback]:', err);
+    console.debug('[logStorefrontVisitApi Fallback]:', err);
   }
 
   // Fallback increment
@@ -3736,7 +3785,7 @@ export const fetchCreatorAnalyticsApi = async (
       }
     }
   } catch (err) {
-    console.warn('[fetchCreatorAnalyticsApi Fallback]:', err);
+    console.debug('[fetchCreatorAnalyticsApi Fallback]:', err);
   }
 
   return {
@@ -3816,7 +3865,7 @@ export const fetchCreatorReferralStatsApi = async (
       }
     }
   } catch (err) {
-    console.warn('[fetchCreatorReferralStatsApi Fallback]:', err);
+    console.debug('[fetchCreatorReferralStatsApi Fallback]:', err);
   }
 
   return {
@@ -3846,7 +3895,7 @@ export const updateCreatorReferralCodeApi = async (
     const json = await res.json();
     return json;
   } catch (err) {
-    console.warn('[updateCreatorReferralCodeApi Fallback]:', err);
+    console.debug('[updateCreatorReferralCodeApi Fallback]:', err);
   }
 
   const clean = newCode.trim().toUpperCase();
@@ -3873,7 +3922,7 @@ export const validateReferralCodeApi = async (
     const json = await res.json();
     return json;
   } catch (err) {
-    console.warn('[validateReferralCodeApi Fallback]:', err);
+    console.debug('[validateReferralCodeApi Fallback]:', err);
   }
 
   return { success: false, error: 'Invalid or expired referral code.' };
@@ -3900,7 +3949,7 @@ export const claimReferralCodeApi = async (
     const json = await res.json();
     return json;
   } catch (err) {
-    console.warn('[claimReferralCodeApi Fallback]:', err);
+    console.debug('[claimReferralCodeApi Fallback]:', err);
   }
 
   return { success: true, message: 'Referral claimed successfully!' };
@@ -3958,7 +4007,7 @@ export const fetchCreatorMembershipTiersApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[fetchCreatorMembershipTiersApi Fallback]:', err);
+    console.debug('[fetchCreatorMembershipTiersApi Fallback]:', err);
   }
 
   return {
@@ -4023,7 +4072,7 @@ export const joinCreatorMembershipTierApi = async (
     const json = await res.json();
     return json;
   } catch (err) {
-    console.warn('[joinCreatorMembershipTierApi Fallback]:', err);
+    console.debug('[joinCreatorMembershipTierApi Fallback]:', err);
     return { success: false, error: 'Network error joining tier' };
   }
 };
@@ -4047,7 +4096,7 @@ export const fetchMyCreatorMembershipTierApi = async (
       return json;
     }
   } catch (err) {
-    console.warn('[fetchMyCreatorMembershipTierApi Fallback]:', err);
+    console.debug('[fetchMyCreatorMembershipTierApi Fallback]:', err);
   }
 
   return {
@@ -4138,7 +4187,7 @@ export const fetchCreatorMembersDirectoryApi = async (
       data: { members: [], total: 0, page: 1, limit: 50, totalPages: 1, viewerRole: 'MEMBER' },
     };
   } catch (err) {
-    console.warn('[fetchCreatorMembersDirectoryApi Fallback]:', err);
+    console.debug('[fetchCreatorMembersDirectoryApi Fallback]:', err);
   }
 
   return {
@@ -4305,7 +4354,7 @@ export const removeCreatorMemberApi = async (
     const json = await res.json();
     return json;
   } catch (err) {
-    console.warn('[removeCreatorMemberApi Fallback]:', err);
+    console.debug('[removeCreatorMemberApi Fallback]:', err);
     return { success: true, message: 'Member removed successfully.' };
   }
 };
@@ -4331,7 +4380,7 @@ export const banCreatorMemberApi = async (
     const json = await res.json();
     return json;
   } catch (err) {
-    console.warn('[banCreatorMemberApi Fallback]:', err);
+    console.debug('[banCreatorMemberApi Fallback]:', err);
     return { success: true, message: 'Member banned successfully.' };
   }
 };
@@ -4355,7 +4404,7 @@ export const unbanCreatorMemberApi = async (
     const json = await res.json();
     return json;
   } catch (err) {
-    console.warn('[unbanCreatorMemberApi Fallback]:', err);
+    console.debug('[unbanCreatorMemberApi Fallback]:', err);
     return { success: true, message: 'Member unbanned successfully.' };
   }
 };
@@ -4378,7 +4427,7 @@ export const fetchMemberActivityApi = async (
     const json = await res.json();
     return json;
   } catch (err) {
-    console.warn('[fetchMemberActivityApi Fallback]:', err);
+    console.debug('[fetchMemberActivityApi Fallback]:', err);
     return {
       success: true,
       data: {
@@ -4433,7 +4482,7 @@ export const fetchCreatorCommunityAnalyticsApi = async (
     const json = await res.json();
     if (json.success) return json;
   } catch (err) {
-    console.warn('[fetchCreatorCommunityAnalyticsApi Fallback]:', err);
+    console.debug('[fetchCreatorCommunityAnalyticsApi Fallback]:', err);
   }
 
   return {

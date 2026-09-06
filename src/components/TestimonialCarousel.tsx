@@ -90,7 +90,7 @@ export const TestimonialCarousel: React.FC = () => {
             </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight text-[#F7F4EF]">
-              Transformed with <span className="italic text-[#B8703F]">Ascend</span>
+              Transformed with <span className="italic text-[#B8703F]">Universifit</span>
             </h2>
 
             <p className="text-sm sm:text-base text-[#F7F4EF]/70 max-w-xl font-normal">
@@ -188,7 +188,7 @@ export const TestimonialCarousel: React.FC = () => {
                   <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={item.buyerPhoto}
-                      alt={item.name}
+                      alt={`${item.name}, verified Universifit member`}
                       className="w-10 h-10 rounded-full object-cover ring-2 ring-white/10 shrink-0"
                     />
                     <div className="min-w-0">
@@ -207,7 +207,7 @@ export const TestimonialCarousel: React.FC = () => {
                   <div className="flex items-center gap-1.5 bg-white/[0.04] px-2.5 py-1 rounded-full border border-white/0.06 shrink-0">
                     <img
                       src={item.coachAvatar}
-                      alt={item.coachTrainedWith}
+                      alt={`Coach ${item.coachTrainedWith}`}
                       className="w-4 h-4 rounded-full object-cover"
                     />
                     <span className="text-[10px] font-semibold text-[#F7F4EF]/70">

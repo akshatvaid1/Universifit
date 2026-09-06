@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" fill="none">
+  <rect width="1200" height="630" fill="#121315" />
+  
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-opacity="0.025" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="glow" cx="85%" cy="20%" r="60%">
+      <stop offset="0%" stop-color="#B8703F" stop-opacity="0.22" />
+      <stop offset="60%" stop-color="#B8703F" stop-opacity="0.04" />
+      <stop offset="100%" stop-color="#121315" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="bottomGlow" cx="20%" cy="85%" r="50%">
+      <stop offset="0%" stop-color="#6E8B6F" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#121315" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="copperText" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E29A68" />
+      <stop offset="50%" stop-color="#B8703F" />
+      <stop offset="100%" stop-color="#8F5128" />
+    </linearGradient>
+    <linearGradient id="borderGrad" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#B8703F" stop-opacity="0.5" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#6E8B6F" stop-opacity="0.3" />
+    </linearGradient>
+    <clipPath id="avatarClip">
+      <rect width="200" height="200" rx="36" />
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#grid)" />
+  <rect width="1200" height="630" fill="url(#glow)" />
+  <rect width="1200" height="630" fill="url(#bottomGlow)" />
+  <rect x="24" y="24" width="1152" height="582" rx="28" stroke="url(#borderGrad)" stroke-width="2" />
+
+  <g transform="translate(80, 70)">
+    <rect width="50" height="50" rx="14" fill="#16171A" stroke="#B8703F" stroke-width="1.5" stroke-opacity="0.5" />
+    <path d="M17 14V28C17 32.4 20.6 36 25 36C29.4 36 33 32.4 33 28V14" stroke="url(#copperText)" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="25" cy="14" r="2.5" fill="#E29A68" />
+    <text x="68" y="35" font-family="'Fraunces', Georgia, serif" font-size="32" font-weight="800" fill="#F7F4EF" letter-spacing="0.04em">UNIVERSIFIT</text>
+    <rect x="330" y="8" width="190" height="34" rx="17" fill="#6E8B6F" fill-opacity="0.15" stroke="#6E8B6F" stroke-width="1" stroke-opacity="0.3" />
+    <circle cx="348" cy="25" r="4" fill="#6E8B6F" />
+    <text x="360" y="30" font-family="'Inter', sans-serif" font-size="12" font-weight="700" fill="#6E8B6F" letter-spacing="0.06em">VERIFIED PRACTITIONER</text>
+  </g>
+
+  <g transform="translate(80, 170)">
+    <g transform="translate(0, 10)">
+      <rect width="206" height="206" rx="39" fill="#16171A" stroke="#B8703F" stroke-width="3" stroke-opacity="0.6" />
+      <g transform="translate(3, 3)" clip-path="url(#avatarClip)">
+        <image href="https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=900&amp;auto=format&amp;fit=crop&amp;q=80" width="200" height="200" preserveAspectRatio="xMidYMid slice" />
+      </g>
+      <circle cx="186" cy="186" r="18" fill="#6E8B6F" />
+      <path d="M179 186L184 191L193 181" stroke="#121315" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <g transform="translate(240, 25)">
+      <text x="0" y="44" font-family="'Fraunces', Georgia, serif" font-size="48" font-weight="800" fill="#F7F4EF" letter-spacing="-0.02em">
+        Chad Tagemb
+      </text>
+      <text x="0" y="90" font-family="'Inter', sans-serif" font-size="22" font-weight="600" fill="url(#copperText)">
+        Elite Powerlifting &amp; Posture Restoration Coach
+      </text>
+      <g transform="translate(0, 125)">
+        
+        <g transform="translate(0, 0)">
+          <rect width="195" height="38" rx="19" fill="#16171A" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1"/>
+          <text x="97" y="24" font-family="'Inter', sans-serif" font-size="13" font-weight="600" fill="#F7F4EF" fill-opacity="0.9" text-anchor="middle">Powerlifting</text>
+        </g>
+        <g transform="translate(210, 0)">
+          <rect width="195" height="38" rx="19" fill="#16171A" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1"/>
+          <text x="97" y="24" font-family="'Inter', sans-serif" font-size="13" font-weight="600" fill="#F7F4EF" fill-opacity="0.9" text-anchor="middle">Core Restoration</text>
+        </g>
+        <g transform="translate(420, 0)">
+          <rect width="195" height="38" rx="19" fill="#16171A" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1"/>
+          <text x="97" y="24" font-family="'Inter', sans-serif" font-size="13" font-weight="600" fill="#F7F4EF" fill-opacity="0.9" text-anchor="middle">Injury Prevention</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(80, 528)">
+    <text x="0" y="22" font-family="'Inter', monospace" font-size="15" font-weight="700" fill="#E29A68">
+      ★ 4.99 RATING
+    </text>
+    <text x="180" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="500" fill="#ffffff" fill-opacity="0.35">|</text>
+    <text x="205" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="600" fill="#F7F4EF" fill-opacity="0.85">
+      1,850+ Athletes Coached
+    </text>
+    <text x="450" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="500" fill="#ffffff" fill-opacity="0.35">|</text>
+    <text x="475" y="22" font-family="'Inter', sans-serif" font-size="15" font-weight="600" fill="#6E8B6F">
+      1-on-1 Consultations &amp; Custom Splits
+    </text>
+    <text x="1040" y="22" font-family="'Inter', sans-serif" font-size="16" font-weight="700" fill="#F7F4EF" fill-opacity="0.9" text-anchor="end">
+      universifit.vercel.app
+    </text>
+  </g>
+</svg>

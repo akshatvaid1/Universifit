@@ -202,7 +202,7 @@ export const CreatorProfileManager: React.FC<CreatorProfileManagerProps> = ({
     setUploadingDocs(true);
     setTimeout(() => {
       setUploadingDocs(false);
-      onTriggerToast(`${files.length} certification file(s) submitted to Ascend Compliance.`);
+      onTriggerToast(`${files.length} certification file(s) submitted to Universifit Compliance.`);
     }, 1200);
   };
 
@@ -266,7 +266,7 @@ export const CreatorProfileManager: React.FC<CreatorProfileManagerProps> = ({
                 <div className="relative shrink-0">
                   <img
                     src={avatarUrl}
-                    alt={fullName}
+                    alt={`${fullName || 'Creator'} profile avatar preview`}
                     className="w-20 h-20 rounded-2xl object-cover ring-2 ring-[#B8703F] shadow-lg"
                   />
                   {isVerified && (
@@ -526,7 +526,7 @@ export const CreatorProfileManager: React.FC<CreatorProfileManagerProps> = ({
                   </h4>
                   <p className="text-[11px] text-[#F7F4EF]/60">
                     {isVerified
-                      ? 'Identity & credentials verified by Ascend Compliance.'
+                      ? 'Identity & credentials verified by Universifit Compliance.'
                       : 'Documents queued for compliance team review.'}
                   </p>
                 </div>
