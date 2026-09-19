@@ -60,8 +60,7 @@ export const CreatorProfileManager: React.FC<CreatorProfileManagerProps> = ({
       "A men's self-improvement and aesthetics coach covering facial aesthetics, diet, physique training, and confidence/mindset."
   );
   const [avatarUrl, setAvatarUrl] = useState(
-    creatorData.avatarUrl ||
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80'
+    creatorData.avatarUrl || '/chadtag.png'
   );
   const [specialtyTags, setSpecialtyTags] = useState<string[]>(
     creatorData.specialtyTags && creatorData.specialtyTags.length > 0

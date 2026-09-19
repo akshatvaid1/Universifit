@@ -11,7 +11,11 @@ export const getWishlist = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.user?.userId || 'user-akshat';
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Authentication required.' });
+      return;
+    }
+    const userId = req.user.userId;
 
     const items = await prisma.wishlistItem.findMany({
       where: { userId },
@@ -59,8 +63,12 @@ export const addToWishlist = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.user?.userId || 'user-akshat';
-    const { offerId } = req.body;
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Authentication required.' });
+      return;
+    }
+    const userId = req.user.userId;
+    const offerId = req.params.offerId || req.body.offerId;
 
     if (!offerId || typeof offerId !== 'string') {
       res.status(400).json({
@@ -133,7 +141,11 @@ export const removeFromWishlist = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.user?.userId || 'user-akshat';
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Authentication required.' });
+      return;
+    }
+    const userId = req.user.userId;
     const target = req.params.offerId;
 
     if (!target) {
@@ -174,7 +186,11 @@ export const toggleWishlist = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.user?.userId || 'user-akshat';
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Authentication required.' });
+      return;
+    }
+    const userId = req.user.userId;
     const { offerId } = req.body;
 
     if (!offerId || typeof offerId !== 'string') {

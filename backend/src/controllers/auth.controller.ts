@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { prisma } from '../config/db.js';
+import { inMemoryStore } from '../config/inMemoryDb.js';
 import { generateToken, hashPassword, comparePassword } from '../config/jwt.js';
 import { AuthenticatedRequest } from '../types/auth.types.js';
 import { isGoogleOAuthConfigured } from '../config/passport.js';
 import { EmailService } from '../services/email.service.js';
+import { logger } from '../utils/logger.js';
+import { AlertService } from '../services/alert.service.js';
 
 /**
  * POST /auth/register (or /api/auth/register)
@@ -38,6 +41,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (existingUser) {
+      logger.authFailure({
+        email: normalizedEmail,
+        reason: 'duplicate_email_registration',
+        ip: (req.headers['x-forwarded-for'] as string) || req.ip,
+      });
       res.status(400).json({
         success: false,
         error: 'An account with this email address already exists. Please sign in.',
@@ -246,6 +254,19 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     if (!user) {
+      const clientIp = (req.headers['x-forwarded-for'] as string) || req.ip;
+      logger.authFailure({
+        email: normalizedEmail,
+        reason: 'user_not_found',
+        ip: clientIp,
+        userAgent: req.headers['user-agent'] as string,
+      });
+      await AlertService.recordAuthFailure({
+        email: normalizedEmail,
+        ip: clientIp,
+        reason: 'user_not_found',
+        userAgent: req.headers['user-agent'] as string,
+      });
       res.status(401).json({
         success: false,
         error: 'Invalid email or password.',
@@ -254,6 +275,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     if (!user.passwordHash || user.passwordHash.startsWith('oauth_google_')) {
+      const clientIp = (req.headers['x-forwarded-for'] as string) || req.ip;
+      logger.authFailure({
+        email: normalizedEmail,
+        reason: 'oauth_requires_google_signin',
+        ip: clientIp,
+        userAgent: req.headers['user-agent'] as string,
+      });
       res.status(401).json({
         success: false,
         error: 'This account was created via Google OAuth. Please sign in with Google.',
@@ -263,6 +291,19 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const isMatch = await comparePassword(password, user.passwordHash);
     if (!isMatch) {
+      const clientIp = (req.headers['x-forwarded-for'] as string) || req.ip;
+      logger.authFailure({
+        email: normalizedEmail,
+        reason: 'invalid_password',
+        ip: clientIp,
+        userAgent: req.headers['user-agent'] as string,
+      });
+      await AlertService.recordAuthFailure({
+        email: normalizedEmail,
+        ip: clientIp,
+        reason: 'invalid_password',
+        userAgent: req.headers['user-agent'] as string,
+      });
       res.status(401).json({
         success: false,
         error: 'Invalid email or password.',
@@ -276,6 +317,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       email: user.email,
       role: user.role,
       fullName: user.fullName,
+    });
+
+    const clientIp = (req.headers['x-forwarded-for'] as string) || req.ip;
+    logger.authSuccess({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      method: 'password',
+      ip: clientIp,
     });
 
     res.status(200).json({
@@ -298,7 +348,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error: any) {
-    console.error('[Login Controller Error]:', error);
+    logger.apiError({
+      route: '/auth/login',
+      method: 'POST',
+      statusCode: 500,
+      error: error.message,
+      stack: error.stack,
+    });
 
     // Dev resilience: Provide real signed JWT for demo administrator account
     if (req.body?.email?.trim().toLowerCase() === 'admin@ascend.io' && req.body?.password === 'admin123') {
@@ -339,7 +395,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           fullName: 'Chadtag',
           email: 'chadtag@ascend.io',
           role: 'CREATOR',
-          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
+          avatarUrl: '/chadtag.png',
           profile: {
             creatorId: 'creator-chadtag',
             handle: 'chadtag',
@@ -584,6 +640,17 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
         error: 'Invalid or expired password reset token. Please request a new reset link.',
       });
       return;
+    }
+
+    // Always update inMemoryStore user with new bcrypt hash if present
+    if (targetEmail) {
+      const newHash = await hashPassword(newPassword);
+      const memUser = inMemoryStore.users.find(
+        (u) => u.email.toLowerCase() === targetEmail!.toLowerCase()
+      );
+      if (memUser) {
+        memUser.passwordHash = newHash;
+      }
     }
 
     res.status(200).json({

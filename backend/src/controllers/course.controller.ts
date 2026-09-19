@@ -311,6 +311,142 @@ export const getCourseById = async (
 };
 
 /**
+ * GET /courses/:id/progress
+ * Fetch progress for the authenticated user for a given course
+ */
+export const getUserCourseProgress = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Authentication required.' });
+      return;
+    }
+
+    const rawId = req.params.id;
+    const courseId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
+    const userId = req.user.userId;
+
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      include: {
+        lessons: {
+          orderBy: { order: 'asc' },
+          select: {
+            id: true,
+            title: true,
+            order: true,
+            durationSeconds: true,
+            dripDays: true,
+            dripDate: true,
+            isPreview: true,
+          },
+        },
+      },
+    });
+
+    if (!course) {
+      const memCourse = inMemoryStore.courses.find((c) => c.id === courseId);
+      if (!memCourse) {
+        res.status(404).json({ success: false, error: `Course with id "${courseId}" not found.` });
+        return;
+      }
+      const memLessons = inMemoryStore.lessons.filter((l) => l.courseId === courseId);
+      const memProgress = inMemoryStore.lessonProgress.filter(
+        (lp) => lp.userId === userId && memLessons.some((l) => l.id === lp.lessonId)
+      );
+      const completedCount = memProgress.filter((p) => p.isCompleted).length;
+      const total = memLessons.length;
+      const percent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          courseId,
+          totalLessons: total,
+          completedLessons: completedCount,
+          progressPercent: percent,
+          isCompleted: percent >= 100,
+          lessons: memLessons.map((l) => {
+            const prog = memProgress.find((p) => p.lessonId === l.id);
+            return {
+              lessonId: l.id,
+              title: l.title,
+              order: l.order,
+              isCompleted: Boolean(prog?.isCompleted),
+              completedAt: prog?.completedAt || null,
+              lastWatchedSeconds: prog?.lastWatchedSeconds || 0,
+            };
+          }),
+        },
+      });
+      return;
+    }
+
+    const enrollment = await prisma.enrollment.findFirst({
+      where: {
+        userId,
+        OR: [{ courseId: course.id }, ...(course.offerId ? [{ offerId: course.offerId }] : [])],
+      },
+      select: { enrolledAt: true, progressPercent: true },
+    });
+
+    const progressRecords = await prisma.lessonProgress.findMany({
+      where: {
+        userId,
+        lesson: { courseId: course.id },
+      },
+      select: {
+        lessonId: true,
+        isCompleted: true,
+        completedAt: true,
+        lastWatchedSeconds: true,
+      },
+    });
+
+    const progressMap = new Map<string, any>(progressRecords.map((p) => [p.lessonId, p]));
+    const completedCount = progressRecords.filter((p) => p.isCompleted).length;
+    const totalLessons = course.lessons.length;
+    const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        courseId: course.id,
+        courseTitle: course.title,
+        enrolledAt: enrollment?.enrolledAt || null,
+        totalLessons,
+        completedLessons: completedCount,
+        progressPercent: enrollment?.progressPercent ?? progressPercent,
+        isCompleted: progressPercent >= 100,
+        lessons: course.lessons.map((lesson) => {
+          const prog = progressMap.get(lesson.id);
+          const dripStatus = calculateLessonDripStatus(lesson, enrollment?.enrolledAt || null, false);
+          return {
+            lessonId: lesson.id,
+            title: lesson.title,
+            order: lesson.order,
+            isLocked: dripStatus.isLocked,
+            unlockDate: dripStatus.unlockDate,
+            isCompleted: Boolean(prog?.isCompleted),
+            completedAt: prog?.completedAt || null,
+            lastWatchedSeconds: prog?.lastWatchedSeconds || 0,
+          };
+        }),
+      },
+    });
+  } catch (error: any) {
+    console.error('[getUserCourseProgress Error]:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error fetching user course progress.',
+      details: error.message,
+    });
+  }
+};
+
+/**
  * POST /courses/video-upload-url
  * Generates direct video upload URL with Mux or Cloudflare Stream
  */

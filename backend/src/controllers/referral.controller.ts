@@ -9,11 +9,26 @@ import { AuthenticatedRequest } from '../types/auth.types.js';
 export const getCreatorReferrals = async (req: Request, res: Response): Promise<void> => {
   try {
     const authReq = req as AuthenticatedRequest;
-    const { creatorId } = req.params;
+    if (!authReq.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Authentication required.' });
+      return;
+    }
 
+    const { creatorId } = req.params;
     let targetCreator: any = null;
 
-    if (authReq.user?.userId) {
+    if (creatorId) {
+      targetCreator = await prisma.creatorProfile.findFirst({
+        where: {
+          OR: [
+            { id: creatorId },
+            { userId: creatorId },
+            { handle: creatorId },
+          ],
+        },
+        include: { user: true },
+      });
+    } else {
       targetCreator = await prisma.creatorProfile.findFirst({
         where: {
           OR: [
@@ -25,29 +40,19 @@ export const getCreatorReferrals = async (req: Request, res: Response): Promise<
       });
     }
 
-    if (!targetCreator && creatorId) {
-      targetCreator = await prisma.creatorProfile.findFirst({
-        where: {
-          OR: [
-            { id: creatorId },
-            { userId: creatorId },
-            { handle: creatorId },
-          ],
-        },
-        include: { user: true },
-      });
-    }
-
-    // Default fallback to first active verified creator if not found
-    if (!targetCreator) {
-      targetCreator = await prisma.creatorProfile.findFirst({
-        where: { verificationStatus: 'VERIFIED' },
-        include: { user: true },
-      });
-    }
-
     if (!targetCreator) {
       res.status(404).json({ success: false, error: 'Creator profile not found.' });
+      return;
+    }
+
+    // Verify ownership or Admin role
+    const isOwner = targetCreator.userId === authReq.user.userId || targetCreator.id === authReq.user.userId;
+    const isAdmin = authReq.user.role === 'ADMIN';
+    if (!isOwner && !isAdmin) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden: You are not authorized to view this creator referral dashboard.',
+      });
       return;
     }
 

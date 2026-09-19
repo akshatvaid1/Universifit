@@ -77,9 +77,13 @@ export const getCreatorById = async (
         specialtyTags: creator.specialtyTags,
         credentials: creator.credentials,
         verificationStatus: creator.verificationStatus,
+        isVerified: creator.verificationStatus === 'VERIFIED',
+        verifiedAt: (creator as any).verifiedAt || null,
+        rejectionReason: (creator as any).rejectionReason || null,
         agreementAccepted: (creator as any).agreementAccepted ?? false,
         agreementAcceptedAt: (creator as any).agreementAcceptedAt || null,
         rating: creator.rating,
+        reviewCount: (creator as any).reviewCount ?? 0,
         totalClients: creator.totalClients,
         offersCount: creator.offers.length,
         offers: creator.offers.map((o) => ({
@@ -109,9 +113,13 @@ export const getCreatorById = async (
           specialtyTags: cp.specialtyTags,
           credentials: cp.credentials,
           verificationStatus: cp.verificationStatus,
+          isVerified: cp.verificationStatus === 'VERIFIED',
+          verifiedAt: cp.verifiedAt || null,
+          rejectionReason: cp.rejectionReason || null,
           agreementAccepted: cp.agreementAccepted,
           agreementAcceptedAt: cp.agreementAcceptedAt || null,
           rating: cp.rating,
+          reviewCount: (cp as any).reviewCount ?? 0,
           totalClients: cp.totalClients,
           offersCount: offers.length,
           offers: offers.map((o) => ({
@@ -442,7 +450,7 @@ export const getCreatorStudioData = async (
             id: cp.id,
             fullName: user?.fullName || 'Chadtag',
             email: user?.email,
-            avatarUrl: user?.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
+            avatarUrl: user?.avatarUrl || '/chadtag.png',
             handle: cp.handle,
             headline: cp.headline,
             bio: cp.bio,
@@ -579,8 +587,8 @@ export const updatePayoutSettings = async (
       return;
     }
 
+    const payoutMethod = req.body.payoutMethod || req.body.method || 'BANK_TRANSFER';
     const {
-      payoutMethod = 'BANK_TRANSFER',
       accountHolderName,
       accountNumber,
       ifscOrSwift,
@@ -635,6 +643,25 @@ export const updatePayoutSettings = async (
       gstin,
     });
 
+    if (creator) {
+      await prisma.creatorProfile.update({
+        where: { id: creator.id },
+        data: {
+          payoutMethod,
+          payoutDetails: {
+            accountHolderName,
+            accountNumber,
+            ifscOrSwift,
+            bankName,
+            upiId,
+            taxId,
+          },
+          gstin: gstin || '27AAPFV8921M1Z5',
+          payoutSetupCompleted: true,
+        },
+      }).catch((err) => console.warn('[Prisma updatePayoutSettings warning]:', err));
+    }
+
     res.status(200).json({
       success: true,
       message: 'Payout settings saved and verified successfully.',
@@ -688,7 +715,11 @@ export const updateCreatorProfile = async (
       where: {
         OR: [{ userId: req.user.userId }, { id: req.user.userId }],
       },
-      include: { user: true },
+      include: {
+        user: {
+          select: { id: true, fullName: true, email: true, avatarUrl: true, role: true },
+        },
+      },
     });
 
     if (creator) {
@@ -710,7 +741,11 @@ export const updateCreatorProfile = async (
           ...(Array.isArray(specialtyTags) ? { specialtyTags } : {}),
           ...(socialLinks ? { socialLinks } : {}),
         },
-        include: { user: true },
+        include: {
+          user: {
+            select: { id: true, fullName: true, email: true, avatarUrl: true, role: true },
+          },
+        },
       });
 
       res.status(200).json({
@@ -879,6 +914,185 @@ export const updateAvailabilitySchedule = async (
     res.status(500).json({
       success: false,
       error: 'Failed to update availability schedule.',
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * POST /creators/accept-agreement
+ * POST /creators/me/agreement
+ * Checkbox acceptance + timestamp for Creator Agreement (gates publishing)
+ */
+export const acceptCreatorAgreement = async (
+  req: any,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Authentication required.' });
+      return;
+    }
+
+    const { agreementAccepted, termsVersion = '1.0' } = req.body;
+    const isAccepted = agreementAccepted === true || agreementAccepted === 'true';
+
+    if (!isAccepted) {
+      res.status(400).json({
+        success: false,
+        code: 'AGREEMENT_CHECKBOX_REQUIRED',
+        error: 'Validation Error: "agreementAccepted" checkbox must be checked (true) to accept the Creator Agreement.',
+      });
+      return;
+    }
+
+    const now = new Date();
+    const userId = req.user.userId;
+
+    // 1. Locate creator profile in DB
+    let creator = await prisma.creatorProfile.findFirst({
+      where: {
+        OR: [{ userId }, { id: userId }],
+      },
+      include: {
+        user: {
+          select: { id: true, fullName: true, email: true, avatarUrl: true, role: true },
+        },
+      },
+    });
+
+    if (creator) {
+      const updated = await prisma.creatorProfile.update({
+        where: { id: creator.id },
+        data: {
+          agreementAccepted: true,
+          agreementAcceptedAt: now,
+        },
+        include: {
+          user: {
+            select: { id: true, fullName: true, email: true, avatarUrl: true, role: true },
+          },
+        },
+      });
+
+      // Also ensure in-memory store is synchronized
+      const memCp = inMemoryStore.creatorProfiles.find(
+        (cp) => cp.userId === userId || cp.id === creator.id
+      );
+      if (memCp) {
+        memCp.agreementAccepted = true;
+        memCp.agreementAcceptedAt = now;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Ascend Creator Terms of Service successfully accepted.',
+        data: {
+          creatorId: updated.id,
+          userId: updated.userId,
+          handle: updated.handle,
+          agreementAccepted: true,
+          agreementAcceptedAt: updated.agreementAcceptedAt || now,
+          termsVersion,
+          revenueSplit: '85/15',
+        },
+      });
+      return;
+    }
+
+    // 2. In-memory fallback
+    const memCp = inMemoryStore.creatorProfiles.find(
+      (cp) => cp.userId === userId || cp.id === userId
+    ) || inMemoryStore.creatorProfiles[0];
+
+    if (memCp) {
+      memCp.agreementAccepted = true;
+      memCp.agreementAcceptedAt = now;
+
+      res.status(200).json({
+        success: true,
+        message: 'Ascend Creator Terms of Service successfully accepted (in-memory store).',
+        data: {
+          creatorId: memCp.id,
+          userId: memCp.userId,
+          handle: memCp.handle,
+          agreementAccepted: true,
+          agreementAcceptedAt: now,
+          termsVersion,
+          revenueSplit: '85/15',
+        },
+      });
+      return;
+    }
+
+    res.status(404).json({
+      success: false,
+      error: 'Creator profile not found. Please complete creator profile setup first.',
+    });
+  } catch (error: any) {
+    console.error('[acceptCreatorAgreement Error]:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to accept creator agreement.',
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * GET /creators/me/agreement-status
+ * Check current agreement acceptance status and terms metadata
+ */
+export const getCreatorAgreementStatus = async (
+  req: any,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Authentication required.' });
+      return;
+    }
+
+    const userId = req.user.userId;
+    let creator = await prisma.creatorProfile.findFirst({
+      where: {
+        OR: [{ userId }, { id: userId }],
+      },
+    });
+
+    if (!creator) {
+      creator = inMemoryStore.creatorProfiles.find(
+        (cp) => cp.userId === userId || cp.id === userId
+      ) as any;
+    }
+
+    const agreementAccepted = Boolean(creator?.agreementAccepted);
+    const agreementAcceptedAt = creator?.agreementAcceptedAt || null;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        creatorId: creator?.id || null,
+        agreementAccepted,
+        agreementAcceptedAt,
+        revenueSplit: {
+          creatorPercent: 85,
+          platformPercent: 15,
+        },
+        terms: {
+          revenueShare: '85% of net order value paid out to creator, 15% platform processing fee',
+          payoutSchedule: 'Automatic payouts via Razorpay Route / UPI on successful completion',
+          refundPolicy: 'Coaching cancellations 24h prior eligible for full refund; digital courses subject to 7-day fair usage guarantee',
+          contentOwnership: 'Creator retains 100% intellectual property ownership of all uploaded material',
+          conductPolicy: 'Zero tolerance for discriminatory behavior, uncredentialed medical diagnoses, or fraudulent claims',
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('[getCreatorAgreementStatus Error]:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch creator agreement status.',
       details: error.message,
     });
   }

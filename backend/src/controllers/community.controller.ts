@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../types/auth.types.js';
 import { prisma } from '../config/db.js';
+import { inMemoryStore } from '../config/inMemoryDb.js';
 import { verifyToken } from '../config/jwt.js';
 import { GamificationService } from '../services/gamification.service.js';
 import { MembershipService } from '../services/membership.service.js';
@@ -443,6 +444,54 @@ export const createPostReply = async (
     });
   } catch (error: any) {
     console.error('[createPostReply Error]:', error);
+    const rawId = req.params.id;
+    const postId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
+    const userId = req.user?.userId;
+    const { content } = req.body || {};
+
+    const memPost = inMemoryStore.communityPosts.find((p) => p.id === postId);
+    if (memPost && userId && content) {
+      const reply = {
+        id: `reply-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        postId,
+        authorId: userId,
+        content: content.trim(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      inMemoryStore.postReplies.push(reply);
+      const user = inMemoryStore.users.find((u) => u.id === userId);
+      if (user) user.points += REPLY_CREATION_POINTS;
+
+      if (memPost.creatorId) {
+        GamificationService.awardPoints(userId, memPost.creatorId, 'reply', { postId, replyId: reply.id }).catch(
+          (e) => console.warn('[Gamification reply hook]:', e)
+        );
+      }
+
+      res.status(201).json({
+        success: true,
+        message: `Reply posted successfully. Awarded +${REPLY_CREATION_POINTS} community points!`,
+        data: {
+          reply: {
+            id: reply.id,
+            postId: reply.postId,
+            content: reply.content,
+            author: {
+              id: user?.id || userId,
+              fullName: user?.fullName || 'Community Member',
+              avatarUrl: user?.avatarUrl,
+              points: user?.points || REPLY_CREATION_POINTS,
+            },
+            createdAt: reply.createdAt,
+          },
+          pointsAwarded: REPLY_CREATION_POINTS,
+          userTotalPoints: user?.points || REPLY_CREATION_POINTS,
+        },
+      });
+      return;
+    }
+
     res.status(500).json({
       success: false,
       error: 'Internal server error while creating reply.',
@@ -553,6 +602,37 @@ export const togglePostLike = async (
     });
   } catch (error: any) {
     console.error('[togglePostLike Error]:', error);
+    const rawId = req.params.id;
+    const postId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
+    const userId = req.user?.userId;
+
+    const memPost = inMemoryStore.communityPosts.find((p) => p.id === postId);
+    if (memPost && userId) {
+      const existingIdx = inMemoryStore.postLikes.findIndex((l) => l.postId === postId && l.userId === userId);
+      let liked = false;
+      if (existingIdx >= 0) {
+        inMemoryStore.postLikes.splice(existingIdx, 1);
+        memPost.likesCount = Math.max(0, memPost.likesCount - 1);
+        liked = false;
+      } else {
+        inMemoryStore.postLikes.push({ id: `pl-${Date.now()}`, postId, userId, createdAt: new Date() });
+        memPost.likesCount += 1;
+        liked = true;
+        if (memPost.creatorId && memPost.authorId && memPost.authorId !== userId) {
+          GamificationService.awardPoints(memPost.authorId, memPost.creatorId, 'like-received', {
+            postId,
+            likedByUserId: userId,
+          }).catch((e) => console.warn('[Gamification like hook]:', e));
+        }
+      }
+      res.status(200).json({
+        success: true,
+        message: liked ? 'Post liked successfully.' : 'Post unliked.',
+        data: { postId, liked, likesCount: memPost.likesCount },
+      });
+      return;
+    }
+
     res.status(500).json({
       success: false,
       error: 'Internal server error while liking post.',
@@ -569,12 +649,12 @@ export const getAllCommunityPosts = async (
   req: any,
   res: Response
 ): Promise<void> => {
-  try {
-    const { category, page = '1', limit = '10' } = req.query;
-    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
-    const limitNum = Math.min(50, Math.max(1, parseInt(limit as string, 10) || 10));
-    const skip = (pageNum - 1) * limitNum;
+  const { category, page = '1', limit = '10' } = req.query;
+  const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+  const limitNum = Math.min(50, Math.max(1, parseInt(limit as string, 10) || 10));
+  const skip = (pageNum - 1) * limitNum;
 
+  try {
     const where: any = {};
     if (category && category !== 'All') {
       where.category = category;
@@ -645,14 +725,259 @@ export const getAllCommunityPosts = async (
         },
       },
     });
+    return;
   } catch (error: any) {
+    console.warn('[getAllCommunityPosts] Fallback to in-memory store:', error.message);
+    const memPosts = inMemoryStore.communityPosts
+      .filter((p) => !category || category === 'All' || p.category === category)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    const paginated = memPosts.slice(skip, skip + limitNum);
+    res.status(200).json({
+      success: true,
+      data: {
+        total: memPosts.length,
+        posts: paginated.map((p) => {
+          const author = inMemoryStore.users.find((u) => u.id === p.authorId);
+          const creator = p.creatorId ? inMemoryStore.creatorProfiles.find((cp) => cp.id === p.creatorId) : null;
+          const replies = inMemoryStore.postReplies.filter((r) => r.postId === p.id);
+          return {
+            id: p.id,
+            title: p.title,
+            content: p.content,
+            category: p.category,
+            tierAccess: p.tierAccess || 'FREE',
+            isLocked: false,
+            likesCount: p.likesCount,
+            repliesCount: replies.length,
+            author: {
+              id: author?.id || p.authorId,
+              fullName: author?.fullName || 'Community Member',
+              avatarUrl: author?.avatarUrl,
+              points: author?.points || 0,
+            },
+            creator: creator ? { id: creator.id, handle: creator.handle } : null,
+            replies,
+            createdAt: p.createdAt,
+          };
+        }),
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          totalItems: memPosts.length,
+          totalPages: Math.ceil(memPosts.length / limitNum) || 1,
+        },
+      },
+    });
+  }
+};
+
+/**
+ * GET /posts/:id (or /community/posts/:id)
+ * Fetch a single community post with author, creator, replies, and like status
+ */
+export const getCommunityPostById = async (
+  req: any,
+  res: Response
+): Promise<void> => {
+  try {
+    const rawId = req.params.id;
+    const postId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
+
+    let viewerId: string | null = req.user?.userId || null;
+    if (!viewerId && req.headers.authorization?.startsWith('Bearer ')) {
+      try {
+        const decoded = verifyToken(req.headers.authorization.split(' ')[1]);
+        viewerId = decoded.userId;
+      } catch {
+        // Guest
+      }
+    }
+
+    try {
+      const post = await prisma.communityPost.findUnique({
+        where: { id: postId },
+        include: {
+          author: {
+            select: { id: true, fullName: true, avatarUrl: true, role: true, points: true },
+          },
+          creator: {
+            select: { id: true, handle: true, user: { select: { fullName: true, avatarUrl: true } } },
+          },
+          replies: {
+            orderBy: { createdAt: 'asc' },
+            include: {
+              author: { select: { id: true, fullName: true, avatarUrl: true, points: true, role: true } },
+            },
+          },
+          likes: viewerId ? { where: { userId: viewerId }, select: { id: true } } : false,
+          _count: { select: { replies: true, likes: true } },
+        },
+      });
+
+      if (post) {
+        const isPaid = post.tierAccess === 'PAID';
+        const isLocked = isPaid && post.authorId !== viewerId;
+
+        res.status(200).json({
+          success: true,
+          data: {
+            post: {
+              id: post.id,
+              title: post.title,
+              content: isLocked ? post.content.slice(0, 90) + '... [🔒 Content Locked - Apex VIP Tier Required]' : post.content,
+              category: post.category,
+              tierAccess: post.tierAccess || 'FREE',
+              isLocked,
+              isPinned: post.isPinned,
+              likesCount: post.likesCount,
+              repliesCount: post._count.replies,
+              hasLiked: viewerId ? (post.likes as any)?.length > 0 : false,
+              author: post.author,
+              creator: post.creator,
+              replies: post.replies,
+              createdAt: post.createdAt,
+              updatedAt: post.updatedAt,
+            },
+          },
+        });
+        return;
+      }
+    } catch (dbErr) {
+      console.warn('[getCommunityPostById] DB fallback:', dbErr);
+    }
+
+    // In-memory fallback
+    const memPost = inMemoryStore.communityPosts.find((p) => p.id === postId);
+    if (!memPost) {
+      res.status(404).json({ success: false, error: `Community post with id "${postId}" not found.` });
+      return;
+    }
+
+    const author = inMemoryStore.users.find((u) => u.id === memPost.authorId);
+    const creator = memPost.creatorId ? inMemoryStore.creatorProfiles.find((cp) => cp.id === memPost.creatorId) : null;
+    const replies = inMemoryStore.postReplies
+      .filter((r) => r.postId === postId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .map((r) => {
+        const rAuthor = inMemoryStore.users.find((u) => u.id === r.authorId);
+        return {
+          id: r.id,
+          postId: r.postId,
+          content: r.content,
+          author: {
+            id: rAuthor?.id || r.authorId,
+            fullName: rAuthor?.fullName || 'Community Member',
+            avatarUrl: rAuthor?.avatarUrl,
+            role: rAuthor?.role || 'BUYER',
+            points: rAuthor?.points || 0,
+          },
+          createdAt: r.createdAt,
+        };
+      });
+
+    const hasLiked = viewerId ? inMemoryStore.postLikes.some((l) => l.postId === postId && l.userId === viewerId) : false;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        post: {
+          id: memPost.id,
+          title: memPost.title,
+          content: memPost.content,
+          category: memPost.category,
+          tierAccess: memPost.tierAccess || 'FREE',
+          isLocked: false,
+          isPinned: Boolean(memPost.isPinned),
+          likesCount: memPost.likesCount,
+          repliesCount: replies.length,
+          hasLiked,
+          author: {
+            id: author?.id || memPost.authorId,
+            fullName: author?.fullName || 'Community Member',
+            avatarUrl: author?.avatarUrl,
+            role: author?.role || 'BUYER',
+            points: author?.points || 0,
+          },
+          creator: creator ? { id: creator.id, handle: creator.handle } : null,
+          replies,
+          createdAt: memPost.createdAt,
+          updatedAt: memPost.updatedAt,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('[getCommunityPostById Error]:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * GET /posts/:id/replies (or /community/posts/:id/replies)
+ * Fetch replies for a community post
+ */
+export const getCommunityPostReplies = async (
+  req: any,
+  res: Response
+): Promise<void> => {
+  try {
+    const rawId = req.params.id;
+    const postId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
+
+    try {
+      const replies = await prisma.postReply.findMany({
+        where: { postId },
+        orderBy: { createdAt: 'asc' },
+        include: {
+          author: {
+            select: { id: true, fullName: true, avatarUrl: true, role: true, points: true },
+          },
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: { replies },
+      });
+      return;
+    } catch (dbErr) {
+      console.warn('[getCommunityPostReplies] DB fallback:', dbErr);
+    }
+
+    // In-memory fallback
+    const memReplies = inMemoryStore.postReplies
+      .filter((r) => r.postId === postId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .map((r) => {
+        const author = inMemoryStore.users.find((u) => u.id === r.authorId);
+        return {
+          id: r.id,
+          postId: r.postId,
+          content: r.content,
+          author: {
+            id: author?.id || r.authorId,
+            fullName: author?.fullName || 'Community Member',
+            avatarUrl: author?.avatarUrl,
+            role: author?.role || 'BUYER',
+            points: author?.points || 0,
+          },
+          createdAt: r.createdAt,
+        };
+      });
+
+    res.status(200).json({
+      success: true,
+      data: { replies: memReplies },
+    });
+  } catch (error: any) {
+    console.error('[getCommunityPostReplies Error]:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
 
 /**
  * POST /posts (or /community/posts)
- * Create a new global community post
+ * Create a new global community post (Awards +10 points)
  */
 export const createGlobalPost = async (
   req: AuthenticatedRequest,
@@ -664,31 +989,86 @@ export const createGlobalPost = async (
       return;
     }
 
+    const userId = req.user.userId;
     const { title, content, category, creatorId } = req.body;
     if (!title || !content) {
       res.status(400).json({ success: false, error: 'Title and content are required.' });
       return;
     }
 
-    const [newPost, updatedUser] = await prisma.$transaction([
-      prisma.communityPost.create({
+    const effectiveCreatorId = creatorId || 'creator-chadtag';
+
+    try {
+      const [newPost, updatedUser] = await prisma.$transaction([
+        prisma.communityPost.create({
+          data: {
+            authorId: userId,
+            creatorId: creatorId || null,
+            title: title.trim(),
+            content: content.trim(),
+            category: category || 'General',
+          },
+          include: {
+            author: { select: { id: true, fullName: true, avatarUrl: true, points: true } },
+          },
+        }),
+        prisma.user.update({
+          where: { id: userId },
+          data: { points: { increment: POST_CREATION_POINTS } },
+          select: { points: true },
+        }),
+      ]);
+
+      GamificationService.awardPoints(userId, effectiveCreatorId, 'post', {
+        postId: newPost.id,
+      }).catch((e) => console.warn('[Gamification post hook]:', e));
+
+      res.status(201).json({
+        success: true,
+        message: `Post created successfully. Awarded +${POST_CREATION_POINTS} community points!`,
         data: {
-          authorId: req.user.userId,
-          creatorId: creatorId || null,
-          title: title.trim(),
-          content: content.trim(),
-          category: category || 'General',
+          post: {
+            id: newPost.id,
+            title: newPost.title,
+            content: newPost.content,
+            category: newPost.category,
+            likesCount: 0,
+            repliesCount: 0,
+            author: {
+              ...newPost.author,
+              points: updatedUser?.points || POST_CREATION_POINTS,
+            },
+            createdAt: newPost.createdAt,
+          },
+          pointsAwarded: POST_CREATION_POINTS,
+          userTotalPoints: updatedUser?.points || POST_CREATION_POINTS,
         },
-        include: {
-          author: { select: { id: true, fullName: true, avatarUrl: true, points: true } },
-        },
-      }),
-      prisma.user.update({
-        where: { id: req.user.userId },
-        data: { points: { increment: POST_CREATION_POINTS } },
-        select: { points: true },
-      }),
-    ]);
+      });
+      return;
+    } catch (dbErr) {
+      console.warn('[createGlobalPost] DB fallback:', dbErr);
+    }
+
+    // In-memory fallback
+    const id = `post-${Date.now()}`;
+    const newPost = {
+      id,
+      authorId: userId,
+      creatorId: effectiveCreatorId,
+      title: title.trim(),
+      content: content.trim(),
+      category: category || 'General',
+      likesCount: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    inMemoryStore.communityPosts.push(newPost);
+    const user = inMemoryStore.users.find((u) => u.id === userId);
+    if (user) user.points += POST_CREATION_POINTS;
+
+    GamificationService.awardPoints(userId, effectiveCreatorId, 'post', { postId: id }).catch(
+      (e) => console.warn('[Gamification post hook]:', e)
+    );
 
     res.status(201).json({
       success: true,
@@ -702,14 +1082,19 @@ export const createGlobalPost = async (
           likesCount: 0,
           repliesCount: 0,
           author: {
-            ...newPost.author,
-            points: updatedUser?.points || 10,
+            id: user?.id || req.user.userId,
+            fullName: user?.fullName || 'Community Member',
+            avatarUrl: user?.avatarUrl,
+            points: user?.points || POST_CREATION_POINTS,
           },
           createdAt: newPost.createdAt,
         },
+        pointsAwarded: POST_CREATION_POINTS,
+        userTotalPoints: user?.points || POST_CREATION_POINTS,
       },
     });
   } catch (error: any) {
+    console.error('[createGlobalPost Error]:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -742,10 +1127,14 @@ export const togglePinPost = async (
     }
 
     // Ensure only the Creator owner of the space or Admin can pin/unpin
-    const isCreatorOwner = post.creator && post.creator.userId === req.user.userId;
+    const isCreatorOwner = Boolean(
+      (post.creator && post.creator.userId === req.user.userId) ||
+      (post.creator && post.creator.id === req.user.userId) ||
+      post.creatorId === req.user.userId
+    );
     const isAdmin = req.user.role === 'ADMIN';
 
-    if (!isCreatorOwner && !isAdmin && req.user.userId !== 'mock_buyer_id' && req.user.userId !== 'creator-marcus') {
+    if (!isCreatorOwner && !isAdmin) {
       res.status(403).json({
         success: false,
         error: 'Forbidden: Only the coach can pin or unpin posts in this space.',
@@ -967,6 +1356,11 @@ export const getReportedPostsForCreator = async (
   res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Authentication required.' });
+      return;
+    }
+
     const rawId = req.params.creatorId || req.params.id;
     const creatorIdentifier = Array.isArray(rawId) ? rawId[0] : (rawId as string);
 
@@ -976,7 +1370,22 @@ export const getReportedPostsForCreator = async (
       },
     });
 
-    const creatorId = creator ? creator.id : creatorIdentifier;
+    if (!creator) {
+      res.status(404).json({ success: false, error: 'Creator not found.' });
+      return;
+    }
+
+    const isOwner = creator.userId === req.user.userId || creator.id === req.user.userId;
+    const isAdmin = req.user.role === 'ADMIN';
+    if (!isOwner && !isAdmin) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden: You are not authorized to view the moderation queue for this creator.',
+      });
+      return;
+    }
+
+    const creatorId = creator.id;
 
     const reportedPosts = await prisma.communityPost.findMany({
       where: {
@@ -1012,14 +1421,36 @@ export const getReportedPostsForCreator = async (
 
 /**
  * PATCH /posts/:id/dismiss-report (or /api/posts/:id/dismiss-report)
- * Dismiss report on a post
+ * Dismiss report on a post (Creator owner & Admin only)
  */
 export const dismissReport = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: 'Unauthorized: Authentication required.' });
+      return;
+    }
+
     const postId = req.params.id;
+    const post = await prisma.communityPost.findUnique({
+      where: { id: postId },
+      include: { creator: true },
+    });
+
+    if (post) {
+      const isOwner = post.creator?.userId === req.user.userId || post.creatorId === req.user.userId;
+      const isAdmin = req.user.role === 'ADMIN';
+      if (!isOwner && !isAdmin) {
+        res.status(403).json({
+          success: false,
+          error: 'Forbidden: Only the community creator or platform admin can dismiss reports.',
+        });
+        return;
+      }
+    }
+
     await prisma.communityPost.update({
       where: { id: postId },
       data: {

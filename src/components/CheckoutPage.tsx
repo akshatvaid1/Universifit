@@ -18,9 +18,10 @@ import {
   X,
   RefreshCw,
 } from 'lucide-react';
-import { Card, Badge, Button, Input } from './ui';
-import { validateCouponApi, type CreatorItem, type CreatorOffer } from '../services/api';
+import { Button, Input } from './ui';
+import { validateCouponApi, getStoredToken, getStoredUser, type CreatorItem, type CreatorOffer } from '../services/api';
 import { updatePageMetadata } from '../utils/seo';
+import { trackCheckoutStart, trackCheckoutCompleted, trackEnroll } from '../services/analytics';
 
 declare global {
   interface Window {
@@ -41,11 +42,22 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   onSuccessNavigate,
   onBack,
 }) => {
-  // Buyer Form State
-  const [fullName, setFullName] = useState('Akshat');
-  const [email, setEmail] = useState('akshat@example.com');
+  // Buyer Form State: Prefill from authenticated session if available
+  const storedUser = getStoredUser();
+  const [fullName, setFullName] = useState(storedUser?.profile?.fullName || 'Akshat');
+  const [email, setEmail] = useState(storedUser?.email || 'akshat@example.com');
   const [phone, setPhone] = useState('+91 98765 43210');
   const [goalNotes, setGoalNotes] = useState('');
+
+  // Dynamically load Razorpay checkout script if not present
+  useEffect(() => {
+    if (typeof window.Razorpay === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
   
   // Validation State
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -75,7 +87,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponMessage, setCouponMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Dynamically load Razorpay checkout script (unconditional hook)
+  // Dynamically load Razorpay checkout script
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -86,14 +98,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       script.async = true;
       document.body.appendChild(script);
     }
-  }, []);
 
-  // Dynamic Checkout SEO Metadata Injection (unconditional hook)
+    if (offer) {
+      trackCheckoutStart(offer.id, Number(offer.price), offer.currency || 'USD', creator?.id);
+    }
+  }, [offer?.id]);
+
+  // Dynamic Checkout SEO Metadata Injection
   useEffect(() => {
     if (offer && creator) {
       updatePageMetadata({
-        title: `Checkout: ${offer.title} with Coach ${creator.fullName} | Universifit`,
-        description: `Complete your secure 256-bit encrypted checkout for ${offer.title} guided by ${creator.fullName}. 30-day satisfaction guarantee on Universifit.`,
+        title: `Checkout: ${offer.title} with ${creator.fullName} | Universifit`,
+        description: `Complete your secure 256-bit encrypted checkout for ${offer.title} guided by ${creator.fullName}.`,
         ogImage: '/og-image.svg',
         ogType: 'website',
         canonicalUrl: `${window.location.origin}/checkout`,
@@ -101,7 +117,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     } else {
       updatePageMetadata({
         title: 'Secure Checkout | Universifit',
-        description: 'Secure 256-bit encrypted checkout with buyer protection and money-back guarantee on Universifit.',
+        description: 'Secure 256-bit encrypted checkout with buyer protection on Universifit.',
         ogImage: '/og-image.svg',
         ogType: 'website',
         canonicalUrl: `${window.location.origin}/checkout`,
@@ -111,20 +127,20 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
   if (!offer || !creator) {
     return (
-      <div className="min-h-screen bg-[#16171A] text-[#F7F4EF] font-sans pb-28 flex flex-col justify-center items-center px-4">
-        <div className="max-w-md w-full bg-[#121315] border border-white/[0.08] rounded-3xl p-8 text-center space-y-5 shadow-2xl">
-          <div className="w-16 h-16 rounded-3xl bg-[#B8703F]/15 border border-[#B8703F]/30 text-[#B8703F] mx-auto flex items-center justify-center">
-            <Lock className="w-8 h-8" />
+      <div className="min-h-screen bg-[#F7F7F5] text-[#14161A] font-sans pb-28 flex flex-col justify-center items-center px-4">
+        <div className="max-w-md w-full bg-white border border-[#E8E8E6] rounded-xl p-8 text-center space-y-5">
+          <div className="w-12 h-12 rounded-md bg-[#F7F7F5] border border-[#E8E8E6] text-[#14161A] mx-auto flex items-center justify-center">
+            <Lock className="w-6 h-6" />
           </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-display font-bold text-white tracking-tight">
+          <div className="space-y-1.5">
+            <h1 className="text-xl font-semibold text-[#14161A] tracking-tight">
               No Offer Selected
             </h1>
-            <p className="text-xs sm:text-sm text-[#F7F4EF]/60 leading-relaxed">
-              Please select a coaching program, video curriculum, or community cohort to proceed with checkout.
+            <p className="text-xs sm:text-sm text-[#8B8D91] leading-relaxed font-normal">
+              Please select a coaching program, video curriculum, or community cohort from a verified practitioner to proceed.
             </p>
           </div>
-          <Button variant="primary" size="md" onClick={onBack}>
+          <Button variant="primary" size="sm" onClick={onBack}>
             Browse Coaches & Programs
           </Button>
         </div>
@@ -155,7 +171,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         setAppliedCoupon(res.data);
         setCouponMessage({
           type: 'success',
-          text: `Promo applied: ${res.data.discountType === 'PERCENT' ? `${res.data.value}% OFF` : `$${res.data.value} FLAT OFF`} (-$${res.data.discountAmount.toFixed(2)})`,
+          text: `Coupon applied: ${res.data.discountType === 'PERCENT' ? `${res.data.value}% OFF` : `$${res.data.value} OFF`} (-$${res.data.discountAmount.toFixed(2)})`,
         });
       } else {
         setAppliedCoupon(null);
@@ -191,7 +207,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   };
 
   /**
-   * Razorpay Checkout Flow hitting Backend B6 routes:
+   * Razorpay Checkout Flow:
    * 1. POST /checkout/create-order
    * 2. Razorpay Modal Popup
    * 3. POST /checkout/verify (HMAC SHA-256)
@@ -202,18 +218,27 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     setCheckoutStatus('processing');
     setFailureReason('');
 
+    const markPaymentCompleted = (effectiveOrderId: string, _effectivePaymentId: string, amount: number) => {
+      trackCheckoutCompleted(effectiveOrderId, currentOffer.id, amount, currentOffer.currency || 'USD', currentCreator?.id);
+      if (currentOffer.type === 'COURSE') {
+        trackEnroll(email || 'buyer', (currentOffer as any).courseId || currentOffer.id, currentOffer.id, currentCreator?.id);
+      }
+    };
+
     try {
-      // Step 1: Create Order on Backend (POST /checkout/create-order)
       let orderData: any = null;
       const payableAmount = appliedCoupon ? appliedCoupon.finalAmount : Number(currentOffer.price);
 
       try {
+        const token = getStoredToken();
+        const authHeaders: Record<string, string> = {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        };
+
         const orderRes = await fetch('/api/checkout/create-order', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer mock_valid_jwt_token',
-          },
+          headers: authHeaders,
           body: JSON.stringify({
             offerId: currentOffer.id,
             amount: payableAmount,
@@ -234,15 +259,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           if (json.data) orderData = json.data;
         }
       } catch (err) {
-        console.debug('Backend API connection warning, initializing simulated Razorpay gateway', err);
+        console.debug('Backend API connection note, falling back to simulated Razorpay gateway', err);
       }
 
-      // If backend mock or dev fallback
       const orderId = orderData?.orderId || `order_${Date.now().toString(36)}`;
       const amountInSubunits = orderData?.amountInSubunits || Math.round(payableAmount * 100);
       const razorpayKey = orderData?.keyId || 'rzp_test_samplekeyid123';
 
-      // Step 2: Open Razorpay Checkout Modal
       if (typeof window.Razorpay !== 'undefined') {
         const options = {
           key: razorpayKey,
@@ -258,17 +281,19 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             contact: phone,
           },
           theme: {
-            color: '#B8703F', // Brand Accent Copper
+            color: '#3652C4', // Minimalist Signal-Blue
           },
           handler: async (response: any) => {
-            // Step 3: Verify Payment Signature on Backend (POST /checkout/verify)
             try {
+              const token = getStoredToken();
+              const authHeaders: Record<string, string> = {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+              };
+
               await fetch('/api/checkout/verify', {
                 method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': 'Bearer mock_valid_jwt_token',
-                },
+                headers: authHeaders,
                 body: JSON.stringify({
                   razorpay_order_id: response.razorpay_order_id || orderId,
                   razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
@@ -280,7 +305,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               setPaymentDetails({
                 paymentId: response.razorpay_payment_id || `pay_${Date.now().toString(36)}`,
                 orderId: response.razorpay_order_id || orderId,
-                amount: Number(currentOffer.price),
+                amount: payableAmount,
                 currency: currentOffer.currency || 'USD',
                 date: new Date().toLocaleDateString('en-US', {
                   month: 'short',
@@ -288,15 +313,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   year: 'numeric',
                 }),
               });
+              markPaymentCompleted(response.razorpay_order_id || orderId, response.razorpay_payment_id || `pay_${Date.now()}`, payableAmount);
               setCheckoutStatus('success');
             } catch {
               setPaymentDetails({
                 paymentId: `pay_${Date.now().toString(36)}`,
                 orderId,
-                amount: Number(currentOffer.price),
+                amount: payableAmount,
                 currency: currentOffer.currency || 'USD',
                 date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
               });
+              markPaymentCompleted(orderId, `pay_${Date.now().toString(36)}`, payableAmount);
               setCheckoutStatus('success');
             }
           },
@@ -313,181 +340,185 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           setCheckoutStatus('failed');
           setFailureReason(
             resp.error?.description ||
-              'Your bank declined the transaction due to 3D Secure authentication timeout or insufficient daily limit.'
+              'Your bank declined the transaction during 3D Secure verification or the card limit was exceeded.'
           );
         });
         rzp.open();
       } else {
-        // Direct simulation for headless browser environments
         setTimeout(() => {
           setPaymentDetails({
             paymentId: `pay_${Date.now().toString(36)}`,
             orderId,
-            amount: Number(currentOffer.price),
+            amount: payableAmount,
             currency: currentOffer.currency || 'USD',
             date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           });
+          markPaymentCompleted(orderId, `pay_${Date.now().toString(36)}`, payableAmount);
           setCheckoutStatus('success');
         }, 1200);
       }
     } catch (err: any) {
       setCheckoutStatus('failed');
-      setFailureReason(err.message || 'Unable to establish secure handshake with Razorpay Orders API.');
+      setFailureReason(err.message || 'Unable to establish secure connection with payment gateway.');
     }
   };
 
   const getFormatIcon = (type?: string) => {
     switch (type) {
       case 'COURSE':
-        return <BookOpen className="w-4 h-4 text-[#B8703F]" />;
+        return <BookOpen className="w-3.5 h-3.5 text-[#3652C4]" />;
       case 'COMMUNITY':
-        return <Users className="w-4 h-4 text-[#6E8B6F]" />;
+        return <Users className="w-3.5 h-3.5 text-[#3652C4]" />;
       default:
-        return <Video className="w-4 h-4 text-sky-400" />;
+        return <Video className="w-3.5 h-3.5 text-[#3652C4]" />;
+    }
+  };
+
+  const getFormatLabel = (type?: string) => {
+    switch (type) {
+      case 'COURSE':
+        return 'Video Curriculum';
+      case 'COMMUNITY':
+        return 'Group Cohort';
+      default:
+        return '1-on-1 Coaching';
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#16171A] text-[#F7F4EF] font-sans pb-28">
+    <div className="min-h-screen bg-[#F7F7F5] text-[#14161A] font-sans pb-28">
       
       {/* Top Header Bar */}
-      <div className="border-b border-white/[0.08] bg-[#121315] py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div className="border-b border-[#E8E8E6] bg-white py-3.5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={onBack}
-              className="text-xs font-semibold text-[#F7F4EF]/70 hover:text-white transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded-lg px-2 py-1"
+              className="text-xs font-medium text-[#8B8D91] hover:text-[#14161A] transition-colors cursor-pointer rounded px-1.5 py-1"
             >
               &larr; Back
             </button>
-            <span className="text-white/20">•</span>
-            <div className="flex items-center gap-2">
-              <Lock className="w-3.5 h-3.5 text-[#6E8B6F]" />
-              <span className="text-xs font-semibold text-[#F7F4EF]/90">
+            <span className="text-[#E8E8E6]">•</span>
+            <div className="flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-[#14161A]" />
+              <span className="text-xs font-medium text-[#14161A]">
                 256-Bit Encrypted Razorpay Checkout
               </span>
             </div>
           </div>
 
-          <Badge variant="verified" size="sm">
-            100% Coach Guaranteed
-          </Badge>
+          <span className="text-xs font-medium text-[#8B8D91]">
+            Verified Guarantee
+          </span>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
         
         {/* ========================================================================= */}
-        {/* 1. SUCCESS STATE WITH CLEAR NEXT STEPS */}
+        {/* 1. SUCCESS STATE */}
         {/* ========================================================================= */}
         {checkoutStatus === 'success' && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-3xl mx-auto space-y-8"
+            className="max-w-2xl mx-auto space-y-6"
           >
-            {/* Header Card */}
-            <Card
-              variant="charcoal"
-              className="p-8 sm:p-10 text-center bg-[#121315] border-[#6E8B6F]/40 shadow-2xl space-y-6"
-            >
-              {/* Success Badge */}
-              <div className="w-16 h-16 rounded-full bg-[#6E8B6F]/20 text-[#6E8B6F] border border-[#6E8B6F]/30 mx-auto flex items-center justify-center shadow-lg">
-                <CheckCircle2 className="w-9 h-9" />
+            <div className="p-8 sm:p-10 text-center bg-white border border-[#E8E8E6] rounded-xl space-y-6">
+              
+              <div className="w-12 h-12 rounded-md bg-[#F7F7F5] border border-[#E8E8E6] text-[#3652C4] mx-auto flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6" />
               </div>
 
-              <div className="space-y-2">
-                <Badge variant="verified" size="md">
-                  Payment Verified & Completed
-                </Badge>
-                <h1 className="text-3xl sm:text-4xl font-display font-bold text-[#F7F4EF] tracking-tight">
-                  Enrollment Confirmed & Access Granted!
+              <div className="space-y-1.5">
+                <span className="text-xs font-medium text-[#3652C4] uppercase tracking-wider block">
+                  Payment Completed
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-semibold text-[#14161A] tracking-tight">
+                  Enrollment Confirmed
                 </h1>
-                <p className="text-sm sm:text-base text-[#F7F4EF]/70 max-w-lg mx-auto font-normal">
-                  Welcome to <strong className="text-white">{currentOffer.title}</strong> with Coach{' '}
-                  <strong className="text-white">{currentCreator.fullName}</strong>.
+                <p className="text-sm text-[#8B8D91] max-w-md mx-auto font-normal leading-relaxed">
+                  Welcome to <strong className="text-[#14161A] font-semibold">{currentOffer.title}</strong> with Coach{' '}
+                  <strong className="text-[#14161A] font-semibold">{currentCreator.fullName}</strong>.
                 </p>
               </div>
 
-              {/* Transaction Summary Pill */}
-              <div className="p-4 rounded-2xl bg-[#16171A] border border-white/[0.08] max-w-md mx-auto grid grid-cols-3 gap-2 text-left text-xs">
+              {/* Transaction Summary Card */}
+              <div className="p-4 rounded-lg bg-[#F7F7F5] border border-[#E8E8E6] max-w-md mx-auto grid grid-cols-3 gap-2 text-left text-xs">
                 <div>
-                  <span className="text-[#F7F4EF]/50 block">Amount Paid</span>
-                  <span className="font-bold text-[#B8703F] text-sm">
-                    ${paymentDetails?.amount} {paymentDetails?.currency}
+                  <span className="text-[#8B8D91] block">Amount Paid</span>
+                  <span className="font-bold text-[#14161A] text-sm mt-0.5 block">
+                    ${paymentDetails?.amount.toFixed(2)} {paymentDetails?.currency}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[#F7F4EF]/50 block">Payment ID</span>
-                  <span className="font-mono text-white/80 truncate block">
-                    {paymentDetails?.paymentId.slice(0, 10)}...
+                  <span className="text-[#8B8D91] block">Payment ID</span>
+                  <span className="font-mono text-[#14161A] truncate block mt-0.5">
+                    {paymentDetails?.paymentId.slice(0, 12)}...
                   </span>
                 </div>
                 <div>
-                  <span className="text-[#F7F4EF]/50 block">Date</span>
-                  <span className="text-white/80">{paymentDetails?.date}</span>
+                  <span className="text-[#8B8D91] block">Date</span>
+                  <span className="text-[#14161A] block mt-0.5">{paymentDetails?.date}</span>
                 </div>
               </div>
 
-              {/* ACTIONABLE 3-STEP ONBOARDING ROADMAP */}
-              <div className="pt-6 border-t border-white/[0.08] text-left space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#F7F4EF]/50">
-                  Your Immediate Next Steps
+              {/* Next Steps List */}
+              <div className="pt-4 border-t border-[#E8E8E6] text-left space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8B8D91]">
+                  Next Steps
                 </h3>
 
-                <div className="space-y-3">
-                  {/* Step 1 */}
-                  <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-start gap-3.5">
-                    <div className="w-8 h-8 rounded-xl bg-[#6E8B6F]/20 text-[#6E8B6F] flex items-center justify-center font-display font-bold shrink-0">
+                <div className="space-y-2.5">
+                  <div className="p-3.5 rounded-lg bg-[#F7F7F5] border border-[#E8E8E6] flex items-start gap-3">
+                    <span className="w-6 h-6 rounded bg-white border border-[#E8E8E6] text-xs font-bold text-[#14161A] flex items-center justify-center shrink-0">
                       1
-                    </div>
+                    </span>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F7F4EF]">
-                        Instant Learning Space Access
+                      <h4 className="text-xs font-semibold text-[#14161A]">
+                        Learning Space Access Granted
                       </h4>
-                      <p className="text-xs text-[#F7F4EF]/65 mt-0.5 leading-relaxed">
-                        Your member portal is unlocked. You can immediately begin Module 1 video lessons and download the initial biomechanics worksheet.
+                      <p className="text-xs text-[#8B8D91] mt-0.5 leading-relaxed">
+                        Your member portal is activated. You can immediately access video modules, protocol worksheets, and resources.
                       </p>
                     </div>
                   </div>
 
-                  {/* Step 2 */}
-                  <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-start gap-3.5">
-                    <div className="w-8 h-8 rounded-xl bg-[#B8703F]/20 text-[#B8703F] flex items-center justify-center font-display font-bold shrink-0">
+                  <div className="p-3.5 rounded-lg bg-[#F7F7F5] border border-[#E8E8E6] flex items-start gap-3">
+                    <span className="w-6 h-6 rounded bg-white border border-[#E8E8E6] text-xs font-bold text-[#14161A] flex items-center justify-center shrink-0">
                       2
-                    </div>
+                    </span>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F7F4EF]">
-                        Direct Coach Channel & Onboarding Form
+                      <h4 className="text-xs font-semibold text-[#14161A]">
+                        Coach Coordination Channel
                       </h4>
-                      <p className="text-xs text-[#F7F4EF]/65 mt-0.5 leading-relaxed">
-                        Coach {currentCreator.fullName} has been notified of your enrollment. Expect an introduction message and intake link on WhatsApp/Email within 12 hours.
+                      <p className="text-xs text-[#8B8D91] mt-0.5 leading-relaxed">
+                        Coach {currentCreator.fullName} has received your booking details and will send intake instructions within 24 hours.
                       </p>
                     </div>
                   </div>
 
-                  {/* Step 3 */}
-                  <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-start gap-3.5">
-                    <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center font-display font-bold shrink-0">
+                  <div className="p-3.5 rounded-lg bg-[#F7F7F5] border border-[#E8E8E6] flex items-start gap-3">
+                    <span className="w-6 h-6 rounded bg-white border border-[#E8E8E6] text-xs font-bold text-[#14161A] flex items-center justify-center shrink-0">
                       3
-                    </div>
+                    </span>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F7F4EF]">
-                        Invoice & Tax Receipt Emailed
+                      <h4 className="text-xs font-semibold text-[#14161A]">
+                        Tax Invoice Emailed
                       </h4>
-                      <p className="text-xs text-[#F7F4EF]/65 mt-0.5 leading-relaxed">
-                        A full GST/tax receipt has been dispatched to <strong className="text-white">{email}</strong>.
+                      <p className="text-xs text-[#8B8D91] mt-0.5 leading-relaxed">
+                        A verified receipt has been dispatched to <span className="font-medium text-[#14161A]">{email}</span>.
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Success CTAs */}
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button
                   variant="primary"
-                  size="lg"
+                  size="md"
                   onClick={onSuccessNavigate || onBack}
                   rightIcon={<ArrowRight className="w-4 h-4" />}
                 >
@@ -496,22 +527,22 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <Button
                   variant="outline"
-                  size="lg"
+                  size="md"
                   onClick={() => {
                     const receiptContent = [
                       '========================================================',
                       '                 UNIVERSIFIT ENROLLMENT RECEIPT           ',
                       '========================================================',
                       `Transaction ID     : ${paymentDetails?.paymentId || 'TXN-' + Date.now()}`,
-                      `Payment Gateway    : Razorpay / Stripe Confirmed`,
+                      `Payment Gateway    : Razorpay Confirmed`,
                       `Timestamp          : ${new Date().toISOString()}`,
                       '--------------------------------------------------------',
-                      `Offer / Masterclass: ${offer?.title || 'Universifit Masterclass'}`,
-                      `Coach / Instructor : ${creator?.fullName || 'Universifit Coach'}`,
-                      `Amount Paid        : $${offer?.price || '180'} USD`,
-                      `Status             : SUCCESSFUL & ACTIVE`,
+                      `Program / Offer    : ${currentOffer.title}`,
+                      `Practitioner       : ${currentCreator.fullName}`,
+                      `Amount Paid        : $${paymentDetails?.amount.toFixed(2)} ${paymentDetails?.currency || 'USD'}`,
+                      `Status             : COMPLETED & ACTIVE`,
                       '--------------------------------------------------------',
-                      'Immediate Access Granted in Athlete Portal.',
+                      'Access activated in member portal.',
                       '========================================================'
                     ].join('\n');
                     const blob = new Blob([receiptContent], { type: 'text/plain;charset=utf-8' });
@@ -524,98 +555,83 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     document.body.removeChild(link);
                     URL.revokeObjectURL(url);
                   }}
-                  leftIcon={<Download className="w-4 h-4 text-[#B8703F]" />}
+                  leftIcon={<Download className="w-4 h-4" />}
                 >
                   Download Receipt
                 </Button>
               </div>
-            </Card>
+
+            </div>
           </motion.div>
         )}
 
         {/* ========================================================================= */}
-        {/* 2. FAILURE STATE (CLEAR REASON & RECOVERY STEPS, NOT GENERIC ERROR) */}
+        {/* 2. FAILURE STATE */}
         {/* ========================================================================= */}
         {checkoutStatus === 'failed' && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-2xl mx-auto space-y-6"
+            className="max-w-xl mx-auto space-y-6"
           >
-            <Card
-              variant="charcoal"
-              className="p-8 sm:p-10 text-center bg-[#121315] border-rose-500/30 shadow-2xl space-y-6"
-            >
-              {/* Failure Icon */}
-              <div className="w-16 h-16 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 mx-auto flex items-center justify-center shadow-lg">
-                <AlertTriangle className="w-8 h-8" />
+            <div className="p-8 sm:p-10 text-center bg-white border border-[#E8E8E6] rounded-xl space-y-5">
+              
+              <div className="w-12 h-12 rounded-md bg-rose-50 border border-rose-200 text-rose-600 mx-auto flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6" />
               </div>
 
-              <div className="space-y-2">
-                <Badge variant="copper" size="sm">
+              <div className="space-y-1.5">
+                <h1 className="text-xl font-semibold text-[#14161A] tracking-tight">
                   Payment Authorization Declined
-                </Badge>
-                <h1 className="text-2xl sm:text-3xl font-display font-bold text-[#F7F4EF] tracking-tight">
-                  We Couldn't Complete Your Transaction
                 </h1>
-                <p className="text-sm text-rose-300/90 font-medium max-w-md mx-auto leading-relaxed">
+                <p className="text-xs sm:text-sm text-rose-600 font-medium max-w-md mx-auto leading-relaxed">
                   {failureReason ||
-                    'Your bank declined the payment during 3D Secure authentication or the session timed out.'}
+                    'Your payment could not be processed. The session timed out or was declined by the card issuer.'}
                 </p>
               </div>
 
-              {/* Reassurance Callout Box */}
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-left text-xs text-[#F7F4EF]/75 space-y-2">
-                <div className="flex items-center gap-2 font-bold text-[#F7F4EF]">
-                  <CheckCircle2 className="w-4 h-4 text-[#6E8B6F]" />
-                  <span>No funds were deducted from your account.</span>
+              {/* Reassurance Box */}
+              <div className="p-3.5 rounded-lg bg-[#F7F7F5] border border-[#E8E8E6] text-left text-xs text-[#14161A] space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold text-[#14161A]">
+                  <CheckCircle2 className="w-4 h-4 text-[#3652C4]" />
+                  <span>No funds were debited from your account.</span>
                 </div>
-                <p className="leading-relaxed">
-                  Your spot in <strong className="text-white">{currentOffer.title}</strong> is temporarily held for the next 15 minutes.
+                <p className="text-[#8B8D91] leading-relaxed">
+                  Your registration in <strong className="text-[#14161A] font-medium">{currentOffer.title}</strong> is reserved temporarily.
                 </p>
               </div>
 
-              {/* Actionable Recovery Advice */}
-              <div className="text-left space-y-3 pt-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#F7F4EF]/50">
-                  Recommended Solutions:
-                </h4>
-                <ul className="space-y-2 text-xs text-[#F7F4EF]/70 font-medium">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#B8703F] font-bold">•</span>
-                    <span><strong>Try UPI / NetBanking</strong> (Google Pay, PhonePe, Paytm, HDFC, ICICI).</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#B8703F] font-bold">•</span>
-                    <span><strong>Check International / Online limits</strong> in your mobile banking app.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#B8703F] font-bold">•</span>
-                    <span>Need concierge billing support? Email <span className="text-[#B8703F]">billing@universifit.com</span>.</span>
-                  </li>
+              {/* Solutions List */}
+              <div className="text-left space-y-2 pt-1 text-xs text-[#8B8D91]">
+                <span className="font-semibold text-[#14161A] block">Recommended steps:</span>
+                <ul className="space-y-1.5 list-disc list-inside">
+                  <li>Try another card or select UPI / NetBanking.</li>
+                  <li>Check online transaction limits in your banking portal.</li>
+                  <li>Contact <span className="text-[#3652C4]">support@universifit.com</span> for concierge assistance.</li>
                 </ul>
               </div>
 
               {/* Failure Actions */}
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button
                   variant="primary"
-                  size="lg"
+                  size="sm"
                   onClick={handleInitiatePayment}
-                  leftIcon={<RotateCcw className="w-4 h-4" />}
+                  leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
                 >
-                  Retry Payment with Alternate Method
+                  Retry Payment
                 </Button>
 
                 <Button
                   variant="outline"
-                  size="lg"
+                  size="sm"
                   onClick={onBack}
                 >
-                  Back to Program Details
+                  Return to Program
                 </Button>
               </div>
-            </Card>
+
+            </div>
           </motion.div>
         )}
 
@@ -628,20 +644,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             {/* Left Column: Buyer Details Form (Span 7) */}
             <div className="lg:col-span-7 space-y-6">
               
-              <div>
-                <Badge variant="copper" size="sm">
-                  Step 1 of 2
-                </Badge>
-                <h1 className="text-2xl sm:text-3xl font-display font-bold text-[#F7F4EF] tracking-tight mt-1">
+              <div className="space-y-1">
+                <h1 className="text-2xl font-semibold text-[#14161A] tracking-tight">
                   Buyer & Member Information
                 </h1>
-                <p className="text-xs sm:text-sm text-[#F7F4EF]/60 font-normal">
+                <p className="text-sm text-[#8B8D91] font-normal">
                   Your credentials and coach communication channel will be registered under these details.
                 </p>
               </div>
 
               {/* Form Card */}
-              <Card variant="charcoal" className="p-6 sm:p-7 space-y-5 bg-[#121315] border-white/[0.08] shadow-xl">
+              <div className="p-6 sm:p-7 space-y-5 bg-white border border-[#E8E8E6] rounded-xl">
                 
                 {/* Full Name */}
                 <Input
@@ -654,116 +667,113 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 {/* Email Address */}
                 <Input
-                  label="Email Address (Access Portal & Receipts)"
+                  label="Email Address"
                   type="email"
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   error={errors.email}
-                  leftIcon={<Mail className="w-4 h-4" />}
-                  helperText="Curriculum access tokens will be dispatched to this email."
+                  leftIcon={<Mail className="w-4 h-4 text-[#8B8D91]" />}
+                  helperText="Curriculum access tokens and receipts will be dispatched here."
                 />
 
                 {/* Phone Number */}
                 <Input
-                  label="Phone / WhatsApp Number (Coach Sync Line)"
+                  label="Phone / WhatsApp Number"
                   placeholder="+91 98765 43210"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   error={errors.phone}
-                  helperText="Used for weekly form checks and urgent session alerts."
+                  helperText="Used for weekly form checks and direct coach coordination."
                 />
 
                 {/* Optional Goals Note */}
                 <div className="space-y-1.5 font-sans">
-                  <label className="block text-xs font-medium text-[#F7F4EF]/80">
-                    Primary Goal or Training Background (Optional)
+                  <label className="block text-xs font-medium text-[#14161A]">
+                    Primary Goals or Background (Optional)
                   </label>
                   <textarea
                     rows={3}
-                    placeholder="e.g. 4 years lifting experience, looking to overcome shoulder impingement and add 10kg to bench..."
+                    placeholder="e.g. Current training split, injury history, or specific milestones you want to achieve..."
                     value={goalNotes}
                     onChange={(e) => setGoalNotes(e.target.value)}
-                    className="w-full bg-[#16171A] text-[#F7F4EF] placeholder-white/30 border border-white/15 focus:border-[#B8703F] focus:ring-2 focus:ring-[#B8703F] rounded-xl p-3.5 text-xs font-sans focus:outline-none transition-all"
+                    className="w-full bg-white text-[#14161A] placeholder-[#8B8D91] border border-[#E8E8E6] focus:border-[#14161A] focus:ring-1 focus:ring-[#14161A] rounded-md p-3 text-xs font-sans focus:outline-none transition-colors"
                   />
                 </div>
 
                 {/* Trust Guarantees */}
-                <div className="pt-4 border-t border-white/[0.08] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[#F7F4EF]/70 font-medium">
+                <div className="pt-4 border-t border-[#E8E8E6] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[#8B8D91]">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-[#6E8B6F] shrink-0" />
-                    <span>30-Day Transformation Guarantee</span>
+                    <ShieldCheck className="w-4 h-4 text-[#3652C4] shrink-0" />
+                    <span>Verified Practitioner Quality</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-[#6E8B6F] shrink-0" />
-                    <span>Zero Card Data Stored on Server</span>
+                    <Lock className="w-4 h-4 text-[#14161A] shrink-0" />
+                    <span>Encrypted Razorpay Checkout</span>
                   </div>
                 </div>
 
-              </Card>
+              </div>
 
               {/* Supported Payment Gateways Badge Strip */}
-              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between text-xs text-[#F7F4EF]/50">
+              <div className="p-4 rounded-lg bg-white border border-[#E8E8E6] flex items-center justify-between text-xs text-[#8B8D91]">
                 <span className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-[#B8703F]" />
-                  <span>Supports UPI, Cards, NetBanking, EMI & Wallets</span>
+                  <CreditCard className="w-4 h-4 text-[#14161A]" />
+                  <span>Supports UPI, Cards, NetBanking & Wallets</span>
                 </span>
-                <span className="font-mono text-[#B8703F] font-bold">Razorpay Powered</span>
+                <span className="font-medium text-[#14161A]">Razorpay Powered</span>
               </div>
 
             </div>
 
             {/* Right Column: Order Summary (Span 5) */}
-            <div className="lg:col-span-5 space-y-6 sticky top-24">
+            <aside className="lg:col-span-5 space-y-6 sticky top-20">
               
-              <div>
-                <Badge variant="verified" size="sm">
+              <div className="space-y-1">
+                <h3 className="text-xl font-semibold text-[#14161A] tracking-tight">
                   Order Summary
-                </Badge>
-                <h3 className="text-xl sm:text-2xl font-display font-bold text-[#F7F4EF] tracking-tight mt-1">
-                  Program Investment
                 </h3>
               </div>
 
               {/* Summary Card */}
-              <Card variant="charcoal" className="p-6 bg-[#121315] border-white/15 shadow-2xl space-y-5">
+              <div className="p-6 bg-white border border-[#E8E8E6] rounded-xl space-y-5">
                 
                 {/* Coach & Offer Preview */}
-                <div className="flex items-start gap-3.5 pb-5 border-b border-white/[0.08]">
+                <div className="flex items-start gap-3.5 pb-5 border-b border-[#E8E8E6]">
                   <img
                     src={currentCreator.avatarUrl || ''}
-                    alt={`Coach ${currentCreator.fullName}`}
-                    className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white/10 shrink-0"
+                    alt={`${currentCreator.fullName}'s profile photo`}
+                    className="w-12 h-12 rounded-lg object-cover border border-[#E8E8E6] shrink-0"
                   />
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-semibold text-[#F7F4EF]/60">Coach</span>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#6E8B6F]" />
+                      <span className="text-xs text-[#5A5D62]">Coach</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#3652C4]" />
                     </div>
-                    <h4 className="font-display font-bold text-base text-[#F7F4EF] truncate">
+                    <h4 className="font-semibold text-sm text-[#14161A] truncate">
                       {currentCreator.fullName}
                     </h4>
-                    <p className="text-xs text-[#B8703F] font-medium truncate">
+                    <p className="text-xs text-[#5A5D62] truncate mt-0.5">
                       {currentCreator.headline}
                     </p>
                   </div>
                 </div>
 
                 {/* Program Item Details */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <span className="text-sm font-bold text-[#F7F4EF] block">
+                      <span className="text-sm font-semibold text-[#14161A] block">
                         {currentOffer.title}
                       </span>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-xs text-[#F7F4EF]/50 flex items-center gap-1 font-mono">
+                        <span className="text-xs text-[#5A5D62] flex items-center gap-1">
                           {getFormatIcon(currentOffer.type)}
-                          {currentOffer.type === 'COURSE' ? 'Video Masterclass' : 'Direct Coaching'}
+                          <span>{getFormatLabel(currentOffer.type)}</span>
                         </span>
                         {(currentOffer.isRecurring || currentOffer.type === 'ONE_ON_ONE') && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#6E8B6F]/20 text-[#6E8B6F] border border-[#6E8B6F]/30 flex items-center gap-1">
-                            <RefreshCw className="w-3 h-3" />
+                          <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#F7F7F5] text-[#14161A] border border-[#E8E8E6] flex items-center gap-1">
+                            <RefreshCw className="w-3 h-3 text-[#3652C4]" />
                             Monthly Recurring
                           </span>
                         )}
@@ -771,11 +781,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     </div>
 
                     <div className="text-right">
-                      <span className="font-display font-bold text-lg text-[#F7F4EF] block">
-                        ${Number(currentOffer.price)}
+                      <span className="font-bold text-base text-[#14161A] block">
+                        ${Number(currentOffer.price).toFixed(2)}
                       </span>
                       {(currentOffer.isRecurring || currentOffer.type === 'ONE_ON_ONE') && (
-                        <span className="text-[10px] text-[#F7F4EF]/50 font-mono">
+                        <span className="text-[10px] text-[#5A5D62]">
                           / month
                         </span>
                       )}
@@ -783,24 +793,25 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
 
                   {currentOffer.description && (
-                    <p className="text-xs text-[#F7F4EF]/60 leading-relaxed">
+                    <p className="text-xs text-[#5A5D62] leading-relaxed line-clamp-2">
                       {currentOffer.description}
                     </p>
                   )}
                 </div>
 
-                {/* Coupon / Promo Code Input Section */}
-                <div className="pt-4 border-t border-white/[0.08] space-y-2.5">
+                {/* Coupon Input Section */}
+                <div className="pt-4 border-t border-[#E8E8E6] space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-[#F7F4EF]/80 flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5 text-[#B8703F]" />
-                      <span>Have a promo code or creator coupon?</span>
+                    <label htmlFor="coupon-code-input" className="text-xs font-medium text-[#14161A] flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-[#3652C4]" />
+                      <span>Have a promo code?</span>
                     </label>
                     {appliedCoupon && (
                       <button
                         type="button"
                         onClick={handleRemoveCoupon}
-                        className="text-[11px] text-rose-400 hover:text-rose-300 transition-colors font-medium flex items-center gap-1"
+                        className="text-xs text-rose-600 hover:underline font-medium flex items-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#3652C4] rounded"
+                        aria-label="Remove applied promo code"
                       >
                         <X className="w-3 h-3" /> Remove
                       </button>
@@ -810,8 +821,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   {!appliedCoupon ? (
                     <div className="flex gap-2">
                       <input
+                        id="coupon-code-input"
                         type="text"
-                        placeholder="e.g. MARCUS20, PROMO10"
+                        aria-label="Promo code"
+                        placeholder="e.g. CHAD10, PROMO20"
                         value={couponCodeInput}
                         onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
                         onKeyDown={(e) => {
@@ -820,38 +833,39 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                             handleApplyCoupon();
                           }
                         }}
-                        className="flex-1 bg-[#16171A] text-[#F7F4EF] placeholder-white/30 border border-white/15 focus:border-[#B8703F] focus:ring-1 focus:ring-[#B8703F] rounded-xl px-3 py-2 text-xs font-mono uppercase tracking-wider focus:outline-none transition-all"
+                        className="flex-1 bg-white text-[#14161A] placeholder-[#5A5D62] border border-[#E8E8E6] focus:border-[#3652C4] focus:ring-1 focus:ring-[#3652C4] rounded-md px-3 py-1.5 text-xs font-mono uppercase tracking-wider focus:outline-none transition-colors"
                       />
                       <Button
                         type="button"
-                        variant="secondary"
+                        variant="outline"
                         size="sm"
                         isLoading={couponLoading}
                         onClick={handleApplyCoupon}
-                        className="text-xs font-semibold px-4 whitespace-nowrap bg-white/10 hover:bg-white/15 text-[#F7F4EF]"
+                        className="text-xs"
                       >
                         Apply
                       </Button>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-xl bg-[#6E8B6F]/10 border border-[#6E8B6F]/30 flex items-center justify-between text-xs">
+                    <div className="p-3 rounded-md bg-[#F7F7F5] border border-[#E8E8E6] flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-[#6E8B6F] shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-[#3652C4] shrink-0" />
                         <div>
-                          <span className="font-mono font-bold text-[#F7F4EF] tracking-wider">{appliedCoupon.code}</span>
-                          <span className="text-[#6E8B6F] font-semibold ml-2">
-                            ({appliedCoupon.discountType === 'PERCENT' ? `${appliedCoupon.value}% OFF` : `$${appliedCoupon.value} FLAT OFF`})
+                          <span className="font-mono font-bold text-[#14161A]">{appliedCoupon.code}</span>
+                          <span className="text-[#5A5D62] ml-2">
+                            ({appliedCoupon.discountType === 'PERCENT' ? `${appliedCoupon.value}% OFF` : `$${appliedCoupon.value} OFF`})
                           </span>
                         </div>
                       </div>
-                      <span className="font-bold text-[#6E8B6F]">-${appliedCoupon.discountAmount.toFixed(2)}</span>
+                      <span className="font-bold text-[#3652C4]">-${appliedCoupon.discountAmount.toFixed(2)}</span>
                     </div>
                   )}
 
                   {couponMessage && (
                     <p
-                      className={`text-[11px] font-medium ${
-                        couponMessage.type === 'success' ? 'text-[#6E8B6F]' : 'text-rose-400'
+                      role={couponMessage.type === 'success' ? 'status' : 'alert'}
+                      className={`text-xs font-medium ${
+                        couponMessage.type === 'success' ? 'text-emerald-700' : 'text-rose-600'
                       }`}
                     >
                       {couponMessage.text}
@@ -859,76 +873,71 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   )}
                 </div>
 
-                {/* Price Breakdown Calculation */}
-                <div className="space-y-2 pt-4 border-t border-white/[0.08] text-xs font-medium">
-                  <div className="flex items-center justify-between text-[#F7F4EF]/70">
+                {/* Price Breakdown */}
+                <div className="space-y-2 pt-4 border-t border-[#E8E8E6] text-xs font-medium">
+                  <div className="flex items-center justify-between text-[#8B8D91]">
                     <span>Program Tuition</span>
-                    <span>${Number(currentOffer.price)}.00</span>
+                    <span className="text-[#14161A]">${Number(currentOffer.price).toFixed(2)}</span>
                   </div>
 
                   {appliedCoupon && appliedCoupon.discountAmount > 0 && (
-                    <div className="flex items-center justify-between text-[#6E8B6F] font-semibold">
+                    <div className="flex items-center justify-between text-[#3652C4]">
                       <span className="flex items-center gap-1.5">
                         <Tag className="w-3.5 h-3.5" />
-                        Coupon Discount ({appliedCoupon.code})
+                        Coupon ({appliedCoupon.code})
                       </span>
                       <span>-${appliedCoupon.discountAmount.toFixed(2)}</span>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-[#F7F4EF]/70">
-                    <span>Platform & Coach Onboarding Fee</span>
-                    <span className="text-[#6E8B6F] font-bold">FREE ($0.00)</span>
+                  <div className="flex items-center justify-between text-[#8B8D91]">
+                    <span>Platform Fee</span>
+                    <span className="text-[#14161A]">Free ($0.00)</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[#F7F4EF]/70">
-                    <span>Instant Access Activation</span>
-                    <span className="text-[#6E8B6F] font-bold">INCLUDED</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm font-bold text-white pt-3 border-t border-white/[0.08]">
+                  <div className="flex items-center justify-between text-sm font-bold text-[#14161A] pt-3 border-t border-[#E8E8E6]">
                     <span>Total Investment</span>
                     <div className="text-right">
                       <div className="flex items-baseline justify-end gap-2">
                         {appliedCoupon && appliedCoupon.discountAmount > 0 && (
-                          <span className="text-sm font-display line-through text-[#F7F4EF]/40 font-normal">
-                            ${Number(currentOffer.price)}.00
+                          <span className="text-xs line-through text-[#8B8D91] font-normal">
+                            ${Number(currentOffer.price).toFixed(2)}
                           </span>
                         )}
-                        <span className="text-2xl font-display font-bold text-[#B8703F]">
+                        <span className="text-xl font-bold text-[#14161A]">
                           ${(appliedCoupon ? appliedCoupon.finalAmount : Number(currentOffer.price)).toFixed(2)}
                         </span>
                       </div>
-                      <span className="text-[10px] text-[#F7F4EF]/50 block font-sans font-normal">
-                        {currentOffer.type === 'COURSE' ? 'One-time investment' : 'Billed Monthly'}
+                      <span className="text-[10px] text-[#8B8D91] block font-normal">
+                        {currentOffer.type === 'COURSE' ? 'One-time payment' : 'Billed monthly'}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Primary Payment CTA Button */}
-                <div className="pt-2 space-y-3">
+                <div className="pt-2 space-y-2.5">
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-full text-base font-bold shadow-lg"
+                    className="w-full justify-center text-sm font-semibold"
                     isLoading={checkoutStatus === 'processing'}
                     onClick={handleInitiatePayment}
-                    leftIcon={<Zap className="w-4 h-4 fill-current" />}
+                    leftIcon={<Zap className="w-4 h-4" />}
                   >
                     {checkoutStatus === 'processing'
-                      ? 'Establishing Secure Checkout...'
-                      : `Pay $${(appliedCoupon ? appliedCoupon.finalAmount : Number(currentOffer.price)).toFixed(2)} & Confirm Spot`}
+                      ? 'Opening Secure Gateway...'
+                      : `Pay $${(appliedCoupon ? appliedCoupon.finalAmount : Number(currentOffer.price)).toFixed(2)} & Confirm`}
                   </Button>
 
-                  <p className="text-[11px] text-center text-[#F7F4EF]/40 font-medium">
-                    By clicking pay, you agree to the 30-day coach adherence policy and terms.
+                  <p className="text-[11px] text-center text-[#8B8D91] leading-relaxed">
+                    By completing this purchase, you agree to the Universifit terms and coach adherence policies.
                   </p>
                 </div>
 
-              </Card>
+              </div>
 
-            </div>
+            </aside>
 
           </div>
         )}

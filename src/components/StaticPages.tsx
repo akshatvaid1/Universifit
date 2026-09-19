@@ -415,7 +415,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                   Buyer Protection & Refund Policy
                 </h1>
                 <p className="text-sm text-[#F7F4EF]/60 leading-relaxed max-w-3xl">
-                  Our refund framework balances genuine client satisfaction with fair compensation for coach labor, specialized knowledge, and reserved calendar time.
+                  Our refund framework balances genuine client satisfaction with fair compensation for coach labor, specialized knowledge, and reserved calendar time. All transactions are securely processed through Razorpay and PCI-DSS Level 1 compliant gateways.
                 </p>
               </div>
 
@@ -434,15 +434,15 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                   </div>
                   <div className="space-y-2 pt-4 border-t border-white/[0.06] text-xs">
                     <div className="flex items-center justify-between text-emerald-400 font-bold">
-                      <span>&gt; 48 Hours Notice:</span>
+                      <span>&gt;= 24 Hours Notice:</span>
                       <span>100% Full Refund</span>
                     </div>
                     <div className="flex items-center justify-between text-amber-300 font-semibold">
-                      <span>24–48 Hours Notice:</span>
-                      <span>50% Partial Refund</span>
+                      <span>12–24 Hours Notice:</span>
+                      <span>50% Partial / Credit</span>
                     </div>
                     <div className="flex items-center justify-between text-rose-400 font-medium">
-                      <span>&lt; 24 Hours / No-Show:</span>
+                      <span>&lt; 12 Hours / No-Show:</span>
                       <span>Non-Refundable</span>
                     </div>
                   </div>
@@ -465,7 +465,7 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                       <span>100% Money-Back</span>
                     </div>
                     <p className="text-[11px] text-[#F7F4EF]/60 leading-normal">
-                      Valid if buyer has streamed less than 25% of lessons and has not exported proprietary downloadable spreadsheets.
+                      Valid if buyer has streamed less than 25% of lessons and has not exported proprietary downloadable spreadsheets or claimed an accreditation certificate.
                     </p>
                   </div>
                 </div>
@@ -493,33 +493,71 @@ export const StaticPages: React.FC<StaticPagesProps> = ({
                 </div>
               </div>
 
-              {/* Coach No-Show Guarantee */}
+              {/* Coach Attendance & Fulfillment Guarantee */}
               <div className="p-6 rounded-3xl bg-[#16171A] border border-white/[0.08] space-y-3 text-xs sm:text-sm">
                 <div className="flex items-center gap-2 text-emerald-400 font-bold">
                   <CheckCircle2 className="w-5 h-5" />
-                  <span>The Universifit Coach Attendance Guarantee</span>
+                  <span>The Ascend Coach Attendance Guarantee</span>
                 </div>
                 <p className="text-[#F7F4EF]/70 leading-relaxed">
-                  If a verified coach fails to attend a confirmed appointment or does not deliver an agreed-upon initial customized intake protocol within <strong className="text-white">5 business days</strong> of payment, the buyer is entitled to an immediate <strong className="text-white">100% automatic refund</strong> or re-credit to their Universifit wallet, at their choice.
+                  If a verified coach fails to attend a confirmed appointment or does not deliver an agreed-upon initial customized intake protocol within <strong className="text-white">5 business days</strong> of payment, the buyer is entitled to an immediate <strong className="text-white">100% automatic refund</strong> or re-credit to their Ascend wallet, at their choice.
                 </p>
               </div>
 
-              {/* How to initiate a refund */}
+              {/* Section 1: Razorpay Settlement & Actual Banking Turnaround Timeline */}
               <section className="space-y-4">
                 <h2 className="text-xl font-display font-bold text-white tracking-tight flex items-center gap-2">
                   <span className="text-[#B8703F] font-mono text-base">01.</span>
-                  <span>How to Initiate a Refund Request</span>
+                  <span>Razorpay Payment Gateway Refund Timelines</span>
+                </h2>
+                <div className="p-6 rounded-3xl bg-[#16171A] border border-white/[0.08] space-y-4 text-xs sm:text-sm text-[#F7F4EF]/70 leading-relaxed">
+                  <p>
+                    All customer refunds are initiated programmatically through the <strong className="text-white">Razorpay Payments API</strong>. Once approved, the refund is transmitted immediately to the banking clearing network. The actual crediting timeframe depends on the original payment instrument:
+                  </p>
+                  <div className="grid sm:grid-cols-3 gap-4 pt-2">
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-2">
+                      <span className="text-emerald-400 font-bold font-mono text-xs uppercase block">UPI Payments</span>
+                      <p className="text-xl font-display font-bold text-white">2 to 24 Hours</p>
+                      <p className="text-[11px] text-[#F7F4EF]/60">Google Pay, PhonePe, Paytm, BHIM UPI. Often credited instantly back to source VPA.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-2">
+                      <span className="text-amber-400 font-bold font-mono text-xs uppercase block">Credit & Debit Cards</span>
+                      <p className="text-xl font-display font-bold text-white">5 to 7 Business Days</p>
+                      <p className="text-[11px] text-[#F7F4EF]/60">Visa, Mastercard, RuPay, Amex. Credited based on card issuer billing cycles.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-2">
+                      <span className="text-sky-400 font-bold font-mono text-xs uppercase block">Net Banking</span>
+                      <p className="text-xl font-display font-bold text-white">3 to 7 Business Days</p>
+                      <p className="text-[11px] text-[#F7F4EF]/60">Processed via NEFT / IMPS clearance through the beneficiary bank.</p>
+                    </div>
+                  </div>
+                  <ul className="list-disc pl-5 space-y-2 pt-2">
+                    <li>
+                      <strong className="text-white">Statutory Refund Window:</strong> Ascend honors refund requests and can execute gateway refunds for up to <strong className="text-white">180 days (6 months)</strong> from the original payment date per Razorpay policy.
+                    </li>
+                    <li>
+                      <strong className="text-white">Bank Reference Number (ARN):</strong> Once the refund is executed, a unique Acquirer Reference Number (ARN) or Razorpay Refund ID is generated. This number is automatically attached to your Support Ticket and emailed to you so your bank can track the credit if delayed.
+                    </li>
+                  </ul>
+                </div>
+              </section>
+
+              {/* Section 2: How to initiate a refund */}
+              <section className="space-y-4">
+                <h2 className="text-xl font-display font-bold text-white tracking-tight flex items-center gap-2">
+                  <span className="text-[#B8703F] font-mono text-base">02.</span>
+                  <span>How to Submit a Refund Request</span>
                 </h2>
                 <div className="p-6 rounded-3xl bg-[#16171A] border border-white/[0.08] space-y-4 text-xs sm:text-sm text-[#F7F4EF]/70 leading-relaxed">
                   <ol className="list-decimal pl-5 space-y-2">
                     <li>
-                      Visit your <strong className="text-white">My Space</strong> dashboard, navigate to the <strong className="text-white">Purchases & Bookings</strong> tab, locate the order, and select <span className="text-[#B8703F] font-semibold">Request Cancellation</span>.
+                      <strong className="text-white">In-App Support Desk (Fastest):</strong> Open the <strong className="text-white">Help Desk</strong> in your dashboard or footer, select the category <span className="text-[#B8703F] font-mono font-semibold">REFUND_REQUEST</span>, select your purchase reference, and submit your note. Our concierge processes valid claims within 12–24 hours.
                     </li>
                     <li>
-                      Alternatively, send an email to <a href="mailto:refunds@universifit.com" className="text-[#B8703F] underline">refunds@universifit.com</a> including your Order Reference ID (e.g., <code className="bg-white/[0.05] px-1 rounded font-mono">uni_ord_...</code>) and the reason for cancellation.
+                      <strong className="text-white">Email Concierge:</strong> Send an email to <a href="mailto:refunds@ascend.fit" className="text-[#B8703F] underline">refunds@ascend.fit</a> with your registered email and Order ID (e.g. <code className="bg-white/[0.05] px-1.5 py-0.5 rounded font-mono">asc_ord_...</code>).
                     </li>
                     <li>
-                      Approved refunds are processed back to the original funding source (credit card, UPI, debit, net banking) within <strong className="text-white">5 to 7 business days</strong>.
+                      <strong className="text-white">Grievance Escalation:</strong> If a refund dispute is unresolved after 48 hours, escalate directly to our Grievance Redressal Officer at <a href="mailto:grievance@ascend.fit" className="text-[#B8703F] underline">grievance@ascend.fit</a> under Indian IT Rules 2011.
                     </li>
                   </ol>
                 </div>

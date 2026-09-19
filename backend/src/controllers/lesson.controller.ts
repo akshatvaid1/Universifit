@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../types/auth.types.js';
 import { prisma } from '../config/db.js';
+import { inMemoryStore } from '../config/inMemoryDb.js';
 import { calculateLessonDripStatus } from '../utils/drip.util.js';
 import { CertificateService } from '../services/certificate.service.js';
 import { GamificationService } from '../services/gamification.service.js';
@@ -14,6 +15,9 @@ export const markLessonComplete = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
+  const rawId = req.params.id;
+  const lessonId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
+
   try {
     if (!req.user) {
       res.status(401).json({
@@ -22,9 +26,6 @@ export const markLessonComplete = async (
       });
       return;
     }
-
-    const rawId = req.params.id;
-    const lessonId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
 
     if (!lessonId) {
       res.status(400).json({
@@ -239,6 +240,93 @@ export const markLessonComplete = async (
     });
   } catch (error: any) {
     console.error('[markLessonComplete Error]:', error);
+    const userId = req.user?.userId;
+    const lesson = inMemoryStore.lessons.find((l) => l.id === lessonId);
+    if (lesson && userId) {
+      const course = inMemoryStore.courses.find((c) => c.id === lesson.courseId);
+      const isCreatorOrAdmin =
+        req.user?.role === 'ADMIN' ||
+        (course &&
+          inMemoryStore.creatorProfiles.find((cp) => cp.id === course.creatorId)?.userId === userId);
+      const memEnrollment = inMemoryStore.enrollments.find(
+        (e) => e.userId === userId && (e.courseId === course?.id || e.offerId === course?.offerId) && (e.status === 'ACTIVE' || e.status === 'COMPLETED')
+      );
+      const enrolledAt = memEnrollment?.enrolledAt || new Date();
+      const dripCheck = calculateLessonDripStatus(lesson as any, enrolledAt, Boolean(isCreatorOrAdmin));
+
+      if (dripCheck.isLocked) {
+        res.status(403).json({
+          success: false,
+          error: 'Forbidden: Cannot complete lesson because it is currently locked on a drip schedule.',
+          details: {
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            unlockDate: dripCheck.unlockDate,
+            daysRemaining: dripCheck.daysRemaining,
+            reason: dripCheck.reason,
+          },
+        });
+        return;
+      }
+
+      let prog = inMemoryStore.lessonProgress.find(
+        (lp) => lp.userId === userId && lp.lessonId === lessonId
+      );
+      if (!prog) {
+        prog = {
+          id: `lp-${Date.now()}`,
+          userId,
+          lessonId,
+          isCompleted: true,
+          completedAt: new Date(),
+          lastWatchedSeconds: lesson.durationSeconds,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        inMemoryStore.lessonProgress.push(prog);
+      } else {
+        prog.isCompleted = true;
+        prog.completedAt = new Date();
+      }
+
+      const allCourseLessons = inMemoryStore.lessons.filter((l) => l.courseId === lesson.courseId);
+      const completedCount = inMemoryStore.lessonProgress.filter(
+        (lp) => lp.userId === userId && lp.isCompleted && allCourseLessons.some((l) => l.id === lp.lessonId)
+      ).length;
+      const progressPercent =
+        allCourseLessons.length > 0
+          ? Math.round((completedCount / allCourseLessons.length) * 100)
+          : 100;
+
+      let certificate: any = null;
+      if (progressPercent >= 100) {
+        try {
+          certificate = await CertificateService.getOrCreateCertificate(userId, lesson.courseId);
+        } catch (certErr) {
+          console.warn('[markLessonComplete fallback] Certificate generation failed:', certErr);
+        }
+      }
+
+      res.status(200).json({
+        success: true,
+        message: `Lesson "${lesson.title}" marked as completed.`,
+        data: {
+          lessonId: lesson.id,
+          isCompleted: true,
+          completedAt: prog.completedAt,
+          courseProgress: {
+            courseId: lesson.courseId,
+            completedLessons: completedCount,
+            totalLessons: allCourseLessons.length,
+            progressPercent,
+            isCourseCompleted: progressPercent >= 100,
+          },
+          certificate,
+        },
+      });
+      return;
+    }
+
     res.status(500).json({
       success: false,
       error: 'Internal server error while marking lesson complete.',

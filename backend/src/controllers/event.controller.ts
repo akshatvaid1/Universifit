@@ -36,7 +36,7 @@ export const createEvent = async (req: AuthenticatedRequest, res: Response): Pro
       return;
     }
 
-    const { title, description, scheduledAt, durationMinutes, capacity, isRecurring, recurrenceRule } = req.body;
+    const { title, description, scheduledAt, durationMinutes, capacity, isRecurring, recurrenceRule, tierAccess, eventOfferId } = req.body;
 
     if (!title || !scheduledAt) {
       res.status(400).json({ success: false, error: 'title and scheduledAt are required.' });
@@ -52,6 +52,8 @@ export const createEvent = async (req: AuthenticatedRequest, res: Response): Pro
       capacity: capacity ? Number(capacity) : undefined,
       isRecurring: Boolean(isRecurring),
       recurrenceRule,
+      tierAccess,
+      eventOfferId,
     });
 
     res.status(201).json({

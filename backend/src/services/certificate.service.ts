@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit';
 import { prisma } from '../config/db.js';
+import { inMemoryStore } from '../config/inMemoryDb.js';
 
 export interface CertificateData {
   certificateNumber: string;
@@ -341,28 +342,68 @@ export class CertificateService {
     }
 
     // 2. Fetch User, Course, Creator Profile, and Enrollment
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
-      include: {
-        creator: {
-          include: {
-            user: true,
+    let user: any = null;
+    try {
+      user = await prisma.user.findUnique({ where: { id: userId } });
+    } catch (_err) {
+      // ignore
+    }
+    if (!user) {
+      user = inMemoryStore.users.find((u) => u.id === userId);
+    }
+
+    let course: any = null;
+    try {
+      course = await prisma.course.findUnique({
+        where: { id: courseId },
+        include: {
+          creator: {
+            include: {
+              user: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (_err) {
+      // ignore
+    }
+
+    if (!course) {
+      const memCourse = inMemoryStore.courses.find((c) => c.id === courseId);
+      if (memCourse) {
+        const memCreator = inMemoryStore.creatorProfiles.find((cp) => cp.id === memCourse.creatorId);
+        const memUser = inMemoryStore.users.find((u) => u.id === memCreator?.userId);
+        course = {
+          ...memCourse,
+          creator: {
+            ...memCreator,
+            user: memUser,
+          },
+        };
+      }
+    }
 
     if (!user || !course) {
       throw new Error('User or Course not found');
     }
 
-    const enrollment = await prisma.enrollment.findFirst({
-      where: {
-        userId,
-        OR: [{ courseId: course.id }, ...(course.offerId ? [{ offerId: course.offerId }] : [])],
-      },
-    });
+    let enrollment: any = null;
+    try {
+      enrollment = await prisma.enrollment.findFirst({
+        where: {
+          userId,
+          OR: [{ courseId: course.id }, ...(course.offerId ? [{ offerId: course.offerId }] : [])],
+        },
+      });
+    } catch (_err) {
+      // ignore
+    }
+
+    if (!enrollment) {
+      enrollment = inMemoryStore.enrollments.find(
+        (e) => e.userId === userId && (e.courseId === course.id || (course.offerId && e.offerId === course.offerId))
+      );
+    }
 
     const buyerName = user.fullName || 'Ascend Athlete';
     const courseTitle = course.title;

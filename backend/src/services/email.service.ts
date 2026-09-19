@@ -10,6 +10,16 @@ export interface EmailPayload {
   text?: string;
 }
 
+export function escapeHtml(str: string | undefined | null): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export class EmailService {
   private static resendApiKey = process.env.RESEND_API_KEY;
   private static sendgridApiKey = process.env.SENDGRID_API_KEY;
@@ -102,9 +112,10 @@ export class EmailService {
     }
   ) {
     const isCreator = data.role === 'CREATOR';
+    const safeName = escapeHtml(data.name);
     const subject = isCreator
-      ? `Welcome to Ascend, Coach ${data.name}! Let's Build Your Storefront 🚀`
-      : `Welcome to Ascend, ${data.name}! Your Journey to Physical Mastery Begins 🌟`;
+      ? `Welcome to Ascend, Coach ${safeName}! Let's Build Your Storefront 🚀`
+      : `Welcome to Ascend, ${safeName}! Your Journey to Physical Mastery Begins 🌟`;
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const destinationUrl = isCreator ? `${frontendUrl}/dashboard` : `${frontendUrl}/discover`;
@@ -118,7 +129,7 @@ export class EmailService {
 
         <div style="background: #16171A; padding: 30px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 25px;">
           <h2 style="color: #F7F4EF; font-size: 22px; margin-top: 0; line-height: 1.3;">
-            Welcome to the Community, ${data.name}! 👋
+            Welcome to the Community, ${safeName}! 👋
           </h2>
           
           <p style="color: rgba(247,244,239,0.85); line-height: 1.6; font-size: 14px;">
@@ -512,6 +523,7 @@ export class EmailService {
       resetCode: string;
     }
   ) {
+    const safeName = escapeHtml(data.name);
     const subject = `Reset Your Ascend Password`;
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #121315; color: #F7F4EF; padding: 40px 20px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(255,255,255,0.1);">
@@ -523,7 +535,7 @@ export class EmailService {
         <div style="background: #16171A; padding: 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 25px;">
           <h2 style="color: #F7F4EF; font-size: 20px; margin-top: 0;">Password Reset Request</h2>
           <p style="color: rgba(247,244,239,0.8); line-height: 1.6; font-size: 14px;">
-            Hello ${data.name}, we received a request to reset your Ascend password. Click the button below to choose a new password:
+            Hello ${safeName}, we received a request to reset your Ascend password. Click the button below to choose a new password:
           </p>
           
           <div style="text-align: center; margin: 25px 0;">
@@ -567,6 +579,7 @@ export class EmailService {
       verificationCode: string;
     }
   ) {
+    const safeName = escapeHtml(data.name);
     const subject = `Verify Your Email — Welcome to Ascend`;
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #121315; color: #F7F4EF; padding: 40px 20px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(255,255,255,0.1);">
@@ -576,7 +589,7 @@ export class EmailService {
         </div>
 
         <div style="background: #16171A; padding: 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 25px;">
-          <h2 style="color: #F7F4EF; font-size: 20px; margin-top: 0;">Welcome to Ascend, ${data.name}! 🚀</h2>
+          <h2 style="color: #F7F4EF; font-size: 20px; margin-top: 0;">Welcome to Ascend, ${safeName}! 🚀</h2>
           <p style="color: rgba(247,244,239,0.8); line-height: 1.6; font-size: 14px;">
             Please verify your email address to activate your account and start your physical transformation journey.
           </p>

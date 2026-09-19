@@ -1,224 +1,144 @@
-import React, { useRef, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Star,
-  Quote,
-  ChevronLeft,
-  ChevronRight,
-  TrendingUp,
-  MapPin,
-  CheckCircle2,
-} from 'lucide-react';
-import { Badge, Card } from './ui';
+import { Star, MessageSquareQuote, ArrowRight } from 'lucide-react';
 
-interface Testimonial {
+export interface RealReviewItem {
   id: string;
-  name: string;
-  location: string;
-  role: string;
-  buyerPhoto: string;
-  quote: string;
-  coachTrainedWith: string;
-  coachAvatar: string;
-  resultStat: string;
+  buyerName: string;
   rating: number;
-  timeframe: string;
-  category: 'Physique' | 'Skincare' | 'Posture' | 'Nutrition';
+  reviewText: string;
+  programTitle: string;
+  verifiedBuyer: boolean;
+  createdAt: string;
 }
 
-const testimonials: Testimonial[] = [];
+interface TestimonialsSectionProps {
+  onExplore?: () => void;
+}
 
-export const TestimonialCarousel: React.FC = () => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+export const TestimonialCarousel: React.FC<TestimonialsSectionProps> = ({ onExplore }) => {
+  const [reviews, setReviews] = useState<RealReviewItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 10);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const { clientWidth } = scrollRef.current;
-      const scrollAmount = direction === 'left' ? -clientWidth * 0.8 : clientWidth * 0.8;
-      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
-
-  if (testimonials.length === 0) {
-    return (
-      <section className="py-16 sm:py-20 lg:py-24 bg-[#0E0E10] border-t border-white/[0.08] relative font-sans">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl border border-white/[0.08] bg-[#16171A]/70 p-8 sm:p-12 text-center flex flex-col items-center justify-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#B8703F]/10 border border-[#B8703F]/20 flex items-center justify-center text-[#B8703F]">
-              <Quote className="w-7 h-7" />
-            </div>
-            <h3 className="text-xl sm:text-2xl font-bold font-display text-[#F7F4EF]">
-              Client Outcomes & Transformation Reviews
-            </h3>
-            <p className="text-sm sm:text-base text-[#F7F4EF]/70 max-w-lg">
-              Verified client outcome stories and transformation milestones will appear here as athletes complete coached protocols.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  useEffect(() => {
+    // Fetch real authenticated client reviews from backend
+    fetch('/api/reviews/creator/creator-chadtag')
+      .then((res) => {
+        if (res.ok) return res.json();
+        return null;
+      })
+      .then((data) => {
+        if (data?.data?.reviews && Array.isArray(data.data.reviews)) {
+          setReviews(data.data.reviews);
+        }
+      })
+      .catch((err) => {
+        console.debug('No reviews currently returned by API:', err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
 
   return (
-    <section className="py-20 lg:py-28 bg-[#16171A] relative overflow-hidden font-sans">
-      {/* Glow Effects */}
-      <div className="absolute top-1/3 right-0 w-96 h-96 bg-[#B8703F]/[0.05] rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 left-10 w-96 h-96 bg-[#6E8B6F]/[0.04] rounded-full blur-3xl pointer-events-none" />
-
+    <section id="testimonials" className="py-16 sm:py-20 lg:py-24 bg-[#F7F7F5] text-[#14161A] border-t border-[#E8E8E6] font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2">
-              <Badge variant="verified" size="sm">
-                Validated Member Outcomes
-              </Badge>
-              <span className="text-xs text-[#F7F4EF]/50 font-medium">
-                Real client transformations
-              </span>
-            </div>
-
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold tracking-tight text-[#F7F4EF]">
-              Transformed with <span className="italic text-[#B8703F]">Universifit</span>
+        {/* Section Header: Plain-language, no eyebrow labels */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+          <div className="space-y-3 max-w-xl">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-sans font-semibold text-[#14161A] tracking-tight">
+              Client Testimonials & Outcomes
             </h2>
-
-            <p className="text-sm sm:text-base text-[#F7F4EF]/70 max-w-xl font-normal">
-              Genuine stories from members who overcame lifestyle, diet, and desk-routine bottlenecks guided by vetted coaches.
+            <p className="text-sm sm:text-base text-[#8B8D91] font-normal leading-relaxed">
+              Real reviews only. Verified feedback submitted by clients and athletes enrolled in creator offerings.
             </p>
           </div>
 
-          {/* Carousel Arrows */}
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
-            <button
-              onClick={() => scroll('left')}
-              disabled={!canScrollLeft}
-              aria-label="Previous testimonials"
-              className={`w-11 h-11 rounded-full border transition-all flex items-center justify-center cursor-pointer shadow-sm ${
-                canScrollLeft
-                  ? 'bg-[#16171A] hover:bg-[#1f2125] text-white border-white/20 hover:border-[#B8703F]'
-                  : 'bg-white/[0.02] text-white/30 border-white/[0.06] cursor-not-allowed'
-              }`}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={() => scroll('right')}
-              disabled={!canScrollRight}
-              aria-label="Next testimonials"
-              className={`w-11 h-11 rounded-full border transition-all flex items-center justify-center cursor-pointer shadow-sm ${
-                canScrollRight
-                  ? 'bg-[#16171A] hover:bg-[#1f2125] text-white border-white/20 hover:border-[#B8703F]'
-                  : 'bg-white/[0.02] text-white/30 border-white/[0.06] cursor-not-allowed'
-              }`}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+          <div className="text-xs font-normal text-[#8B8D91]">
+            100% Authenticated Buyers
           </div>
         </div>
 
-        {/* Carousel Container */}
-        <div
-          ref={scrollRef}
-          onScroll={checkScroll}
-          className="flex gap-6 overflow-x-auto no-scrollbar pb-6 pt-2 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {testimonials.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.08 }}
-              className="w-[340px] sm:w-[410px] shrink-0 snap-start h-full"
-            >
-              <Card
-                variant="charcoal"
-                interactive
-                className="h-full p-6 sm:p-7 flex flex-col justify-between group shadow-xl bg-[#16171A] border-white/[0.09] hover:border-[#B8703F]/40 relative"
+        {/* Real Reviews Grid or Graceful Empty State */}
+        {!isLoading && reviews.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {reviews.map((rev) => (
+              <motion.div
+                key={rev.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-6 rounded-xl bg-white border border-[#E8E8E6] flex flex-col justify-between space-y-4"
               >
-                {/* Quote Icon watermark */}
-                <Quote className="w-8 h-8 text-white/[0.03] absolute top-6 right-6 pointer-events-none" />
-
-                <div>
-                  {/* Rating Stars & Category Pill */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-1">
-                      {[...Array(item.rating)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-amber-500">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${i < Math.round(rev.rating) ? 'fill-current' : 'text-neutral-300'}`}
+                        />
                       ))}
                     </div>
-
-                    <span className="text-[11px] font-semibold text-[#F7F4EF]/60 bg-white/[0.05] px-2.5 py-0.5 rounded-full border border-white/[0.08]">
-                      {item.timeframe}
-                    </span>
+                    {rev.verifiedBuyer && (
+                      <span className="text-xs text-[#8B8D91] font-normal">
+                        Verified Purchase
+                      </span>
+                    )}
                   </div>
 
-                  {/* 2-3 Line Quote */}
-                  <p className="text-sm sm:text-base text-[#F7F4EF]/85 font-normal leading-relaxed italic line-clamp-4 mb-5">
-                    "{item.quote}"
+                  <p className="text-sm text-[#14161A] leading-relaxed font-normal">
+                    "{rev.reviewText}"
                   </p>
-
-                  {/* Result Stat Box in Accent Copper */}
-                  <div className="p-3.5 rounded-2xl bg-[#B8703F]/10 border border-[#B8703F]/25 flex items-start gap-2.5 mb-6">
-                    <div className="w-6 h-6 rounded-lg bg-[#B8703F]/20 text-[#B8703F] flex items-center justify-center shrink-0 mt-0.5">
-                      <TrendingUp className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-xs font-bold text-[#F7F4EF] leading-snug">
-                      {item.resultStat}
-                    </span>
-                  </div>
                 </div>
 
-                {/* Buyer & Coach Info Footer */}
-                <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between gap-3">
-                  {/* Buyer */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={item.buyerPhoto}
-                      alt={`${item.name}, verified Universifit member`}
-                      className="w-10 h-10 rounded-full object-cover ring-2 ring-white/10 shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <h4 className="font-display font-bold text-sm text-[#F7F4EF] flex items-center gap-1 truncate">
-                        <span>{item.name}</span>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#6E8B6F] shrink-0" />
-                      </h4>
-                      <p className="text-[11px] text-[#F7F4EF]/50 flex items-center gap-1 truncate">
-                        <MapPin className="w-3 h-3 text-[#B8703F]" />
-                        <span>{item.location}</span>
-                      </p>
-                    </div>
+                <div className="pt-4 border-t border-[#E8E8E6] flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-semibold text-[#14161A] block">{rev.buyerName}</span>
+                    <span className="text-[#8B8D91]">{rev.programTitle}</span>
                   </div>
-
-                  {/* Coach Trained With Badge */}
-                  <div className="flex items-center gap-1.5 bg-white/[0.04] px-2.5 py-1 rounded-full border border-white/0.06 shrink-0">
-                    <img
-                      src={item.coachAvatar}
-                      alt={`Coach ${item.coachTrainedWith}`}
-                      className="w-4 h-4 rounded-full object-cover"
-                    />
-                    <span className="text-[10px] font-semibold text-[#F7F4EF]/70">
-                      {item.coachTrainedWith.split(' ')[0]}
-                    </span>
-                  </div>
+                  <span className="text-[#8B8D91]">
+                    {new Date(rev.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          /* Graceful Empty State (Real Data Policy: zero fake testimonials) */
+          <div className="rounded-xl border border-[#E8E8E6] bg-white p-8 sm:p-14 text-center max-w-2xl mx-auto flex flex-col items-center space-y-4">
+            <div className="w-12 h-12 rounded-md bg-[#F7F7F5] border border-[#E8E8E6] flex items-center justify-center text-[#14161A]">
+              <MessageSquareQuote className="w-6 h-6 text-[#14161A]" />
+            </div>
+
+            <h3 className="text-xl sm:text-2xl font-semibold font-sans text-[#14161A]">
+              No Client Reviews Submitted Yet
+            </h3>
+
+            <p className="text-sm text-[#8B8D91] leading-relaxed max-w-lg font-normal">
+              Universifit enforces a strict real-data policy. Reviews are published exclusively after paying clients complete their 1-on-1 coaching consultations or curriculum milestones. We do not generate simulated or fabricated testimonials.
+            </p>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (onExplore) {
+                    onExplore();
+                  } else {
+                    const el = document.getElementById('explore-goals') || document.getElementById('explore-creators');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    else window.location.href = '/discover';
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-[#14161A] hover:text-[#3652C4] transition-colors cursor-pointer"
+              >
+                <span>Browse verified programs to get started</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#3652C4]" />
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </section>

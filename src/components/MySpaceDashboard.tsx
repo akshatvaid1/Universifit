@@ -27,6 +27,8 @@ import {
   CheckCircle2,
   Clock,
   X,
+  Shield,
+  Sliders,
 } from 'lucide-react';
 import { Card, Badge, Button, ProgressBar, JoinCallButton } from './ui';
 import { ReviewModal } from './ReviewModal';
@@ -40,12 +42,16 @@ import {
   cancelSubscriptionApi,
   pauseSubscriptionApi,
   resumeSubscriptionApi,
+  requestAccountDeletionApi,
+  exportUserDataApi,
+  clearStoredAuth,
   type BuyerDashboardData,
   type BuyerSubscriptionItem,
   type WishlistItem,
   SAMPLE_BUYER_DASHBOARD,
   SAMPLE_WISHLIST_ITEMS,
 } from '../services/api';
+import { openCookiePreferences, getCookieConsent } from '../services/analytics';
 
 interface MySpaceDashboardProps {
   onResumeCourse?: (courseId: string) => void;
@@ -67,7 +73,7 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
     SAMPLE_BUYER_DASHBOARD.subscriptions || []
   );
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>(SAMPLE_WISHLIST_ITEMS);
-  const [activeTab, setActiveTab] = useState<'courses' | 'subscriptions' | 'bookings' | 'purchases' | 'saved'>('courses');
+  const [activeTab, setActiveTab] = useState<'courses' | 'subscriptions' | 'bookings' | 'purchases' | 'saved' | 'settings'>('courses');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,6 +102,72 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
     creatorName: '',
     programTitle: '',
   });
+
+  // Data Deletion & Privacy Settings Modal State (DPDP Act 2023 & IT Rules 2011)
+  const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState<string>('');
+  const [deleteReason, setDeleteReason] = useState<string>('Privacy concerns');
+  const [deleteFeedback, setDeleteFeedback] = useState<string>('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<boolean>(false);
+
+  // Data Export state
+  const [isExportingData, setIsExportingData] = useState<boolean>(false);
+  const [exportSuccessMessage, setExportSuccessMessage] = useState<string | null>(null);
+
+  const handleExportData = async () => {
+    setIsExportingData(true);
+    setExportSuccessMessage(null);
+    try {
+      const res = await exportUserDataApi();
+      if (res.success && res.data) {
+        const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(res.data, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute('href', dataStr);
+        downloadAnchor.setAttribute('download', `ascend-personal-data-${Date.now()}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        setExportSuccessMessage('Personal data archive downloaded successfully.');
+      } else {
+        setExportSuccessMessage('Unable to export data at this time.');
+      }
+    } catch (e: any) {
+      setExportSuccessMessage('Failed to download data archive.');
+    } finally {
+      setIsExportingData(false);
+    }
+  };
+
+  const handleConfirmAccountDeletion = async () => {
+    if (deleteConfirmationText.trim().toUpperCase() !== 'DELETE') {
+      setDeleteError("Please type 'DELETE' in all caps to confirm.");
+      return;
+    }
+    setIsDeletingAccount(true);
+    setDeleteError(null);
+    try {
+      const res = await requestAccountDeletionApi(
+        deleteConfirmationText,
+        deleteReason,
+        deleteFeedback
+      );
+      if (res.success) {
+        setDeleteSuccess(true);
+        setTimeout(() => {
+          clearStoredAuth();
+          window.location.href = '/';
+        }, 2200);
+      } else {
+        setDeleteError(res.error || 'Failed to process account deletion request.');
+      }
+    } catch (err: any) {
+      setDeleteError(err.message || 'Error processing deletion request.');
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
 
   const loadDashboardData = () => {
     setIsLoading(true);
@@ -489,6 +561,24 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
               <Heart className="w-4 h-4" />
               <span>Saved ({wishlistItems.length})</span>
               {activeTab === 'saved' && (
+                <motion.div
+                  layoutId="tab-underline"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#B8703F]"
+                />
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`pb-3 text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer relative outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121315] rounded-t-lg px-2.5 py-1 ${
+                activeTab === 'settings'
+                  ? 'text-[#B8703F]'
+                  : 'text-[#F7F4EF]/60 hover:text-white'
+              }`}
+            >
+              <Shield className="w-4 h-4" />
+              <span>Account & Privacy</span>
+              {activeTab === 'settings' && (
                 <motion.div
                   layoutId="tab-underline"
                   className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#B8703F]"
@@ -1362,6 +1452,186 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
           </div>
         )}
 
+        {/* ========================================================================= */}
+        {/* TAB 6: SETTINGS & PRIVACY (DPDP Act 2023 & IT Rules 2011) */}
+        {/* ========================================================================= */}
+        {activeTab === 'settings' && (
+          <div className="space-y-8 max-w-4xl">
+            {/* Header */}
+            <div>
+              <h2 className="text-xl sm:text-2xl font-display font-bold text-white tracking-tight">
+                Account & Privacy Controls
+              </h2>
+              <p className="text-xs sm:text-sm text-[#F7F4EF]/60 mt-1 leading-relaxed">
+                Manage your credentials, cookie consent, personal data portability, and erasure rights in compliance with the Digital Personal Data Protection Act (DPDP Act 2023) and Indian IT Rules 2011.
+              </p>
+            </div>
+
+            {/* Profile Overview Card */}
+            <Card variant="charcoal" className="p-6 bg-[#16171A] border-white/[0.08] space-y-5">
+              <div className="flex items-center gap-2 text-[#B8703F] text-xs font-mono font-bold uppercase tracking-wider">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Account Credentials</span>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4 text-xs sm:text-sm">
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-1">
+                  <span className="text-[11px] font-mono text-[#F7F4EF]/40 uppercase">Full Name</span>
+                  <p className="font-bold text-white">{data.user.name}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-1">
+                  <span className="text-[11px] font-mono text-[#F7F4EF]/40 uppercase">Registered Email</span>
+                  <p className="font-bold text-white font-mono">{data.user.email}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-1">
+                  <span className="text-[11px] font-mono text-[#F7F4EF]/40 uppercase">Membership Tier</span>
+                  <p className="font-bold text-[#6E8B6F]">{data.user.tier}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-1">
+                  <span className="text-[11px] font-mono text-[#F7F4EF]/40 uppercase">Ascend Rewards Balance</span>
+                  <p className="font-bold text-[#B8703F] font-mono">{data.user.points || 0} Points</p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Cookie & Tracking Consent Card (Indian IT Rules 2011 & DPDP Act 2023) */}
+            <Card variant="charcoal" className="p-6 bg-[#16171A] border-white/[0.08] space-y-5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider">
+                    <Sliders className="w-4 h-4" />
+                    <span>Cookie & Tracking Preferences</span>
+                  </div>
+                  <h3 className="text-base font-bold text-white">
+                    Indian IT Rules 2011 & DPDP Act 2023 Consent Controls
+                  </h3>
+                  <p className="text-xs text-[#F7F4EF]/60 leading-relaxed max-w-xl">
+                    You have complete autonomy over optional analytics and telemetry cookies. Essential session cookies are strictly required for security, authentication, and PCI-DSS payment compliance.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openCookiePreferences()}
+                  leftIcon={<Sliders className="w-3.5 h-3.5 text-[#B8703F]" />}
+                >
+                  Manage Cookie Consent
+                </Button>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-3 pt-2 text-xs">
+                <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-white">Essential</span>
+                    <Badge variant="neutral" size="sm">Always Active</Badge>
+                  </div>
+                  <p className="text-[11px] text-[#F7F4EF]/50">Auth sessions & CSRF tokens.</p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-white">Analytics</span>
+                    <Badge variant={getCookieConsent()?.analytics ? 'copper' : 'neutral'} size="sm">
+                      {getCookieConsent()?.analytics ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-[#F7F4EF]/50">Cookieless usage metrics.</p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-white">Preferences</span>
+                    <Badge variant={getCookieConsent()?.functional ? 'verified' : 'neutral'} size="sm">
+                      {getCookieConsent()?.functional ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-[#F7F4EF]/50">Volume & playback settings.</p>
+                </div>
+              </div>
+
+              {/* Grievance Officer details per Rule 5(9) */}
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-xs space-y-1">
+                <span className="text-[11px] font-mono text-[#F7F4EF]/50 uppercase block">
+                  Statutory Grievance Redressal Officer (Rule 5(9) IT Rules 2011)
+                </span>
+                <p className="text-[#F7F4EF]/80">
+                  <strong className="text-white">Aditi Sharma</strong> • Grievance Redressal & Data Protection Officer<br />
+                  Email: <a href="mailto:grievance@ascend.fit" className="text-[#B8703F] underline">grievance@ascend.fit</a> • Turnaround SLA: 24–48 hours
+                </p>
+              </div>
+            </Card>
+
+            {/* Data Portability / Export Card */}
+            <Card variant="charcoal" className="p-6 bg-[#16171A] border-white/[0.08] space-y-5">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sky-400 text-xs font-mono font-bold uppercase tracking-wider">
+                    <Download className="w-4 h-4" />
+                    <span>Data Portability (Section 12 DPDP Act 2023)</span>
+                  </div>
+                  <h3 className="text-base font-bold text-white">
+                    Download Your Complete Personal Data Archive
+                  </h3>
+                  <p className="text-xs text-[#F7F4EF]/60 leading-relaxed max-w-xl">
+                    Generate an instant machine-readable JSON export containing your profile details, enrolled courses, completed lessons, consultation appointments, and payment history.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={handleExportData}
+                  isLoading={isExportingData}
+                  leftIcon={<Download className="w-4 h-4 text-sky-400" />}
+                >
+                  Export Data (.JSON)
+                </Button>
+              </div>
+              {exportSuccessMessage && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{exportSuccessMessage}</span>
+                </div>
+              )}
+            </Card>
+
+            {/* Danger Zone: Data Erasure & Account Deletion */}
+            <Card variant="charcoal" className="p-6 bg-rose-500/[0.04] border-rose-500/25 space-y-5">
+              <div className="flex items-center gap-2 text-rose-400 text-xs font-mono font-bold uppercase tracking-wider">
+                <AlertCircle className="w-4 h-4" />
+                <span>Danger Zone • Right to Erasure</span>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-base font-bold text-white">
+                  Request Account & Personal Data Deletion
+                </h3>
+                <p className="text-xs text-[#F7F4EF]/70 leading-relaxed">
+                  Permanently erase your Ascend member account, active enrollments, and personal telemetry. In compliance with the Indian DPDP Act 2023 and GDPR Art. 17:
+                </p>
+                <ul className="list-disc pl-5 text-xs text-[#F7F4EF]/60 space-y-1 leading-relaxed">
+                  <li>Active recurring coaching subscriptions and unredeemed 1:1 consults will be cancelled immediately.</li>
+                  <li>All progress notes, video check-in media, and direct messaging records will be permanently scrubbed.</li>
+                  <li>Statutory tax and financial receipts (GST invoices, Razorpay reference IDs) are retained in an anonymized state for 7 years to satisfy statutory tax audits under Indian law.</li>
+                </ul>
+              </div>
+              <div className="pt-2">
+                <Button
+                  variant="ghost"
+                  size="md"
+                  onClick={() => {
+                    setDeleteModalOpen(true);
+                    setDeleteError(null);
+                    setDeleteSuccess(false);
+                    setDeleteConfirmationText('');
+                  }}
+                  leftIcon={<Trash2 className="w-4 h-4 text-rose-400" />}
+                  className="bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30"
+                >
+                  Delete Account & Data
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
       </main>
 
       {/* Review Modal for Course/Session Ratings (F16) */}
@@ -1482,6 +1752,133 @@ export const MySpaceDashboard: React.FC<MySpaceDashboardProps> = ({
                       className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
                     >
                       Confirm Cancellation
+                    </Button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Account & Data Erasure Confirmation Modal (DPDP Act 2023 / GDPR Art. 17) */}
+      <AnimatePresence>
+        {deleteModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-lg bg-[#16171A] border border-rose-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-6 relative overflow-hidden"
+            >
+              {/* Close Button */}
+              <button
+                type="button"
+                disabled={isDeletingAccount}
+                onClick={() => setDeleteModalOpen(false)}
+                className="absolute top-5 right-5 p-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white/60 hover:text-white transition-all disabled:opacity-40"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {deleteSuccess ? (
+                <div className="text-center py-6 space-y-4">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 mx-auto flex items-center justify-center">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-display font-bold text-white">
+                      Account & Data Erased
+                    </h3>
+                    <p className="text-xs text-[#F7F4EF]/70 max-w-sm mx-auto leading-relaxed">
+                      Your personal data has been erased in compliance with DPDP Act 2023. You are now being signed out...
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center">
+                      <Trash2 className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xl font-display font-bold text-white tracking-tight">
+                      Delete Account & Personal Data?
+                    </h3>
+                    <p className="text-xs text-[#F7F4EF]/60 leading-relaxed">
+                      This action is permanent and cannot be undone. All active curriculums, check-ins, and coaching reservations will be cancelled immediately.
+                    </p>
+                  </div>
+
+                  {deleteError && (
+                    <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{deleteError}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-4 text-xs">
+                    {/* Reason Selector */}
+                    <div className="space-y-1.5">
+                      <label className="font-semibold text-[#F7F4EF]/80">Primary reason for leaving</label>
+                      <select
+                        value={deleteReason}
+                        onChange={(e) => setDeleteReason(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-white focus:border-[#B8703F] focus:outline-none"
+                      >
+                        <option value="Privacy concerns" className="bg-[#16171A]">Privacy or data protection concerns</option>
+                        <option value="No longer using fitness programs" className="bg-[#16171A]">No longer using fitness programs</option>
+                        <option value="Switching platforms" className="bg-[#16171A]">Switching to another platform</option>
+                        <option value="Duplicate account" className="bg-[#16171A]">Created duplicate account</option>
+                        <option value="Other" className="bg-[#16171A]">Other reason</option>
+                      </select>
+                    </div>
+
+                    {/* Feedback (optional) */}
+                    <div className="space-y-1.5">
+                      <label className="font-semibold text-[#F7F4EF]/80">Additional comments (optional)</label>
+                      <textarea
+                        rows={2}
+                        value={deleteFeedback}
+                        onChange={(e) => setDeleteFeedback(e.target.value)}
+                        placeholder="Help us understand how we can improve..."
+                        className="w-full px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.1] text-white focus:border-[#B8703F] focus:outline-none resize-none placeholder:text-white/30"
+                      />
+                    </div>
+
+                    {/* Confirmation typing field */}
+                    <div className="space-y-1.5 p-3.5 rounded-2xl bg-rose-500/[0.06] border border-rose-500/20">
+                      <label className="font-semibold text-rose-300 block">
+                        To confirm, please type <span className="font-mono font-bold bg-rose-500/20 px-1.5 py-0.5 rounded text-white">DELETE</span> below:
+                      </label>
+                      <input
+                        type="text"
+                        value={deleteConfirmationText}
+                        onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                        placeholder="DELETE"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#121315] border border-rose-500/30 text-white font-mono uppercase tracking-widest placeholder:text-white/20 focus:border-rose-400 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <Button
+                      variant="outline"
+                      size="md"
+                      disabled={isDeletingAccount}
+                      onClick={() => setDeleteModalOpen(false)}
+                    >
+                      Keep Account
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      isLoading={isDeletingAccount}
+                      disabled={deleteConfirmationText.trim().toUpperCase() !== 'DELETE'}
+                      onClick={handleConfirmAccountDeletion}
+                      className="bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white font-bold"
+                    >
+                      Permanently Erase My Data
                     </Button>
                   </div>
                 </>

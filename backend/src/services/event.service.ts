@@ -2,7 +2,7 @@
  * EventService — Business logic for creator-hosted group sessions.
  * Operates on inMemoryStore as primary source, Prisma as secondary.
  */
-import { inMemoryStore, MemoryEvent, MemoryEventRSVP, EventStatus, RSVPStatus } from '../config/inMemoryDb.js';
+import { inMemoryStore, MemoryEvent, MemoryEventRSVP, EventStatus, RSVPStatus, TierAccess } from '../config/inMemoryDb.js';
 import { GoogleMeetService } from './google-meet.service.js';
 import { GamificationService } from './gamification.service.js';
 import { MembershipService } from './membership.service.js';
@@ -19,6 +19,8 @@ export interface CreateEventDto {
   capacity?: number;
   isRecurring?: boolean;
   recurrenceRule?: string;
+  tierAccess?: TierAccess;
+  eventOfferId?: string;
 }
 
 export interface UpdateEventDto extends Partial<CreateEventDto> {
@@ -120,6 +122,8 @@ export const EventService = {
       meetingCode: meetResult.meetingCode,
       conferenceId: meetResult.conferenceId,
       calendarEventId: meetResult.calendarEventId,
+      tierAccess: dto.tierAccess ?? 'PAID',
+      eventOfferId: dto.eventOfferId,
       status: 'SCHEDULED',
       createdAt: now,
       updatedAt: now,
@@ -149,6 +153,8 @@ export const EventService = {
     if (dto.capacity !== undefined) event.capacity = dto.capacity;
     if (dto.isRecurring !== undefined) event.isRecurring = dto.isRecurring;
     if (dto.recurrenceRule !== undefined) event.recurrenceRule = dto.recurrenceRule;
+    if (dto.tierAccess !== undefined) event.tierAccess = dto.tierAccess;
+    if (dto.eventOfferId !== undefined) event.eventOfferId = dto.eventOfferId;
     if (dto.status !== undefined) event.status = dto.status;
     event.updatedAt = new Date();
 
@@ -220,7 +226,7 @@ export const EventService = {
         if (!hasOfferAccess) {
           throw new Error('Tier check failed: This event requires a Paid Membership Tier or event pass.');
         }
-      } else if (!tierStatus.isPaidMember) {
+      } else if (event.tierAccess === 'PAID' && !tierStatus.isPaidMember) {
         // Free tier allows community, but paid tier grants full live event RSVP access
         throw new Error('Tier check failed: Full event RSVP access is reserved for Paid Membership Tier members. Upgrade to RSVP.');
       }

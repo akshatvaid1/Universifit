@@ -2,6 +2,7 @@ import { Response } from 'express';
 import fs from 'fs';
 import { AuthenticatedRequest } from '../types/auth.types.js';
 import { prisma } from '../config/db.js';
+import { inMemoryStore } from '../config/inMemoryDb.js';
 import { CertificateService } from '../services/certificate.service.js';
 
 /**
@@ -28,13 +29,32 @@ export const getCertificateForCourse = async (
     }
 
     // 1. Fetch Course and lessons to verify progress
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
-      include: {
-        creator: { include: { user: true } },
-        lessons: true,
-      },
-    });
+    let course: any = null;
+    try {
+      course = await prisma.course.findUnique({
+        where: { id: courseId },
+        include: {
+          creator: { include: { user: true } },
+          lessons: true,
+        },
+      });
+    } catch (_err) {
+      // ignore
+    }
+
+    if (!course) {
+      const memCourse = inMemoryStore.courses.find((c) => c.id === courseId);
+      if (memCourse) {
+        const memCreator = inMemoryStore.creatorProfiles.find((cp) => cp.id === memCourse.creatorId);
+        const memUser = inMemoryStore.users.find((u) => u.id === memCreator?.userId);
+        const memLessons = inMemoryStore.lessons.filter((l) => l.courseId === memCourse.id);
+        course = {
+          ...memCourse,
+          creator: { ...memCreator, user: memUser },
+          lessons: memLessons,
+        };
+      }
+    }
 
     if (!course) {
       res.status(404).json({ success: false, error: 'Course not found.' });
@@ -45,25 +65,47 @@ export const getCertificateForCourse = async (
       course.creator?.userId === userId || req.user.role === 'ADMIN';
 
     // 2. Check enrollment and lesson progress
-    const allLessonIds = course.lessons.map((l) => l.id);
-    const completedCount = await prisma.lessonProgress.count({
-      where: {
-        userId,
-        lessonId: { in: allLessonIds },
-        isCompleted: true,
-      },
-    });
+    const allLessonIds = course.lessons.map((l: any) => l.id);
+    let completedCount = 0;
+    try {
+      completedCount = await prisma.lessonProgress.count({
+        where: {
+          userId,
+          lessonId: { in: allLessonIds },
+          isCompleted: true,
+        },
+      });
+    } catch (_err) {
+      // ignore
+    }
+
+    if (completedCount === 0) {
+      completedCount = inMemoryStore.lessonProgress.filter(
+        (lp) => lp.userId === userId && lp.isCompleted && allLessonIds.includes(lp.lessonId)
+      ).length;
+    }
 
     const totalLessons = allLessonIds.length;
     const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 100;
 
     // Check enrollment status
-    const enrollment = await prisma.enrollment.findFirst({
-      where: {
-        userId,
-        OR: [{ courseId: course.id }, ...(course.offerId ? [{ offerId: course.offerId }] : [])],
-      },
-    });
+    let enrollment: any = null;
+    try {
+      enrollment = await prisma.enrollment.findFirst({
+        where: {
+          userId,
+          OR: [{ courseId: course.id }, ...(course.offerId ? [{ offerId: course.offerId }] : [])],
+        },
+      });
+    } catch (_err) {
+      // ignore
+    }
+
+    if (!enrollment) {
+      enrollment = inMemoryStore.enrollments.find(
+        (e) => e.userId === userId && (e.courseId === course.id || (course.offerId && e.offerId === course.offerId))
+      );
+    }
 
     const isCompleted = progressPercent >= 100 || enrollment?.status === 'COMPLETED' || isCreatorOrAdmin;
 

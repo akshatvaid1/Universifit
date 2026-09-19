@@ -208,7 +208,12 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="messages-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden"
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -218,12 +223,12 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({
         {/* Top Header */}
         <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between bg-[#121315]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#B8703F]/20 text-[#B8703F] flex items-center justify-center border border-[#B8703F]/30">
+            <div className="w-10 h-10 rounded-2xl bg-[#3652C4]/20 text-[#3652C4] flex items-center justify-center border border-[#3652C4]/30">
               <MessageSquare className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-display font-bold text-white tracking-tight">
+                <h3 id="messages-modal-title" className="text-lg font-display font-bold text-white tracking-tight">
                   Direct Messages
                 </h3>
                 <Badge variant="verified" size="sm">
@@ -238,7 +243,8 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="Close messages dialog"
+            className="w-8 h-8 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-[#3652C4]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -255,13 +261,14 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({
             {/* Search Bar */}
             <div className="p-4 border-b border-white/[0.06]">
               <div className="relative">
-                <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
                 <input
                   type="text"
+                  aria-label="Search conversations by coach or program"
                   placeholder="Search coach or program..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#1A1B1E] border border-white/10 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#B8703F]"
+                  className="w-full bg-[#1A1B1E] border border-white/10 rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#3652C4] focus:ring-1 focus:ring-[#3652C4]"
                 />
               </div>
             </div>

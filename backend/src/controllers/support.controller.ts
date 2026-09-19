@@ -3,15 +3,23 @@ import { AuthenticatedRequest } from '../types/auth.types.js';
 import { prisma } from '../config/db.js';
 
 interface CreateTicketBody {
-  category: 'PAYMENT_ISSUE' | 'ACCESS_ISSUE' | 'OTHER';
+  category: 'PAYMENT_ISSUE' | 'ACCESS_ISSUE' | 'REFUND_REQUEST' | 'TECHNICAL_SUPPORT' | 'OTHER';
   subject: string;
   description: string;
   enrollmentId?: string;
   bookingId?: string;
 }
 
+const VALID_TICKET_CATEGORIES = [
+  'PAYMENT_ISSUE',
+  'ACCESS_ISSUE',
+  'REFUND_REQUEST',
+  'TECHNICAL_SUPPORT',
+  'OTHER',
+];
+
 interface UpdateAdminTicketBody {
-  status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+  status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
   adminResponse?: string;
 }
 
@@ -34,10 +42,10 @@ export const createSupportTicket = async (
 
     const { category, subject, description, enrollmentId, bookingId }: CreateTicketBody = req.body;
 
-    if (!category || !['PAYMENT_ISSUE', 'ACCESS_ISSUE', 'OTHER'].includes(category)) {
+    if (!category || !VALID_TICKET_CATEGORIES.includes(category)) {
       res.status(400).json({
         success: false,
-        error: 'Validation Error: "category" must be one of: [PAYMENT_ISSUE, ACCESS_ISSUE, OTHER].',
+        error: `Validation Error: "category" must be one of: [${VALID_TICKET_CATEGORIES.join(', ')}].`,
       });
       return;
     }
@@ -280,7 +288,7 @@ export const updateAdminSupportTicket = async (
     }
 
     const updateData: any = {};
-    if (status && ['OPEN', 'IN_PROGRESS', 'RESOLVED'].includes(status.toUpperCase())) {
+    if (status && ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].includes(status.toUpperCase())) {
       updateData.status = status.toUpperCase();
       if (status.toUpperCase() === 'RESOLVED' && existingTicket.status !== 'RESOLVED') {
         updateData.resolvedAt = new Date();
@@ -323,3 +331,21 @@ export const updateAdminSupportTicket = async (
     });
   }
 };
+
+/**
+ * PATCH /api/support/tickets/admin/:id/resolve
+ * PATCH /admin/tickets/:id/resolve
+ * Admin-only convenience endpoint: marks ticket as RESOLVED with resolution note
+ */
+export const resolveAdminSupportTicket = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  req.body = {
+    ...req.body,
+    status: 'RESOLVED',
+    adminResponse: req.body?.adminResponse || req.body?.resolution || 'Issue investigated and resolved by Ascend Support.',
+  };
+  return updateAdminSupportTicket(req, res);
+};
+

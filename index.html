@@ -13,7 +13,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#121315" />
+    <meta name="theme-color" content="#F7F7F5" />
 
     <!-- Open Graph / Social Sharing -->
     <meta property="og:type" content="website" />
@@ -34,10 +34,14 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="https://universifit.vercel.app/" />
 
-    <!-- Google Fonts: Fraunces (Display) + Inter (Body/UI) -->
+    <!-- Google Fonts: Inter exclusively -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Preconnect for external image CDN to accelerate Largest Contentful Paint (LCP) -->
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+    <link rel="dns-prefetch" href="https://images.unsplash.com">
 
     <!-- Schema.org JSON-LD Structured Data: Organization (Online Marketplace, Not LocalBusiness) -->
     <script type="application/ld+json" id="jsonld-organization">
@@ -57,7 +61,7 @@
     }
     </script>
   </head>
-  <body class="min-h-full bg-[#16171A] text-white antialiased selection:bg-[#B8703F] selection:text-white font-sans">
+  <body class="min-h-full bg-[#F7F7F5] text-[#14161A] antialiased selection:bg-[#3652C4] selection:text-white font-sans">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -8,6 +8,8 @@ import {
   updateCreatorProfile,
   getAvailabilitySchedule,
   updateAvailabilitySchedule,
+  acceptCreatorAgreement,
+  getCreatorAgreementStatus,
 } from '../controllers/creator.controller.js';
 import { createPostForCreator, getPostsForCreator } from '../controllers/community.controller.js';
 import { getCreatorReviews } from '../controllers/review.controller.js';
@@ -36,6 +38,13 @@ import { authenticateJWT, optionalAuthenticateJWT, requireRole } from '../middle
 import { uploadMemory } from '../config/s3.js';
 
 const router = Router();
+
+// POST /creators/accept-agreement & /creators/me/agreement - Checkbox + timestamp acceptance
+router.post('/accept-agreement', authenticateJWT, requireRole('CREATOR', 'ADMIN'), acceptCreatorAgreement);
+router.post('/me/agreement', authenticateJWT, requireRole('CREATOR', 'ADMIN'), acceptCreatorAgreement);
+
+// GET /creators/me/agreement-status - Retrieve acceptance status and legal terms
+router.get('/me/agreement-status', authenticateJWT, requireRole('CREATOR', 'ADMIN'), getCreatorAgreementStatus);
 
 // PUT /creators/profile - Update creator profile details (Creator & Admin only)
 router.put('/profile', authenticateJWT, requireRole('CREATOR', 'ADMIN'), updateCreatorProfile);

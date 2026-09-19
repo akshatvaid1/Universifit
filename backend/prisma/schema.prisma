@@ -87,11 +87,12 @@ enum TierAccess {
 // ----------------------------------------------------
 
 model User {
-  id           String          @id @default(uuid())
-  email        String          @unique
-  passwordHash String
-  fullName     String
+  id                     String          @id @default(uuid())
+  email                  String          @unique
+  passwordHash           String
+  fullName               String
   avatarUrl              String?
+  googleId               String?         @unique
   role                   Role            @default(BUYER)
   points                 Int             @default(0)
   isProfilePrivate       Boolean         @default(false)
@@ -103,51 +104,58 @@ model User {
   updatedAt              DateTime        @updatedAt
 
   // Relations
-  creatorProfile  CreatorProfile?
-  enrollments     Enrollment[]
-  bookings        Booking[]
-  communityPosts  CommunityPost[]
-  postReplies     PostReply[]
-  postLikes       PostLike[]
-  payments        Payment[]
-  lessonProgress  LessonProgress[]
-  sentMessages      Message[] @relation("SentMessages")
-  receivedMessages  Message[] @relation("ReceivedMessages")
-  reviews           Review[]
-  notifications     Notification[]
-  supportTickets    SupportTicket[]
-  wishlistItems     WishlistItem[]
-  certificates      Certificate[]
-  referredBy        Referral?       @relation("ReferredUser")
-  pointsTransactions PointsTransaction[]
-  eventRsvps        EventRSVP[]
+  creatorProfile        CreatorProfile?
+  enrollments           Enrollment[]
+  bookings              Booking[]
+  communityPosts        CommunityPost[]
+  postReplies           PostReply[]
+  postLikes             PostLike[]
+  payments              Payment[]
+  lessonProgress        LessonProgress[]
+  sentMessages          Message[]       @relation("SentMessages")
+  receivedMessages      Message[]       @relation("ReceivedMessages")
+  reviews               Review[]
+  notifications         Notification[]
+  supportTickets        SupportTicket[]
+  wishlistItems         WishlistItem[]
+  certificates          Certificate[]
+  referredBy            Referral?       @relation("ReferredUser")
+  pointsTransactions    PointsTransaction[]
+  eventRsvps            EventRSVP[]
   membershipMemberships MembershipMember[]
+  courseDiscussionPosts CourseDiscussionPost[]
+  courseDiscussionReplies CourseDiscussionReply[]
+  courseDiscussionLikes CourseDiscussionLike[]
 
   @@map("users")
 }
 
 model CreatorProfile {
-  id                 String             @id @default(uuid())
-  userId             String             @unique
-  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  handle             String             @unique
-  headline           String?
-  bio                String?
-  specialtyTags      String[]           @default([])
-  credentials        String[]           @default([])
-  verificationDocs   String[]           @default([]) // S3/R2 stored document URLs
-  verificationStatus VerificationStatus @default(PENDING)
-  rejectionReason    String?
-  verifiedAt         DateTime?
-  rating             Float              @default(5.0)
-  totalClients       Int                @default(0)
-  profileViews       Int                @default(0)
-  referralCode       String?            @unique
-  referralBonus      Decimal            @default(25.00) @db.Decimal(10, 2)
-  agreementAccepted  Boolean            @default(false)
-  agreementAcceptedAt DateTime?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  id                   String             @id @default(uuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  handle               String             @unique
+  headline             String?
+  bio                  String?
+  specialtyTags        String[]           @default([])
+  credentials          String[]           @default([])
+  verificationDocs     String[]           @default([]) // S3/R2 stored document URLs
+  verificationStatus   VerificationStatus @default(PENDING)
+  rejectionReason      String?
+  verifiedAt           DateTime?
+  rating               Float              @default(5.0)
+  totalClients         Int                @default(0)
+  profileViews         Int                @default(0)
+  referralCode         String?            @unique
+  referralBonus        Decimal            @default(25.00) @db.Decimal(10, 2)
+  agreementAccepted    Boolean            @default(false)
+  agreementAcceptedAt  DateTime?
+  payoutMethod         String?            @default("BANK_TRANSFER") // 'BANK_TRANSFER' | 'UPI'
+  payoutDetails        Json?              // { accountHolderName, accountNumber, ifscOrSwift, bankName, upiId, taxId }
+  gstin                String?            // GST Identification Number
+  payoutSetupCompleted Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
   // Relations
   offers           Offer[]
@@ -227,9 +235,10 @@ model Course {
   updatedAt    DateTime       @updatedAt
 
   // Relations
-  lessons      Lesson[]
-  enrollments  Enrollment[]
-  certificates Certificate[]
+  lessons               Lesson[]
+  enrollments           Enrollment[]
+  certificates          Certificate[]
+  discussionPosts       CourseDiscussionPost[]
 
   @@map("courses")
 }
@@ -249,7 +258,8 @@ model Lesson {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
-  progressRecords LessonProgress[]
+  progressRecords       LessonProgress[]
+  discussionPosts       CourseDiscussionPost[]
 
   @@map("lessons")
 }
@@ -752,3 +762,58 @@ model MembershipMember {
   @@index([tierId])
   @@map("membership_members")
 }
+
+// ----------------------------------------------------
+// Course Discussion (Scoped to enrolled students only)
+// ----------------------------------------------------
+
+model CourseDiscussionPost {
+  id          String                 @id @default(uuid())
+  courseId    String
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonId    String?
+  lesson      Lesson?                @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  authorId    String
+  author      User                   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title       String
+  content     String                 @db.Text
+  likesCount  Int                    @default(0)
+  isPinned    Boolean                @default(false)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  // Relations
+  replies     CourseDiscussionReply[]
+  likes       CourseDiscussionLike[]
+
+  @@index([courseId])
+  @@index([lessonId])
+  @@map("course_discussion_posts")
+}
+
+model CourseDiscussionReply {
+  id           String               @id @default(uuid())
+  discussionId String
+  discussion   CourseDiscussionPost @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content      String               @db.Text
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([discussionId])
+  @@map("course_discussion_replies")
+}
+
+model CourseDiscussionLike {
+  id           String               @id @default(uuid())
+  discussionId String
+  discussion   CourseDiscussionPost @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime             @default(now())
+
+  @@unique([userId, discussionId])
+  @@map("course_discussion_likes")
+}
+

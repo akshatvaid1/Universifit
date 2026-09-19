@@ -5,17 +5,17 @@ import {
   validateReferralCode,
   claimReferral,
 } from '../controllers/referral.controller.js';
-import { authenticateJWT, optionalAuth } from '../middleware/auth.middleware.js';
+import { authenticateJWT, requireRole } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
 // Public referral validation
 router.get('/validate/:code', validateReferralCode);
 
-// Creator referral dashboard & code customization
-router.get('/creator/me', optionalAuth, getCreatorReferrals);
-router.get('/creator/:creatorId?', optionalAuth, getCreatorReferrals);
-router.patch('/code', authenticateJWT, updateReferralCode);
+// Creator referral dashboard & code customization (Creator/Admin only)
+router.get('/creator/me', authenticateJWT, requireRole('CREATOR', 'ADMIN'), getCreatorReferrals);
+router.get('/creator/:creatorId?', authenticateJWT, requireRole('CREATOR', 'ADMIN'), getCreatorReferrals);
+router.patch('/code', authenticateJWT, requireRole('CREATOR', 'ADMIN'), updateReferralCode);
 
 // User claim referral
 router.post('/claim', authenticateJWT, claimReferral);

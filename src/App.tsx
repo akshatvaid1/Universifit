@@ -1,13 +1,13 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
-import { TrustStrip } from './components/TrustStrip';
 import { ExploreByGoal } from './components/ExploreByGoal';
 import { VerifiedCoachesCarousel } from './components/VerifiedCoachesCarousel';
-import { TestimonialCarousel } from './components/TestimonialCarousel';
-import { MobileAppBanner } from './components/MobileAppBanner';
 import { CreatorsSection } from './components/CreatorsSection';
+import { TestimonialCarousel } from './components/TestimonialCarousel';
+import { FreeResourcesSection } from './components/FreeResourcesSection';
 import { Footer } from './components/Footer';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
 import type { StaticPageType } from './components/StaticPages';
 
 // Code-split and lazy-load non-homepage routes & heavy modals
@@ -16,6 +16,7 @@ const CreatorProfilePage = lazy(() => import('./components/CreatorProfilePage').
 const CheckoutPage = lazy(() => import('./components/CheckoutPage').then((m) => ({ default: m.CheckoutPage })));
 const CoursePlayerPage = lazy(() => import('./components/CoursePlayerPage').then((m) => ({ default: m.CoursePlayerPage })));
 const CommunityPage = lazy(() => import('./components/CommunityPage').then((m) => ({ default: m.CommunityPage })));
+const CreatorCalendarPage = lazy(() => import('./components/CreatorCalendarPage').then((m) => ({ default: m.CreatorCalendarPage })));
 const MySpaceDashboard = lazy(() => import('./components/MySpaceDashboard').then((m) => ({ default: m.MySpaceDashboard })));
 const CreatorDashboard = lazy(() => import('./components/CreatorDashboard').then((m) => ({ default: m.CreatorDashboard })));
 const AuthPages = lazy(() => import('./components/AuthPages').then((m) => ({ default: m.AuthPages })));
@@ -30,12 +31,12 @@ function RouteLoadingFallback() {
   return (
     <div className="min-h-[50vh] flex flex-col items-center justify-center py-20 px-4">
       <div className="relative flex items-center justify-center">
-        <div className="w-14 h-14 rounded-2xl border-2 border-white/10 border-t-[#B8703F] animate-spin" />
-        <div className="absolute w-7 h-7 rounded-xl bg-[#16171A] flex items-center justify-center font-display font-black text-xs text-[#E29A68]">
+        <div className="w-12 h-12 rounded-lg border-2 border-[#E8E8E6] border-t-[#3652C4] animate-spin" />
+        <div className="absolute w-6 h-6 rounded-md bg-[#14161A] flex items-center justify-center font-sans font-bold text-xs text-white">
           U
         </div>
       </div>
-      <p className="mt-4 text-xs font-mono text-[#F7F4EF]/50 tracking-wider uppercase animate-pulse">
+      <p className="mt-4 text-xs font-sans text-[#8B8D91] tracking-wider uppercase">
         Loading Universifit...
       </p>
     </div>
@@ -58,9 +59,10 @@ import {
   clearCourseSchema,
   clearCreatorSchema,
 } from './utils/seo';
+import { initAnalytics, trackPageView } from './services/analytics';
 
 export function App() {
-  const [currentRoute, setCurrentRoute] = useState<'home' | 'discover' | 'creator' | 'checkout' | 'course' | 'community' | 'myspace' | 'dashboard' | 'auth' | 'admin-creators' | 'static' | 'forbidden' | 'not-found'>('home');
+  const [currentRoute, setCurrentRoute] = useState<'home' | 'discover' | 'creator' | 'checkout' | 'course' | 'community' | 'calendar' | 'myspace' | 'dashboard' | 'auth' | 'admin-creators' | 'static' | 'forbidden' | 'not-found'>('home');
   const [currentUser, setCurrentUser] = useState<AuthUserData | null>(() => getStoredUser());
   const [forbiddenRequiredRole, setForbiddenRequiredRole] = useState<'CREATOR' | 'ADMIN' | 'BUYER'>('CREATOR');
   const [staticPage, setStaticPage] = useState<StaticPageType>('privacy');
@@ -204,6 +206,12 @@ export function App() {
           : hash.replace('#creator/', '').replace('/community', '');
         setSelectedCreatorId(id || '');
         setCurrentRoute('community');
+      } else if (path.includes('/calendar') || hash.includes('/calendar')) {
+        const id = path.includes('/calendar')
+          ? path.replace('/creator/', '').replace('/calendar', '')
+          : hash.replace('#creator/', '').replace('/calendar', '');
+        setSelectedCreatorId(id || '');
+        setCurrentRoute('calendar');
       } else if (path.startsWith('/course/') || hash.startsWith('#course/')) {
         const id = path.startsWith('/course/')
           ? path.replace('/course/', '')
@@ -288,6 +296,16 @@ export function App() {
       window.removeEventListener('hashchange', handleLocationChange);
     };
   }, []);
+
+  // Initialize privacy-respecting analytics client (PostHog cookieless / memory mode)
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  // Track page views per route change without PII
+  useEffect(() => {
+    trackPageView(currentRoute, window.location.pathname);
+  }, [currentRoute]);
 
   // Manage JSON-LD structured data lifecycle per route (Organization on home, cleanups elsewhere)
   useEffect(() => {
@@ -519,7 +537,12 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#16171A] text-[#F7F4EF] flex flex-col font-sans selection:bg-[#B8703F] selection:text-white">
+    <div className="min-h-screen bg-[#F7F7F5] text-[#14161A] flex flex-col font-sans selection:bg-[#3652C4] selection:text-white">
+      {/* Skip-to-content Link for Screen Readers and Keyboard Navigation */}
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+
       {/* Header with Role-Gated Controls & Notification Bell */}
       {currentRoute !== 'auth' && currentRoute !== 'admin-creators' && currentRoute !== 'static' && (
         <Header
@@ -549,7 +572,7 @@ export function App() {
       )}
 
       {/* Main Content Router with Suspense Code-Splitting */}
-      <main className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         <Suspense fallback={<RouteLoadingFallback />}>
           {currentRoute === 'not-found' ? (
             /* Custom 404 Page Not Found */
@@ -610,6 +633,39 @@ export function App() {
                 setCurrentRoute('creator');
                 window.history.pushState({}, '', `/creator/${encodeURIComponent(selectedCreatorId)}`);
               }}
+              onNavigateToCalendar={(id) => {
+                setSelectedCreatorId(id);
+                setCurrentRoute('calendar');
+                window.history.pushState({}, '', `/creator/${encodeURIComponent(id)}/calendar`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onNavigateToProfile={(id) => {
+                setSelectedCreatorId(id);
+                setCurrentRoute('creator');
+                window.history.pushState({}, '', `/creator/${encodeURIComponent(id)}`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          ) : currentRoute === 'calendar' ? (
+            /* /creator/[id]/calendar Event List & RSVP View */
+            <CreatorCalendarPage
+              creatorId={selectedCreatorId}
+              onBack={() => {
+                setCurrentRoute('creator');
+                window.history.pushState({}, '', `/creator/${encodeURIComponent(selectedCreatorId)}`);
+              }}
+              onNavigateToCommunity={(id) => {
+                setSelectedCreatorId(id);
+                setCurrentRoute('community');
+                window.history.pushState({}, '', `/creator/${encodeURIComponent(id)}/community`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onNavigateToProfile={(id) => {
+                setSelectedCreatorId(id);
+                setCurrentRoute('creator');
+                window.history.pushState({}, '', `/creator/${encodeURIComponent(id)}`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             />
           ) : currentRoute === 'course' ? (
             /* /course/[id] Video Player & Lesson Sidebar View */
@@ -664,6 +720,18 @@ export function App() {
               onNavigateDiscover={(cat) => handleNavigateDiscover(cat)}
               onSelectCourse={handleNavigateCourse}
               onBookOffer={handleBookOffer}
+              onNavigateCommunity={(id) => {
+                setSelectedCreatorId(id);
+                setCurrentRoute('community');
+                window.history.pushState({}, '', `/creator/${encodeURIComponent(id)}/community`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onNavigateCalendar={(id) => {
+                setSelectedCreatorId(id);
+                setCurrentRoute('calendar');
+                window.history.pushState({}, '', `/creator/${encodeURIComponent(id)}/calendar`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             />
           ) : currentRoute === 'discover' ? (
             /* /discover View with Filter Sidebar & Results Grid */
@@ -677,40 +745,40 @@ export function App() {
           ) : (
             /* Landing Page View */
             <>
-              {/* Hero with Fraunces headline & asymmetric coach visual */}
-              <Hero onGetStarted={() => handleOpenAuth('register')} />
+              {/* Hero: Plain-language, real product description, one CTA */}
+              <Hero
+                onExploreCommunities={handleNavigateDiscover}
+                onGetStarted={() => handleOpenAuth('register')}
+              />
 
-              {/* Trust Strip with accent-copper numerals & 4 stat cards */}
-              <TrustStrip />
-
-              {/* Explore by Goal */}
+              {/* Category Grid: Real DB Categories */}
               <ExploreByGoal onSelectCategory={handleSelectGoalCategory} />
 
-              {/* Verified Coaches, Real Results (editorial-style horizontal spotlight) */}
+              {/* Featured Creators Section: Real data, no fake stats */}
               <VerifiedCoachesCarousel onBookCoach={handleBookCoach} />
 
-              {/* Testimonial Carousel with 5 India-context genuine quotes */}
-              <TestimonialCarousel />
-
-              {/* Join on the go Banner Section */}
-              <MobileAppBanner />
-
               {/* Explore Creators Section with Link to Discover */}
-              <div className="bg-[#121315] py-6 border-t border-white/[0.08] text-center">
+              <div className="bg-[#F7F7F5] py-8 border-t border-[#E8E8E6] text-center">
                 <button
                   onClick={() => handleNavigateDiscover()}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#B8703F] hover:text-[#d48b59] transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-[#14161A] hover:text-[#3652C4] transition-colors cursor-pointer"
                 >
                   <span>Looking for advanced filters? Open Full Discover Experience &rarr;</span>
                 </button>
               </div>
               <CreatorsSection onBookCreator={handleBookCoach} />
+
+              {/* Testimonials: Real reviews only, graceful empty state */}
+              <TestimonialCarousel onExplore={handleNavigateDiscover} />
+
+              {/* Free Resources Section */}
+              <FreeResourcesSection />
             </>
           )}
         </Suspense>
       </main>
 
-      {/* Multi-Column Footer */}
+      {/* Multi-Column Footer: Buyers, Creators, Company, Legal */}
       {currentRoute !== 'auth' && currentRoute !== 'admin-creators' && currentRoute !== 'static' && (
         <Footer
           currentUser={currentUser}
@@ -720,6 +788,9 @@ export function App() {
           onNavigateDiscover={handleNavigateDiscover}
           onSelectCourse={handleNavigateCourse}
           onOpenSupport={() => handleOpenSupport('OTHER')}
+          onOpenAuth={handleOpenAuth}
+          onNavigateMySpace={handleNavigateMySpace}
+          onNavigateDashboard={handleNavigateDashboard}
         />
       )}
 
@@ -747,6 +818,9 @@ export function App() {
           />
         </Suspense>
       )}
+
+      {/* Cookie Consent & Privacy Preference Banner (Indian IT Rules 2011 & DPDP Act 2023 compliant) */}
+      <CookieConsentBanner onNavigateStatic={handleNavigateStatic} />
     </div>
   );
 }

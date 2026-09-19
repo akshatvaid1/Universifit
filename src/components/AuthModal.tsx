@@ -20,6 +20,7 @@ import {
   verifyEmailApi,
   resendVerificationApi,
 } from '../services/api';
+import { trackSignup } from '../services/analytics';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -146,6 +147,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         });
 
         if (res.success && res.user) {
+          trackSignup(res.user.id, res.user.role || 'BUYER', 'email');
           setInfoMessage(`Verification code dispatched to ${email.trim()}.`);
           setMode('verify');
           setResendCooldown(60);

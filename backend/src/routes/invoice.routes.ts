@@ -4,17 +4,18 @@ import {
   getMyInvoices,
   getCreatorInvoices,
 } from '../controllers/invoice.controller.js';
-import { authenticateJWT, optionalAuth } from '../middleware/auth.middleware.js';
+import { authenticateJWT, requireRole } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
 // Public / Token-authenticated PDF download stream
 router.get('/:invoiceNumber/download', downloadInvoicePdf);
+router.get('/:invoiceNumber', downloadInvoicePdf);
 
-// Buyer Invoices
-router.get('/user/me', optionalAuth, getMyInvoices);
+// Buyer Invoices (Authenticated buyer only)
+router.get('/user/me', authenticateJWT, getMyInvoices);
 
-// Creator Invoices
-router.get('/creator/me', optionalAuth, getCreatorInvoices);
+// Creator Invoices (Authenticated creator/admin only)
+router.get('/creator/me', authenticateJWT, requireRole('CREATOR', 'ADMIN'), getCreatorInvoices);
 
 export default router;

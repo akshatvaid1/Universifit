@@ -68,7 +68,7 @@ function enrichCourse(c: MemoryCourse, include?: any) {
   if (include?.lessons) {
     clone.lessons = inMemoryStore.lessons
       .filter((l) => l.courseId === c.id)
-      .sort((a, b) => a.order - b.order);
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
   }
   if (include?.creator) {
     const creator = inMemoryStore.creatorProfiles.find((cp) => cp.id === c.creatorId);
@@ -300,6 +300,19 @@ const memoryDb = {
       return memoryDb.user.create({ data: create, include });
     },
     count: async () => inMemoryStore.users.length,
+    delete: async (args: any) => {
+      const { where } = args;
+      const index = inMemoryStore.users.findIndex(
+        (u) => (where.id && u.id === where.id) || (where.email && u.email.toLowerCase() === where.email.toLowerCase())
+      );
+      if (index === -1) throw new Error('User not found');
+      const removed = inMemoryStore.users.splice(index, 1)[0];
+      inMemoryStore.enrollments = inMemoryStore.enrollments.filter((e) => e.userId !== removed.id);
+      inMemoryStore.bookings = inMemoryStore.bookings.filter((b) => b.userId !== removed.id);
+      inMemoryStore.lessonProgress = inMemoryStore.lessonProgress.filter((p) => p.userId !== removed.id);
+      inMemoryStore.wishlistItems = inMemoryStore.wishlistItems.filter((w) => w.userId !== removed.id);
+      return removed;
+    },
   },
 
   creatorProfile: {
@@ -499,6 +512,23 @@ const memoryDb = {
       inMemoryStore.courses.push(newCourse);
       return enrichCourse(newCourse, include);
     },
+    update: async (args: any) => {
+      const { where, data, include } = args;
+      const course = inMemoryStore.courses.find((c) => c.id === where.id);
+      if (!course) throw new Error('Course not found');
+      if (data.title !== undefined) course.title = data.title;
+      if (data.description !== undefined) course.description = data.description;
+      if (data.thumbnailUrl !== undefined) course.thumbnailUrl = data.thumbnailUrl;
+      if (data.isPublished !== undefined) course.isPublished = data.isPublished;
+      course.updatedAt = new Date();
+      return enrichCourse(course, include);
+    },
+    delete: async (args: any) => {
+      const { where } = args;
+      const idx = inMemoryStore.courses.findIndex((c) => c.id === where.id);
+      if (idx === -1) throw new Error('Course not found');
+      return inMemoryStore.courses.splice(idx, 1)[0];
+    },
   },
 
   lesson: {
@@ -515,10 +545,87 @@ const memoryDb = {
     },
     findMany: async (args?: any) => {
       const where = args?.where || {};
-      return inMemoryStore.lessons.filter((l) => {
+      let list = inMemoryStore.lessons.filter((l) => {
         if (where.courseId && l.courseId !== where.courseId) return false;
         return true;
       });
+      if (args?.orderBy?.order === 'asc') {
+        list = [...list].sort((a, b) => (a.order || 0) - (b.order || 0));
+      }
+      return list;
+    },
+    create: async (args: any) => {
+      const { data } = args;
+      const newLesson: MemoryLesson = {
+        id: data.id || `lesson-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        courseId: data.courseId,
+        title: data.title || 'Untitled Lesson',
+        description: data.description || '',
+        videoUrl: data.videoUrl || '',
+        durationSeconds: data.durationSeconds || 0,
+        order: data.order !== undefined ? data.order : inMemoryStore.lessons.filter(l => l.courseId === data.courseId).length + 1,
+        dripDays: data.dripDays || 0,
+        dripDate: data.dripDate || undefined,
+        isPreview: data.isPreview !== undefined ? data.isPreview : false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      inMemoryStore.lessons.push(newLesson);
+      return newLesson;
+    },
+    createMany: async (args: any) => {
+      const { data } = args;
+      const items = Array.isArray(data) ? data : [data];
+      const created: MemoryLesson[] = [];
+      for (const d of items) {
+        const l: MemoryLesson = {
+          id: d.id || `lesson-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          courseId: d.courseId,
+          title: d.title || 'Untitled Lesson',
+          description: d.description || '',
+          videoUrl: d.videoUrl || '',
+          durationSeconds: d.durationSeconds || 0,
+          order: d.order || created.length + 1,
+          dripDays: d.dripDays || 0,
+          dripDate: d.dripDate || undefined,
+          isPreview: d.isPreview !== undefined ? d.isPreview : false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        inMemoryStore.lessons.push(l);
+        created.push(l);
+      }
+      return { count: created.length };
+    },
+    update: async (args: any) => {
+      const { where, data } = args;
+      const l = inMemoryStore.lessons.find((item) => item.id === where.id);
+      if (!l) throw new Error('Lesson not found');
+      if (data.title !== undefined) l.title = data.title;
+      if (data.description !== undefined) l.description = data.description;
+      if (data.videoUrl !== undefined) l.videoUrl = data.videoUrl;
+      if (data.durationSeconds !== undefined) l.durationSeconds = data.durationSeconds;
+      if (data.order !== undefined) l.order = data.order;
+      if (data.dripDays !== undefined) l.dripDays = data.dripDays;
+      if (data.dripDate !== undefined) l.dripDate = data.dripDate;
+      if (data.isPreview !== undefined) l.isPreview = data.isPreview;
+      l.updatedAt = new Date();
+      return l;
+    },
+    delete: async (args: any) => {
+      const { where } = args;
+      const idx = inMemoryStore.lessons.findIndex((item) => item.id === where.id);
+      if (idx === -1) throw new Error('Lesson not found');
+      return inMemoryStore.lessons.splice(idx, 1)[0];
+    },
+    deleteMany: async (args: any) => {
+      const where = args?.where || {};
+      const initialLen = inMemoryStore.lessons.length;
+      inMemoryStore.lessons = inMemoryStore.lessons.filter((l) => {
+        if (where.courseId && l.courseId === where.courseId) return false;
+        return true;
+      });
+      return { count: initialLen - inMemoryStore.lessons.length };
     },
   },
 
@@ -603,7 +710,18 @@ const memoryDb = {
         if (where.userId && e.userId !== where.userId) return false;
         if (where.offerId && e.offerId !== where.offerId) return false;
         if (where.courseId && e.courseId !== where.courseId) return false;
-        if (where.status && e.status !== where.status) return false;
+        if (where.status) {
+          if (typeof where.status === 'string' && e.status !== where.status) return false;
+          if (typeof where.status === 'object' && where.status.in && Array.isArray(where.status.in) && !where.status.in.includes(e.status)) return false;
+        }
+        if (where.OR && Array.isArray(where.OR)) {
+          const matchesAny = where.OR.some((cond: any) => {
+            if (cond.courseId && e.courseId === cond.courseId) return true;
+            if (cond.offerId && e.offerId === cond.offerId) return true;
+            return false;
+          });
+          if (!matchesAny) return false;
+        }
         if (where.razorpaySubscriptionId && e.razorpaySubscriptionId !== where.razorpaySubscriptionId) return false;
         return true;
       });
@@ -620,7 +738,10 @@ const memoryDb = {
       const where = args?.where || {};
       const list = inMemoryStore.enrollments.filter((e) => {
         if (where.userId && e.userId !== where.userId) return false;
-        if (where.status && e.status !== where.status) return false;
+        if (where.status) {
+          if (typeof where.status === 'string' && e.status !== where.status) return false;
+          if (typeof where.status === 'object' && where.status.in && Array.isArray(where.status.in) && !where.status.in.includes(e.status)) return false;
+        }
         if (where.isRecurring !== undefined && e.isRecurring !== where.isRecurring) return false;
         if (where.offer?.creatorId) {
           const off = inMemoryStore.offers.find((o) => o.id === e.offerId);
@@ -815,6 +936,7 @@ const memoryDb = {
     findMany: async (args?: any) => {
       const where = args?.where || {};
       let list = inMemoryStore.communityPosts.filter((p) => {
+        if (where.creatorId && p.creatorId !== where.creatorId) return false;
         if (where.category && p.category !== where.category) return false;
         return true;
       });
@@ -832,6 +954,7 @@ const memoryDb = {
         content: data.content,
         category: data.category || 'General',
         likesCount: 0,
+        tierAccess: data.tierAccess || 'FREE',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -855,7 +978,12 @@ const memoryDb = {
       return enrichPost(p, include);
     },
     count: async (args?: any) => {
-      return inMemoryStore.communityPosts.length;
+      const where = args?.where || {};
+      return inMemoryStore.communityPosts.filter((p) => {
+        if (where.creatorId && p.creatorId !== where.creatorId) return false;
+        if (where.category && p.category !== where.category) return false;
+        return true;
+      }).length;
     },
   },
 

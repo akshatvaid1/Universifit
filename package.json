@@ -16,10 +16,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@sentry/react": "^10.74.0",
     "@tailwindcss/vite": "^4.3.3",
     "clsx": "^2.1.1",
     "framer-motion": "^13.1.1",
     "lucide-react": "^1.39.0",
+    "posthog-js": "^1.429.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwind-merge": "^3.6.0",

@@ -16,11 +16,11 @@ import {
   RotateCcw,
   ShieldCheck,
   Pencil,
-  Sparkles,
   Heart,
-  Play,
+  Check,
+  Calendar,
 } from 'lucide-react';
-import { Card, Badge, Button, Breadcrumbs } from './ui';
+import { Button, Breadcrumbs } from './ui';
 import { ReviewModal } from './ReviewModal';
 import {
   fetchCreatorById,
@@ -35,6 +35,7 @@ import {
   type ReviewItem,
 } from '../services/api';
 import { updatePageMetadata, setCreatorSchema, clearCreatorSchema, getCreatorOgImageUrl } from '../utils/seo';
+import { trackCheckoutStart } from '../services/analytics';
 
 interface CreatorProfilePageProps {
   creatorId: string;
@@ -43,6 +44,8 @@ interface CreatorProfilePageProps {
   onNavigateDiscover?: (category?: string) => void;
   onSelectCourse?: (courseId: string) => void;
   onBookOffer?: (offer: CreatorOffer, creator: CreatorItem) => void;
+  onNavigateCommunity?: (creatorId: string) => void;
+  onNavigateCalendar?: (creatorId: string) => void;
 }
 
 export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
@@ -50,8 +53,10 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   onBack,
   onNavigateHome,
   onNavigateDiscover,
-  onSelectCourse,
+  onSelectCourse: _onSelectCourse,
   onBookOffer,
+  onNavigateCommunity,
+  onNavigateCalendar,
 }) => {
   const [creator, setCreator] = useState<CreatorItem | null>(null);
   const [offers, setOffers] = useState<CreatorOffer[]>([]);
@@ -110,7 +115,6 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     e.stopPropagation();
     const isCurrentlySaved = savedOfferIds.has(offer.id);
 
-    // Optimistic state update
     setSavedOfferIds((prev) => {
       const next = new Set(prev);
       if (isCurrentlySaved) next.delete(offer.id);
@@ -121,7 +125,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     setToastMessage(
       isCurrentlySaved
         ? `Removed "${offer.title}" from saved items.`
-        : `Saved "${offer.title}" to your Wishlist! ❤️`
+        : `Saved "${offer.title}" to your wishlist.`
     );
     setTimeout(() => setToastMessage(null), 3000);
 
@@ -132,12 +136,19 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     }
   };
 
+  const handleProceedToCheckout = (offer: CreatorOffer) => {
+    trackCheckoutStart(offer.id, Number(offer.price), offer.currency || 'USD', creator?.id);
+    if (onBookOffer && creator) {
+      onBookOffer(offer, creator);
+    }
+  };
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     loadProfileData();
   }, [creatorId]);
 
-  // Dynamic Per-Creator SEO Metadata Injection (Title, Description, OG Image & Profile Type)
+  // Per-Creator SEO Metadata Injection
   useEffect(() => {
     if (creator && creator.fullName) {
       const bioSnippet = creator.bio
@@ -161,7 +172,6 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         canonicalUrl: `${window.location.origin}/creator/${encodeURIComponent(creator.handle || creator.id || creatorId)}`,
       });
 
-      // Inject Schema.org Person & ProfessionalService Structured Data (Online, Not LocalBusiness)
       setCreatorSchema({
         id: creator.id || creatorId,
         fullName: creator.fullName,
@@ -199,159 +209,127 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const getFormatIcon = (type?: string) => {
+  const getFormatLabel = (type?: string) => {
     switch (type) {
       case 'COURSE':
-        return <BookOpen className="w-4 h-4 text-[#B8703F]" />;
+        return 'Video Curriculum';
       case 'COMMUNITY':
-        return <Users className="w-4 h-4 text-[#6E8B6F]" />;
+        return 'Group Cohort';
       default:
-        return <Video className="w-4 h-4 text-sky-400" />;
+        return '1-on-1 Coaching';
     }
   };
 
-  const getFormatBadge = (type?: string) => {
+  const getFormatIcon = (type?: string) => {
     switch (type) {
       case 'COURSE':
-        return <Badge variant="copper" size="sm">Video Course</Badge>;
+        return <BookOpen className="w-3.5 h-3.5 text-[#3652C4]" />;
       case 'COMMUNITY':
-        return <Badge variant="verified" size="sm">Group Cohort</Badge>;
+        return <Users className="w-3.5 h-3.5 text-[#3652C4]" />;
       default:
-        return <Badge variant="neutral" size="sm">1-on-1 Coaching</Badge>;
+        return <Video className="w-3.5 h-3.5 text-[#3652C4]" />;
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#16171A] text-[#F7F4EF] font-sans pb-32">
-        {/* Top Navigation Skeleton */}
-        <div className="border-b border-white/[0.08] bg-[#121315]/80 backdrop-blur-md sticky top-20 z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 text-xs font-semibold text-[#F7F4EF]/70 hover:text-white transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4 text-[#B8703F]" />
-              <span>Back to Discovery</span>
-            </button>
-            <div className="w-24 h-7 rounded-full bg-white/[0.04] animate-pulse" />
+      <div className="min-h-screen bg-[#F7F7F5] text-[#14161A] font-sans pb-32">
+        <div className="border-b border-[#E8E8E6] bg-white py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <div className="h-4 w-32 bg-[#F7F7F5] rounded animate-pulse" />
+            <div className="h-7 w-20 bg-[#F7F7F5] rounded-md animate-pulse" />
           </div>
         </div>
 
-        {/* Hero Profile Skeleton */}
-        <section className="bg-gradient-to-b from-[#121315] via-[#16171A] to-[#16171A] pt-8 pb-12 border-b border-white/[0.08]">
+        <div className="bg-white border-b border-[#E8E8E6] py-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-pulse">
-              <div className="lg:col-span-4 h-[380px] rounded-3xl bg-white/[0.04] border border-white/[0.08]" />
-              <div className="lg:col-span-8 space-y-6">
-                <div className="space-y-3">
-                  <div className="h-6 w-32 bg-white/[0.06] rounded-full" />
-                  <div className="h-10 w-3/4 bg-white/[0.08] rounded-xl" />
-                  <div className="h-4 w-full bg-white/[0.04] rounded" />
-                  <div className="h-4 w-2/3 bg-white/[0.04] rounded" />
-                </div>
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/[0.06]">
-                  {[1, 2, 3].map((n) => (
-                    <div key={n} className="h-20 rounded-2xl bg-white/[0.03] border border-white/[0.06]" />
-                  ))}
-                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pulse">
+              <div className="lg:col-span-4 h-80 rounded-xl bg-[#F7F7F5] border border-[#E8E8E6]" />
+              <div className="lg:col-span-8 space-y-4">
+                <div className="h-6 w-36 bg-[#F7F7F5] rounded" />
+                <div className="h-9 w-2/3 bg-[#F7F7F5] rounded" />
+                <div className="h-4 w-1/3 bg-[#F7F7F5] rounded" />
+                <div className="h-24 w-full bg-[#F7F7F5] rounded" />
               </div>
             </div>
           </div>
-        </section>
-
-        {/* Offers Skeleton */}
-        <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pulse">
-            <div className="lg:col-span-8 space-y-4">
-              <div className="h-6 w-48 bg-white/[0.06] rounded" />
-              <Card variant="charcoal" className="p-6 bg-[#16171A] border-white/[0.08] h-40" />
-              <Card variant="charcoal" className="p-6 bg-[#16171A] border-white/[0.08] h-40" />
-            </div>
-            <div className="lg:col-span-4">
-              <Card variant="charcoal" className="p-6 bg-[#16171A] border-white/[0.08] h-80" />
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
     );
   }
 
   if (error || !creator) {
     return (
-      <div className="min-h-screen bg-[#16171A] text-[#F7F4EF] font-sans pb-32 flex flex-col justify-center items-center px-4">
-        <Card
-          variant="charcoal"
-          className="p-8 sm:p-10 max-w-lg w-full text-center space-y-6 border-rose-500/30 bg-[#121315] shadow-2xl my-16"
-        >
-          <div className="w-16 h-16 rounded-3xl bg-rose-500/15 border border-rose-500/30 text-rose-400 mx-auto flex items-center justify-center">
-            <AlertCircle className="w-8 h-8" />
+      <div className="min-h-screen bg-[#F7F7F5] text-[#14161A] font-sans pb-32 flex flex-col justify-center items-center px-4">
+        <div className="p-8 max-w-lg w-full text-center space-y-5 my-16 bg-white border border-[#E8E8E6] rounded-xl">
+          <div className="w-12 h-12 rounded-md bg-[#F7F7F5] border border-[#E8E8E6] text-rose-600 mx-auto flex items-center justify-center">
+            <AlertCircle className="w-6 h-6" />
           </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-display font-bold text-white tracking-tight">
+          <div className="space-y-1.5">
+            <h1 className="text-xl font-semibold text-[#14161A] tracking-tight">
               Coach Profile Unavailable
             </h1>
-            <p className="text-xs sm:text-sm text-[#F7F4EF]/60 leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#8B8D91] leading-relaxed font-normal">
               We were unable to load this coach's curriculum and consultation schedules. The practitioner may have updated their handle or temporarily paused new bookings.
             </p>
           </div>
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
             <Button
               variant="primary"
-              size="md"
+              size="sm"
               onClick={loadProfileData}
-              leftIcon={<RotateCcw className="w-4 h-4" />}
+              leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
             >
-              Retry Loading Profile
+              Retry
             </Button>
             <Button
               variant="outline"
-              size="md"
+              size="sm"
               onClick={onBack}
             >
               Return to Discover
             </Button>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#16171A] text-[#F7F4EF] font-sans pb-32">
+    <div className="min-h-screen bg-[#F7F7F5] text-[#14161A] font-sans pb-32">
       
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-24 right-6 z-50 p-4 rounded-2xl bg-[#6E8B6F] text-black font-bold text-xs shadow-2xl flex items-center gap-2 border border-white/20"
+            exit={{ opacity: 0, y: -16 }}
+            className="fixed top-24 right-6 z-50 px-4 py-2.5 rounded-lg bg-[#14161A] text-white text-xs font-medium flex items-center gap-2"
           >
-            <CheckCircle2 className="w-4 h-4" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Top Navigation & Breadcrumb Bar */}
-      <div className="border-b border-white/[0.08] bg-[#121315]/80 backdrop-blur-md sticky top-20 z-40">
+      <div className="border-b border-[#E8E8E6] bg-white sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={onBack}
-              className="flex items-center gap-1.5 text-xs font-semibold text-[#F7F4EF]/70 hover:text-white transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded-lg px-2 py-1 shrink-0"
+              className="flex items-center gap-1.5 text-xs font-medium text-[#8B8D91] hover:text-[#14161A] transition-colors cursor-pointer rounded px-1.5 py-1 shrink-0"
               title="Back to Discovery"
             >
-              <ChevronLeft className="w-4 h-4 text-[#B8703F]" />
+              <ChevronLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Back</span>
             </button>
-            <div className="h-4 w-px bg-white/10 hidden sm:block shrink-0" />
+            <div className="h-3.5 w-px bg-[#E8E8E6] hidden sm:block shrink-0" />
             <Breadcrumbs
               items={[
                 { label: 'Home', onClick: onNavigateHome },
-                { label: 'Discover', onClick: () => onNavigateDiscover ? onNavigateDiscover() : onBack?.() },
+                { label: 'Discover', onClick: () => (onNavigateDiscover ? onNavigateDiscover() : onBack?.()) },
                 ...(creator.specialtyTags && creator.specialtyTags.length > 0
                   ? [
                       {
@@ -366,100 +344,133 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
             />
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
+            {onNavigateCommunity && (
+              <button
+                onClick={() => onNavigateCommunity(creator.id)}
+                className="px-3 py-1.5 rounded-md bg-white hover:bg-[#F7F7F5] border border-[#E8E8E6] text-xs font-medium text-[#14161A] flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Users className="w-3.5 h-3.5 text-[#3652C4]" />
+                <span className="hidden sm:inline">Community</span>
+              </button>
+            )}
+            {onNavigateCalendar && (
+              <button
+                onClick={() => onNavigateCalendar(creator.id)}
+                className="px-3 py-1.5 rounded-md bg-white hover:bg-[#F7F7F5] border border-[#E8E8E6] text-xs font-medium text-[#14161A] flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Calendar className="w-3.5 h-3.5 text-[#3652C4]" />
+                <span className="hidden sm:inline">Calendar</span>
+              </button>
+            )}
             <button
               onClick={handleShare}
-              className="px-3.5 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F]"
+              className="px-3 py-1.5 rounded-md bg-white hover:bg-[#F7F7F5] border border-[#E8E8E6] text-xs font-medium text-[#14161A] flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <Share2 className="w-3.5 h-3.5 text-[#B8703F]" />
-              <span>{copiedLink ? 'Copied Link!' : 'Share Profile'}</span>
+              <Share2 className="w-3.5 h-3.5 text-[#8B8D91]" />
+              <span>{copiedLink ? 'Copied' : 'Share'}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Profile Header Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#121315] via-[#16171A] to-[#16171A] pt-8 pb-12 border-b border-white/[0.08]">
-        {/* Glow Halo */}
-        <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-[#B8703F]/[0.06] rounded-full blur-3xl pointer-events-none" />
-
+      {/* PROFILE HEADER (B1 Minimalist) */}
+      <section className="bg-white border-b border-[#E8E8E6] py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             {/* Coach Photo Left (Span 4) */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="lg:col-span-4 relative"
-            >
-              <div className="relative h-[360px] sm:h-[420px] rounded-3xl overflow-hidden bg-neutral-900 border border-white/15 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.8)]">
+            <div className="lg:col-span-4">
+              <div className="rounded-xl overflow-hidden bg-[#F7F7F5] border border-[#E8E8E6] aspect-square max-w-sm mx-auto lg:max-w-none">
                 <img
-                  src={creator.avatarUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&auto=format&fit=crop&q=80'}
-                  alt={`${creator.fullName} — ${creator.headline || 'Verified Coach'} portrait`}
+                  src={creator.avatarUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=700&auto=format&fit=crop&q=80'}
+                  alt={`${creator.fullName} — Verified Coach Profile Photo`}
+                  width={384}
+                  height={384}
+                  fetchPriority="high"
+                  decoding="async"
                   className="w-full h-full object-cover object-center"
                 />
+              </div>
 
-                <div className="absolute inset-0 bg-gradient-to-t from-[#16171A] via-transparent to-transparent" />
-
-                {/* Verified Pill Overlay */}
-                <div className="absolute top-4 left-4">
-                  <Badge variant="verified" size="md">
-                    Verified Coach
-                  </Badge>
+              {/* Quick Trust Highlights under photo */}
+              <div className="grid grid-cols-3 gap-2 mt-4 max-w-sm mx-auto lg:max-w-none">
+                <div className="p-3 rounded-lg bg-[#F7F7F5] border border-[#E8E8E6] text-center">
+                  <span className="text-base font-bold text-[#14161A] block">
+                    {creator.rating.toFixed(2)} ★
+                  </span>
+                  <span className="text-[11px] text-[#5A5D62]">
+                    Client Rating
+                  </span>
                 </div>
 
-                {/* Bottom Stats Overlay */}
-                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between bg-black/80 backdrop-blur-md p-3.5 rounded-2xl border border-white/10">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
-                    <Star className="w-4 h-4 fill-amber-400" />
-                    <span>{creator.rating.toFixed(2)}</span>
-                    <span className="text-white/50 font-normal">({creator.totalClients}+ clients)</span>
-                  </div>
-                  <span className="text-xs font-semibold text-[#6E8B6F]">Active Coach</span>
+                <div className="p-3 rounded-lg bg-[#F7F7F5] border border-[#E8E8E6] text-center">
+                  <span className="text-base font-bold text-[#14161A] block">
+                    {creator.totalClients}+
+                  </span>
+                  <span className="text-[11px] text-[#5A5D62]">
+                    Clients Coached
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#F7F7F5] border border-[#E8E8E6] text-center">
+                  <span className="text-base font-bold text-[#14161A] block">
+                    &lt; 24h
+                  </span>
+                  <span className="text-[11px] text-[#5A5D62]">
+                    Response Time
+                  </span>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Coach Dossier & Bio Right (Span 8) */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="lg:col-span-8 space-y-6"
-            >
+            {/* Coach Bio & Information Right (Span 8) */}
+            <div className="lg:col-span-8 space-y-6">
+              
+              {/* Header Titles & Verified Badge */}
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   {creator.specialtyTags.map((tag, idx) => (
                     <span
                       key={idx}
-                      className="text-xs font-semibold px-3 py-1 rounded-full bg-white/[0.06] text-[#F7F4EF]/80 border border-white/[0.08]"
+                      className="text-xs font-medium px-2.5 py-0.5 rounded-md bg-[#F7F7F5] text-[#14161A] border border-[#E8E8E6]"
                     >
                       {tag}
                     </span>
                   ))}
                 </div>
 
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-[#F7F4EF] tracking-tight">
-                  {creator.fullName}
-                </h1>
-                <p className="text-base sm:text-lg text-[#B8703F] font-sans font-medium">
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <h1 className="text-3xl sm:text-4xl font-semibold text-[#14161A] tracking-tight">
+                    {creator.fullName}
+                  </h1>
+
+                  {/* Minimalist Verified Badge */}
+                  {creator.verificationStatus === 'VERIFIED' && (
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-[#F7F7F5] text-[#14161A] border border-[#E8E8E6]"
+                      title="Platform-verified practitioner credentials"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#3652C4]" />
+                      <span>Verified Practitioner</span>
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-sm font-medium text-[#8B8D91]">
                   {creator.headline || `@${creator.handle}`}
                 </p>
 
-                {/* Social Links (YouTube, Instagram, Discord) */}
+                {/* Social Channels */}
                 {creator.socialLinks && (creator.socialLinks.youtube || creator.socialLinks.instagram || creator.socialLinks.discord) && (
-                  <div className="flex flex-wrap items-center gap-2.5 pt-2">
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
                     {creator.socialLinks.youtube && (
                       <a
                         href={creator.socialLinks.youtube}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FF0000]/10 hover:bg-[#FF0000]/20 border border-[#FF0000]/30 text-xs font-semibold text-[#FF6B6B] hover:text-white transition-all shadow-sm group cursor-pointer"
-                        title={`${creator.fullName} YouTube Channel`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#F7F7F5] hover:bg-white border border-[#E8E8E6] text-xs font-medium text-[#14161A] transition-colors"
                       >
-                        <svg className="w-4 h-4 fill-current transition-transform group-hover:scale-110" viewBox="0 0 24 24">
-                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                        </svg>
                         <span>YouTube</span>
                       </a>
                     )}
@@ -468,14 +479,8 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                         href={creator.socialLinks.instagram}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#E1306C]/10 hover:bg-[#E1306C]/20 border border-[#E1306C]/30 text-xs font-semibold text-[#F777A9] hover:text-white transition-all shadow-sm group cursor-pointer"
-                        title={`${creator.fullName} Instagram`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#F7F7F5] hover:bg-white border border-[#E8E8E6] text-xs font-medium text-[#14161A] transition-colors"
                       >
-                        <svg className="w-4 h-4 fill-none stroke-current stroke-2 transition-transform group-hover:scale-110" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-                          <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                          <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-                        </svg>
                         <span>Instagram</span>
                       </a>
                     )}
@@ -484,12 +489,8 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                         href={creator.socialLinks.discord}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#5865F2]/15 hover:bg-[#5865F2]/25 border border-[#5865F2]/35 text-xs font-semibold text-[#8EA1E1] hover:text-white transition-all shadow-sm group cursor-pointer"
-                        title={`${creator.fullName} Discord Community`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#F7F7F5] hover:bg-white border border-[#E8E8E6] text-xs font-medium text-[#14161A] transition-colors"
                       >
-                        <svg className="w-4 h-4 fill-current transition-transform group-hover:scale-110" viewBox="0 0 24 24">
-                          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
-                        </svg>
                         <span>Discord Community</span>
                       </a>
                     )}
@@ -498,28 +499,28 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
               </div>
 
               {/* Bio Statement */}
-              <div className="p-5 rounded-2xl bg-[#121315] border border-white/[0.08] shadow-sm">
-                <h3 className="text-xs font-bold text-[#F7F4EF]/40 uppercase tracking-wider mb-2">
+              <div className="p-5 rounded-xl bg-[#F7F7F5] border border-[#E8E8E6]">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8B8D91] mb-2">
                   Coaching Philosophy & Methodology
                 </h3>
-                <p className="text-sm sm:text-base text-[#F7F4EF]/80 font-normal leading-relaxed">
-                  {creator.bio || 'World-class coach offering individualized, high-touch training, metabolic nutrition planning, and form audits.'}
+                <p className="text-sm sm:text-base text-[#14161A] font-normal leading-relaxed">
+                  {creator.bio || 'World-class practitioner offering individualized, high-touch training, metabolic nutrition planning, and form audits.'}
                 </p>
               </div>
 
-              {/* Credentials Grid */}
+              {/* Verified Credentials */}
               {creator.credentials && creator.credentials.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-[#F7F4EF]/40 uppercase tracking-wider">
-                    Verified Credentials & Certifications
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8B8D91]">
+                    Credentials & Certifications
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {creator.credentials.map((cred, i) => (
                       <div
                         key={i}
-                        className="p-3 rounded-xl bg-white/[0.03] border border-[#6E8B6F]/20 text-xs font-medium text-[#F7F4EF]/90 flex items-center gap-2.5"
+                        className="p-3 rounded-lg bg-white border border-[#E8E8E6] text-xs font-medium text-[#14161A] flex items-center gap-2.5"
                       >
-                        <Award className="w-4 h-4 text-[#6E8B6F] shrink-0" />
+                        <Award className="w-4 h-4 text-[#14161A] shrink-0" />
                         <span>{cred}</span>
                       </div>
                     ))}
@@ -527,80 +528,38 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                 </div>
               )}
 
-              {/* Quick Trust Highlights */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
-                  <div className="text-lg font-display font-bold text-[#B8703F]">
-                    {creator.rating.toFixed(2)}
-                  </div>
-                  <span className="text-[10px] text-[#F7F4EF]/50 uppercase font-semibold">
-                    Client Rating
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
-                  <div className="text-lg font-display font-bold text-[#6E8B6F]">
-                    {creator.totalClients}+
-                  </div>
-                  <span className="text-[10px] text-[#F7F4EF]/50 uppercase font-semibold">
-                    Coached
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
-                  <div className="text-lg font-display font-bold text-[#F7F4EF]">
-                    100%
-                  </div>
-                  <span className="text-[10px] text-[#F7F4EF]/50 uppercase font-semibold">
-                    Verified ID
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
-                  <div className="text-lg font-display font-bold text-sky-400">
-                    &lt; 24h
-                  </div>
-                  <span className="text-[10px] text-[#F7F4EF]/50 uppercase font-semibold">
-                    Response Time
-                  </span>
-                </div>
-              </div>
-
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Offers & Curriculum Section */}
-      <section className="py-12 lg:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* OFFERS & STICKY CTA SECTION */}
+      <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Offers List (Span 8) */}
+          {/* OFFERS LIST (Span 8) */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="space-y-2">
-              <Badge variant="copper" size="sm">
-                Programs & Formats
-              </Badge>
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#F7F4EF] tracking-tight">
+            <div className="space-y-1">
+              <h2 className="text-2xl font-semibold text-[#14161A] tracking-tight">
                 Available Coaching & Programs
               </h2>
-              <p className="text-sm text-[#F7F4EF]/60 font-normal">
-                Choose the coaching format that fits your commitment level. All programs include verified coach oversight.
+              <p className="text-sm text-[#8B8D91] font-normal">
+                Select your preferred format. All programs include direct practitioner oversight and verified platform delivery.
               </p>
             </div>
 
-            {/* Offer Cards List */}
-            <div className="space-y-4 pt-2">
+            {/* Offer Cards */}
+            <div className="space-y-3.5 pt-1">
               {offers.length > 0 ? (
                 offers.map((offer) => {
                   const isSelected = selectedOffer?.id === offer.id;
 
                   return (
-                    <motion.div
+                    <div
                       key={offer.id}
-                      tabIndex={0}
                       role="button"
-                      aria-label={`Select ${offer.title} for ${offer.price}`}
+                      tabIndex={0}
+                      aria-pressed={isSelected}
                       onClick={() => setSelectedOfferId(offer.id)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -608,137 +567,115 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                           setSelectedOfferId(offer.id);
                         }
                       }}
-                      className="cursor-pointer outline-none rounded-2xl focus-visible:ring-2 focus-visible:ring-[#B8703F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121315]"
+                      className={`p-5 rounded-xl transition-colors cursor-pointer bg-white border focus-visible:ring-2 focus-visible:ring-[#3652C4] focus-visible:ring-offset-2 ${
+                        isSelected
+                          ? 'border-[#14161A] ring-1 ring-[#14161A]'
+                          : 'border-[#E8E8E6] hover:border-[#14161A]'
+                      }`}
                     >
-                      <Card
-                        variant="charcoal"
-                        interactive
-                        className={`p-6 transition-all border ${
-                          isSelected
-                            ? 'border-[#B8703F] bg-[#1a1b1f] shadow-[0_0_30px_-5px_rgba(184,112,63,0.3)]'
-                            : 'border-white/[0.08] hover:border-white/20'
-                        }`}
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                          
-                          {/* Offer Header & Description */}
-                          <div className="space-y-2.5 flex-1">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                {getFormatBadge(offer.type)}
-                                {offer.isActive === false && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                                    Draft • Pricing & Availability Pending
-                                  </span>
-                                )}
-                                <span className="text-xs text-[#F7F4EF]/50 flex items-center gap-1 font-mono">
-                                  {getFormatIcon(offer.type)}
-                                  {offer.type}
-                                </span>
-                              </div>
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        
+                        {/* Offer Header & Description */}
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-[#F7F7F5] text-[#14161A] border border-[#E8E8E6]">
+                                {getFormatIcon(offer.type)}
+                                <span>{getFormatLabel(offer.type)}</span>
+                              </span>
 
-                              <button
-                                type="button"
-                                title={savedOfferIds.has(offer.id) ? 'Remove from Saved' : 'Save to Wishlist'}
-                                onClick={(e) => handleToggleWishlist(e, offer)}
-                                className={`p-1.5 sm:px-2.5 sm:py-1 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold ${
-                                  savedOfferIds.has(offer.id)
-                                    ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
-                                    : 'bg-white/[0.04] text-[#F7F4EF]/60 hover:text-white hover:bg-white/10 border border-white/10'
+                              {offer.isActive === false && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                                  Draft
+                                </span>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              title={savedOfferIds.has(offer.id) ? 'Remove from Wishlist' : 'Save to Wishlist'}
+                              onClick={(e) => handleToggleWishlist(e, offer)}
+                              className={`p-1.5 rounded-md transition-colors cursor-pointer flex items-center gap-1 text-xs font-medium ${
+                                savedOfferIds.has(offer.id)
+                                  ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                                  : 'text-[#8B8D91] hover:text-[#14161A] hover:bg-[#F7F7F5]'
+                              }`}
+                            >
+                              <Heart
+                                className={`w-4 h-4 ${
+                                  savedOfferIds.has(offer.id) ? 'fill-rose-600 text-rose-600' : ''
                                 }`}
-                              >
-                                <Heart
-                                  className={`w-3.5 h-3.5 transition-transform ${
-                                    savedOfferIds.has(offer.id) ? 'fill-rose-500 text-rose-500 scale-110' : ''
-                                  }`}
-                                />
-                                <span className="hidden sm:inline">
-                                  {savedOfferIds.has(offer.id) ? 'Saved' : 'Save'}
-                                </span>
-                              </button>
-                            </div>
-
-                            <h3 className="text-xl font-display font-bold text-[#F7F4EF]">
-                              {offer.title}
-                            </h3>
-
-                            <p className="text-sm text-[#F7F4EF]/70 leading-relaxed font-normal">
-                              {offer.description || 'Comprehensive protocol tailored to your physical transformation milestones.'}
-                            </p>
-
-                            {/* Offer Perks Row */}
-                            <div className="pt-2 flex flex-wrap gap-2 text-xs text-[#F7F4EF]/70 font-medium">
-                              <span className="flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-[#6E8B6F]" />
-                                Direct Coach Line
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-[#6E8B6F]" />
-                                Weekly Video Form Checks
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-[#6E8B6F]" />
-                                24x7 Progress Dashboard
-                              </span>
-                            </div>
+                              />
+                            </button>
                           </div>
 
-                          {/* Price & Selection Indicator */}
-                          <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-4 sm:pt-0 border-white/[0.08]">
-                            <div>
-                              <span className="text-xs text-[#F7F4EF]/50 font-medium block">Investment</span>
-                              <div className="flex items-baseline gap-1 mt-0.5">
-                                <span className="text-3xl font-display font-bold text-[#B8703F]">
-                                  ${Number(offer.price)}
-                                </span>
-                                <span className="text-xs text-[#F7F4EF]/60 font-sans">
-                                  / {offer.type === 'COURSE' ? 'curriculum' : 'month'}
-                                </span>
-                              </div>
-                            </div>
+                          <h3 className="text-lg font-semibold text-[#14161A]">
+                            {offer.title}
+                          </h3>
 
-                            <div className="sm:mt-4">
-                              <span
-                                className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                                  offer.isActive === false
-                                    ? isSelected
-                                      ? 'bg-amber-500/20 text-amber-200 border-amber-500/40'
-                                      : 'bg-white/[0.05] text-amber-400/80 border-amber-500/20'
-                                    : isSelected
-                                    ? 'bg-[#B8703F] text-white border-[#B8703F]'
-                                    : 'bg-white/[0.05] text-[#F7F4EF]/70 border-white/10'
-                                }`}
-                              >
-                                {offer.isActive === false
-                                  ? isSelected
-                                    ? 'Draft Selected'
-                                    : 'Preview Draft'
-                                  : isSelected
-                                  ? 'Selected Program'
-                                  : 'Select Program'}
-                              </span>
-                            </div>
+                          <p className="text-sm text-[#8B8D91] leading-relaxed font-normal">
+                            {offer.description || 'Comprehensive protocol tailored to your physical transformation milestones.'}
+                          </p>
+
+                          {/* Inclusions Row */}
+                          <div className="pt-2 flex flex-wrap gap-3 text-xs text-[#14161A] font-medium">
+                            <span className="flex items-center gap-1">
+                              <Check className="w-3.5 h-3.5 text-[#3652C4]" />
+                              Direct Practitioner Messaging
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Check className="w-3.5 h-3.5 text-[#3652C4]" />
+                              Video Form Audits
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Check className="w-3.5 h-3.5 text-[#3652C4]" />
+                              Progress Tracking
+                            </span>
                           </div>
-
                         </div>
-                      </Card>
-                    </motion.div>
+
+                        {/* Price & Selection Indicator */}
+                        <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-3 sm:pt-0 border-[#E8E8E6]">
+                          <div>
+                            <span className="text-xs text-[#8B8D91] block">Price</span>
+                            <div className="flex items-baseline gap-1 mt-0.5">
+                              <span className="text-2xl font-bold text-[#14161A]">
+                                ${Number(offer.price)}
+                              </span>
+                              <span className="text-xs text-[#8B8D91]">
+                                / {offer.type === 'COURSE' ? 'course' : 'month'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="sm:mt-4">
+                            <span
+                              className={`inline-flex items-center gap-1 px-3 py-1 rounded text-xs font-medium border ${
+                                isSelected
+                                  ? 'bg-[#14161A] text-white border-[#14161A]'
+                                  : 'bg-white text-[#14161A] border-[#E8E8E6]'
+                              }`}
+                            >
+                              {isSelected ? 'Selected' : 'Select'}
+                            </span>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
                   );
                 })
               ) : (
-                <Card
-                  variant="charcoal"
-                  className="py-14 px-6 text-center space-y-4 border-white/[0.08] bg-[#121315] shadow-xl"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-[#B8703F]/15 border border-[#B8703F]/30 text-[#B8703F] mx-auto flex items-center justify-center shadow-sm">
-                    <PackageOpen className="w-7 h-7" />
+                <div className="py-14 px-6 text-center space-y-4 bg-white border border-[#E8E8E6] rounded-xl">
+                  <div className="w-12 h-12 rounded-md bg-[#F7F7F5] border border-[#E8E8E6] text-[#14161A] mx-auto flex items-center justify-center">
+                    <PackageOpen className="w-6 h-6" />
                   </div>
-                  <div className="space-y-1.5">
-                    <h3 className="text-lg font-display font-bold text-white">
+                  <div className="space-y-1">
+                    <h3 className="text-base font-semibold text-[#14161A]">
                       No active packages published yet
                     </h3>
-                    <p className="text-xs sm:text-sm text-[#F7F4EF]/60 max-w-md mx-auto leading-relaxed font-normal">
-                      This coach is currently finalizing their consultation calendar and course syllabus. Browse other vetted coaches or return later.
+                    <p className="text-xs sm:text-sm text-[#8B8D91] max-w-md mx-auto leading-relaxed font-normal">
+                      This coach is currently finalizing their consultation calendar and course syllabus.
                     </p>
                   </div>
                   <div className="pt-2">
@@ -746,256 +683,169 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                       Browse Other Coaches
                     </Button>
                   </div>
-                </Card>
+                </div>
               )}
             </div>
           </div>
 
           {/* DESKTOP STICKY CTA CARD (Span 4) */}
-          <div className="hidden lg:block lg:col-span-4 sticky top-36 self-start space-y-4">
-            <Card
-              variant="charcoal"
-              className="p-6 bg-[#121315] border-white/15 shadow-2xl space-y-5"
-            >
-              <div className="pb-3 border-b border-white/[0.08] flex items-center justify-between">
-                <span className="text-xs uppercase font-bold text-[#F7F4EF]/50 tracking-wider">
+          <aside className="hidden lg:block lg:col-span-4 sticky top-24 self-start space-y-4">
+            <div className="p-6 bg-white border border-[#E8E8E6] rounded-xl space-y-5">
+              <div className="pb-3 border-b border-[#E8E8E6] flex items-center justify-between">
+                <span className="text-xs uppercase font-semibold text-[#8B8D91] tracking-wider">
                   Selected Program
                 </span>
-                <Badge variant="verified" size="sm">
-                  100% Satisfaction
-                </Badge>
+                {creator.verificationStatus === 'VERIFIED' && (
+                  <span className="text-xs font-medium text-[#3652C4]">
+                    Verified
+                  </span>
+                )}
               </div>
 
               {selectedOffer ? (
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-display font-bold text-lg text-[#F7F4EF]">
+                    <span className="text-xs text-[#8B8D91] block mb-1">
+                      {getFormatLabel(selectedOffer.type)}
+                    </span>
+                    <h4 className="font-semibold text-base text-[#14161A]">
                       {selectedOffer.title}
                     </h4>
-                    <p className="text-xs text-[#F7F4EF]/60 mt-1 line-clamp-2">
+                    <p className="text-xs text-[#8B8D91] mt-1 line-clamp-2 leading-relaxed">
                       {selectedOffer.description}
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#16171A] border border-white/[0.08] flex items-center justify-between">
-                    <span className="text-xs text-[#F7F4EF]/60 font-medium">Total Investment</span>
+                  <div className="p-4 rounded-lg bg-[#F7F7F5] border border-[#E8E8E6] flex items-center justify-between">
+                    <span className="text-xs text-[#8B8D91] font-medium">Investment</span>
                     <div className="text-right">
-                      <span className="text-2xl font-display font-bold text-[#B8703F]">
+                      <span className="text-2xl font-bold text-[#14161A]">
                         ${Number(selectedOffer.price)}
                       </span>
-                      <span className="text-[10px] text-[#F7F4EF]/50 block font-sans">
+                      <span className="text-[11px] text-[#8B8D91] block">
                         {selectedOffer.type === 'COURSE' ? 'Lifetime Access' : 'Monthly Recurring'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="space-y-2.5">
+                  <div className="space-y-3 pt-1">
                     {selectedOffer.isActive === false ? (
-                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center space-y-1">
-                        <span className="text-xs font-semibold text-amber-300 block">
-                          Draft Offer Pending Creator Launch
+                      <div className="p-3 rounded-md bg-amber-50 border border-amber-200 text-center space-y-1">
+                        <span className="text-xs font-semibold text-amber-800 block">
+                          Draft Offer Pending Launch
                         </span>
-                        <p className="text-[11px] text-[#F7F4EF]/60">
-                          Chadtag is currently finalizing pricing and calendar slots. Booking will activate once published.
+                        <p className="text-[11px] text-amber-700">
+                          This offer will open for booking once the practitioner publishes their active calendar.
                         </p>
                       </div>
                     ) : (
                       <Button
                         variant="primary"
                         size="lg"
-                        className="w-full"
-                        onClick={() => onBookOffer && onBookOffer(selectedOffer, creator)}
+                        className="w-full justify-center"
+                        onClick={() => handleProceedToCheckout(selectedOffer)}
                         rightIcon={<ArrowRight className="w-4 h-4" />}
                       >
-                        {selectedOffer.type === 'COURSE' ? 'Enroll in Course' : 'Book Coaching Slot'}
+                        {selectedOffer.type === 'COURSE' ? 'Enroll in Course' : 'Book Consultation Slot'}
                       </Button>
                     )}
 
-                    <p className="text-[11px] text-center text-[#F7F4EF]/40 font-medium flex items-center justify-center gap-1.5">
-                      <Lock className="w-3 h-3 text-[#6E8B6F]" />
-                      <span>Encrypted Checkout with Razorpay</span>
+                    <p className="text-[11px] text-center text-[#8B8D91] font-medium flex items-center justify-center gap-1.5">
+                      <Lock className="w-3 h-3 text-[#14161A]" />
+                      <span>Encrypted checkout via Razorpay</span>
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-6 text-xs text-[#F7F4EF]/50">
-                  Select an offer from the left to proceed.
+                <div className="text-center py-6 text-xs text-[#8B8D91]">
+                  Select an offer from the list to proceed.
                 </div>
               )}
-            </Card>
-
-            {/* Other Offers by Same Coach Contextual Block */}
-            {offers.length > 1 && (
-              <Card variant="charcoal" className="p-5 bg-[#121315] border-white/[0.08] space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                  <span className="text-xs uppercase font-bold text-[#F7F4EF]/70 tracking-wider">
-                    Other Offers by {creator.fullName}
-                  </span>
-                  <span className="text-[11px] font-semibold text-[#B8703F]">
-                    {offers.filter((o) => o.id !== selectedOffer?.id).length} more
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {offers
-                    .filter((o) => o.id !== selectedOffer?.id)
-                    .map((otherOffer) => (
-                      <button
-                        key={otherOffer.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedOfferId(otherOffer.id);
-                          window.scrollTo({ top: 400, behavior: 'smooth' });
-                        }}
-                        className="w-full text-left p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.06] hover:border-[#B8703F]/40 transition-all flex items-center justify-between gap-3 group cursor-pointer"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            {getFormatIcon(otherOffer.type)}
-                            <span className="text-xs font-semibold text-white truncate group-hover:text-[#E29A68] transition-colors">
-                              {otherOffer.title}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-[#F7F4EF]/50 truncate block mt-0.5">
-                            {otherOffer.type === 'COURSE' ? 'Video Masterclass' : otherOffer.type === 'COMMUNITY' ? 'Group Cohort' : '1-on-1 Coaching'}
-                          </span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-xs font-bold text-[#B8703F]">${Number(otherOffer.price)}</span>
-                          <span className="text-[10px] text-[#F7F4EF]/40 group-hover:text-white block transition-colors">Select &rarr;</span>
-                        </div>
-                      </button>
-                    ))}
-                </div>
-              </Card>
-            )}
-
-            {/* Featured Course Masterclass by Coach */}
-            {(creator.handle === 'chadtag' || creator.id.includes('chad') || creator.handle === 'marcus.vance' || creator.id.includes('marcus')) && onSelectCourse && (
-              <Card variant="charcoal" className="p-5 bg-gradient-to-br from-[#16171A] to-[#1a1b20] border-[#B8703F]/30 space-y-3 shadow-lg">
-                <div className="flex items-center gap-2">
-                  <Badge variant="copper" size="sm">Video Masterclass</Badge>
-                  <span className="text-[10px] text-[#F7F4EF]/60 font-mono">Curriculum Available</span>
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-sm text-white">
-                    {creator.handle === 'chadtag' || creator.id.includes('chad')
-                      ? 'ChadMax: Aesthetics & Stature Masterclass'
-                      : 'Big 3 Biomechanics: Squat, Bench & Deadlift'}
-                  </h4>
-                  <p className="text-[11px] text-[#F7F4EF]/60 mt-1 leading-relaxed">
-                    Explore full syllabus, stream video lessons, and download custom workout spreadsheet templates.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs"
-                  onClick={() =>
-                    onSelectCourse(
-                      creator.handle === 'chadtag' || creator.id.includes('chad')
-                        ? 'course-chadmax'
-                        : 'c-big3-mechanics'
-                    )
-                  }
-                  leftIcon={<Play className="w-3.5 h-3.5 text-[#B8703F] fill-current" />}
-                >
-                  Enter Video Classroom
-                </Button>
-              </Card>
-            )}
-          </div>
+            </div>
+          </aside>
 
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* VERIFIED REVIEWS & RATINGS SECTION (F16) */}
-      {/* ========================================================================= */}
-      <section className="py-16 bg-[#16171A] border-t border-white/[0.08]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      {/* REAL REVIEWS & RATINGS SECTION */}
+      <section className="py-14 bg-white border-t border-[#E8E8E6]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           
           {/* Section Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="space-y-2">
-              <Badge variant="copper" size="sm">
-                Verified Feedback
-              </Badge>
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#F7F4EF] tracking-tight">
-                Athlete Reviews & Results
+            <div className="space-y-1">
+              <h2 className="text-2xl font-semibold text-[#14161A] tracking-tight">
+                Athlete Reviews & Evaluations
               </h2>
-              <p className="text-sm text-[#F7F4EF]/60 max-w-xl font-normal">
-                Authentic reviews submitted by athletes upon completing course curriculums or 1-on-1 consultations.
+              <p className="text-sm text-[#8B8D91] max-w-xl font-normal">
+                Genuine client evaluations submitted upon completing consultations or curriculums with {creator.fullName}.
               </p>
             </div>
 
             <Button
               variant="outline"
-              size="md"
+              size="sm"
               onClick={() => {
                 setReviewToEdit(null);
                 setIsReviewModalOpen(true);
               }}
-              leftIcon={<Sparkles className="w-4 h-4 text-[#B8703F]" />}
             >
               Rate & Review Coach
             </Button>
           </div>
 
           {/* Aggregate Rating Scorecard */}
-          <Card
-            variant="charcoal"
-            className="p-6 sm:p-8 bg-[#121315] border-white/10 shadow-xl"
-          >
+          <div className="p-6 sm:p-8 bg-[#F7F7F5] border border-[#E8E8E6] rounded-xl">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
               
-              {/* Score Column (Span 4) */}
-              <div className="md:col-span-4 text-center md:text-left space-y-2 border-b md:border-b-0 md:border-r border-white/[0.08] pb-6 md:pb-0 md:pr-6">
+              {/* Score Column */}
+              <div className="md:col-span-4 text-center md:text-left space-y-2 border-b md:border-b-0 md:border-r border-[#E8E8E6] pb-6 md:pb-0 md:pr-6">
                 <div className="flex items-baseline justify-center md:justify-start gap-2">
-                  <span className="text-5xl sm:text-6xl font-display font-bold text-[#F7F4EF]">
+                  <span className="text-5xl font-bold text-[#14161A]">
                     {(reviewsData?.averageRating || creator.rating || 5.0).toFixed(2)}
                   </span>
-                  <span className="text-lg text-[#F7F4EF]/40 font-medium">/ 5.0</span>
+                  <span className="text-base text-[#8B8D91] font-normal">/ 5.0</span>
                 </div>
 
-                <div className="flex items-center justify-center md:justify-start gap-1 text-amber-400">
+                <div className="flex items-center justify-center md:justify-start gap-1 text-[#14161A]">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />
+                    <Star key={i} className="w-4 h-4 fill-[#14161A]" />
                   ))}
                 </div>
 
-                <p className="text-xs text-[#F7F4EF]/60 font-medium">
-                  Based on <strong>{reviewsData?.totalReviews || 142}</strong> verified athlete evaluations
+                <p className="text-xs text-[#8B8D91]">
+                  Based on <strong>{reviewsData?.totalReviews || 0}</strong> verified evaluations
                 </p>
 
-                <div className="pt-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#6E8B6F]/10 border border-[#6E8B6F]/25 text-[11px] font-semibold text-[#6E8B6F]">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    100% Verified Purchases
+                <div className="pt-1">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium bg-white border border-[#E8E8E6] text-[#14161A]">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#3652C4]" />
+                    Zero simulated reviews
                   </span>
                 </div>
               </div>
 
-              {/* Star Breakdown Bars Column (Span 8) */}
-              <div className="md:col-span-8 space-y-2.5">
+              {/* Star Breakdown Column */}
+              <div className="md:col-span-8 space-y-2">
                 {[5, 4, 3, 2, 1].map((stars) => {
                   const count = reviewsData?.distribution?.[stars as 1 | 2 | 3 | 4 | 5] || 0;
                   const total = reviewsData?.totalReviews || 1;
-                  const percent = Math.round((count / total) * 100);
+                  const percent = reviewsData?.totalReviews ? Math.round((count / total) * 100) : 0;
 
                   return (
                     <div key={stars} className="flex items-center gap-3 text-xs">
-                      <span className="w-12 text-[#F7F4EF]/70 font-medium flex items-center gap-1 shrink-0">
-                        <span>{stars}</span> <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      <span className="w-12 text-[#14161A] font-medium flex items-center gap-1 shrink-0">
+                        <span>{stars}</span> <Star className="w-3 h-3 fill-[#14161A]" />
                       </span>
 
-                      <div className="flex-1 h-2.5 bg-white/[0.06] rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 bg-[#E8E8E6] rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-[#B8703F] to-amber-500 rounded-full transition-all duration-500"
+                          className="h-full bg-[#14161A] rounded-full transition-all duration-300"
                           style={{ width: `${percent}%` }}
                         />
                       </div>
 
-                      <span className="w-12 text-right text-[#F7F4EF]/50 font-mono text-[11px] shrink-0">
+                      <span className="w-12 text-right text-[#8B8D91] font-mono text-[11px] shrink-0">
                         {percent}% ({count})
                       </span>
                     </div>
@@ -1004,134 +854,155 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
               </div>
 
             </div>
-          </Card>
-
-          {/* Filter Chips Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            <button
-              onClick={() => setStarFilter('all')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
-                starFilter === 'all'
-                  ? 'bg-[#B8703F] text-white border-[#B8703F]'
-                  : 'bg-white/[0.04] text-[#F7F4EF]/70 border-white/10 hover:border-white/20'
-              }`}
-            >
-              All Reviews ({reviewsData?.reviews.length || 0})
-            </button>
-            {[5, 4, 3].map((star) => (
-              <button
-                key={star}
-                onClick={() => setStarFilter(star)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 ${
-                  starFilter === star
-                    ? 'bg-[#B8703F] text-white border-[#B8703F]'
-                    : 'bg-white/[0.04] text-[#F7F4EF]/70 border-white/10 hover:border-white/20'
-                }`}
-              >
-                <span>{star} Stars</span>
-                <Star className="w-3 h-3 fill-current" />
-              </button>
-            ))}
           </div>
 
-          {/* Reviews Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {(reviewsData?.reviews || [])
-              .filter((r: ReviewItem) => starFilter === 'all' || r.rating === starFilter)
-              .map((review: ReviewItem) => {
-                const isAuthor = review.buyerId === 'mock_buyer_id' || review.buyerName.includes('Akshat');
+          {/* Filter Chips Bar (Only shown if reviews exist) */}
+          {(reviewsData?.reviews && reviewsData.reviews.length > 0) && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <button
+                onClick={() => setStarFilter('all')}
+                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+                  starFilter === 'all'
+                    ? 'bg-[#14161A] text-white border-[#14161A]'
+                    : 'bg-white text-[#14161A] border-[#E8E8E6] hover:bg-[#F7F7F5]'
+                }`}
+              >
+                All Reviews ({reviewsData?.reviews.length || 0})
+              </button>
+              {[5, 4, 3].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => setStarFilter(star)}
+                  className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer flex items-center gap-1 ${
+                    starFilter === star
+                      ? 'bg-[#14161A] text-white border-[#14161A]'
+                      : 'bg-white text-[#14161A] border-[#E8E8E6] hover:bg-[#F7F7F5]'
+                  }`}
+                >
+                  <span>{star} Stars</span>
+                  <Star className="w-3 h-3 fill-current" />
+                </button>
+              ))}
+            </div>
+          )}
 
-                return (
-                  <motion.div
-                    key={review.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <Card
-                      variant="charcoal"
-                      className="p-6 bg-[#121315] border-white/[0.08] shadow-lg flex flex-col justify-between h-full space-y-4"
+          {/* REVIEWS LIST OR GRACEFUL ZERO-FAKE-REVIEWS EMPTY STATE */}
+          {reviewsData?.reviews && reviewsData.reviews.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {reviewsData.reviews
+                .filter((r: ReviewItem) => starFilter === 'all' || r.rating === starFilter)
+                .map((review: ReviewItem) => {
+                  const isAuthor = review.buyerId === 'mock_buyer_id' || review.buyerName.includes('Akshat');
+
+                  return (
+                    <div
+                      key={review.id}
+                      className="p-5 bg-white border border-[#E8E8E6] rounded-xl flex flex-col justify-between space-y-4"
                     >
                       <div className="space-y-3">
-                        {/* Header: User Avatar, Name & Stars */}
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
                             <img
                               src={review.buyerAvatar}
-                              alt={`${review.buyerName}, verified client review photo`}
-                              className="w-11 h-11 rounded-xl object-cover ring-1 ring-white/10 shrink-0"
+                              alt={`${review.buyerName}'s avatar`}
+                              loading="lazy"
+                              decoding="async"
+                              width={40}
+                              height={40}
+                              className="w-10 h-10 rounded-full object-cover border border-[#E8E8E6] shrink-0"
                             />
                             <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-display font-bold text-sm text-[#F7F4EF]">
+                              <div className="flex items-center gap-1.5">
+                                <h4 className="font-semibold text-sm text-[#14161A]">
                                   {review.buyerName}
                                 </h4>
                                 {review.verifiedBuyer && (
-                                  <Badge variant="verified" size="sm">
-                                    VERIFIED
-                                  </Badge>
+                                  <span className="inline-flex items-center text-[10px] font-medium text-[#3652C4]">
+                                    ✓ Verified
+                                  </span>
                                 )}
                               </div>
-                              <span className="text-[11px] text-[#F7F4EF]/40 font-mono">
+                              <span className="text-[11px] text-[#5A5D62]">
                                 {review.createdAt}
                               </span>
                             </div>
                           </div>
 
-                          {/* Star Rating Icons */}
-                          <div className="flex items-center gap-0.5 text-amber-400 shrink-0">
+                          <div className="flex items-center gap-0.5 text-[#14161A] shrink-0">
                             {[1, 2, 3, 4, 5].map((i) => (
                               <Star
                                 key={i}
-                                className={`w-4 h-4 ${
-                                  i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-neutral-600'
+                                className={`w-3.5 h-3.5 ${
+                                  i <= review.rating ? 'fill-[#14161A]' : 'text-[#E8E8E6]'
                                 }`}
                               />
                             ))}
                           </div>
                         </div>
 
-                        {/* Program Context Chip */}
                         {review.programTitle && (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.08] text-[11px] text-[#B8703F] font-medium">
-                            <BookOpen className="w-3 h-3" />
-                            <span className="truncate max-w-[280px]">{review.programTitle}</span>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#F7F7F5] border border-[#E8E8E6] text-[11px] text-[#8B8D91]">
+                            <BookOpen className="w-3 h-3 text-[#3652C4]" />
+                            <span className="truncate max-w-[260px]">{review.programTitle}</span>
                           </div>
                         )}
 
-                        {/* Review Body Text */}
-                        <p className="text-sm text-[#F7F4EF]/80 leading-relaxed font-normal">
+                        <p className="text-sm text-[#14161A] leading-relaxed font-normal">
                           "{review.reviewText}"
                         </p>
                       </div>
 
-                      {/* Author Edit CTA Footer */}
                       {isAuthor && (
-                        <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
-                          <span className="text-[10px] text-emerald-400 font-medium">
-                            ✓ You authored this review
+                        <div className="pt-3 border-t border-[#E8E8E6] flex items-center justify-between">
+                          <span className="text-[11px] text-[#3652C4] font-medium">
+                            Your verified review
                           </span>
                           <button
                             onClick={() => {
                               setReviewToEdit(review);
                               setIsReviewModalOpen(true);
                             }}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#B8703F] hover:underline cursor-pointer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-[#14161A] hover:text-[#3652C4] cursor-pointer"
                           >
                             <Pencil className="w-3 h-3" />
-                            <span>Edit Review</span>
+                            <span>Edit</span>
                           </button>
                         </div>
                       )}
-                    </Card>
-                  </motion.div>
-                );
-              })}
-          </div>
+                    </div>
+                  );
+                })}
+            </div>
+          ) : (
+            /* GRACEFUL ZERO-FAKE-REVIEWS EMPTY STATE */
+            <div className="p-8 sm:p-10 text-center bg-[#F7F7F5] border border-[#E8E8E6] rounded-xl max-w-xl mx-auto space-y-3">
+              <div className="w-10 h-10 rounded-md bg-white border border-[#E8E8E6] text-[#14161A] mx-auto flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5 text-[#3652C4]" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-[#14161A]">
+                  Zero Simulated Reviews Policy
+                </h3>
+                <p className="text-xs sm:text-sm text-[#8B8D91] leading-relaxed font-normal">
+                  Universifit never manufactures placeholder testimonials. Authentic athlete reviews will appear here once verified clients complete consultations or courses with {creator.fullName}.
+                </p>
+              </div>
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsReviewModalOpen(true)}
+                >
+                  Completed a program? Leave a review
+                </Button>
+              </div>
+            </div>
+          )}
 
         </div>
       </section>
 
-      {/* Review Submission & Edit Modal (F16) */}
+      {/* Review Submission & Edit Modal */}
       <ReviewModal
         isOpen={isReviewModalOpen}
         onClose={() => {
@@ -1143,7 +1014,6 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         programTitle={selectedOffer?.title || 'Coaching Program'}
         existingReview={reviewToEdit}
         onReviewSaved={() => {
-          // Refresh reviews summary dynamically
           fetchCreatorReviewsApi(creator.id).then((res) => {
             if (res.data) setReviewsData(res.data);
           });
@@ -1151,31 +1021,31 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
       />
 
       {/* MOBILE STICKY BOTTOM BAR */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#121315]/95 backdrop-blur-xl border-t border-white/10 p-4 shadow-2xl">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E8E8E6] p-4">
         <div className="max-w-md mx-auto flex items-center justify-between gap-4">
-          <div>
-            <span className="text-[10px] text-[#F7F4EF]/50 uppercase font-semibold block truncate max-w-[140px]">
+          <div className="min-w-0">
+            <span className="text-[11px] text-[#8B8D91] block truncate max-w-[150px]">
               {selectedOffer?.title || 'Coaching Program'}
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl font-display font-bold text-[#B8703F]">
+              <span className="text-xl font-bold text-[#14161A]">
                 ${selectedOffer?.price ? Number(selectedOffer.price) : 180}
               </span>
-              <span className="text-[10px] text-[#F7F4EF]/50">
+              <span className="text-[11px] text-[#8B8D91]">
                 {selectedOffer?.type === 'COURSE' ? 'total' : '/mo'}
               </span>
             </div>
           </div>
 
           {selectedOffer?.isActive === false ? (
-            <span className="text-xs font-medium text-amber-300 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <span className="text-xs font-medium text-amber-800 px-3 py-1.5 rounded-md bg-amber-50 border border-amber-200">
               Draft (Pending)
             </span>
           ) : (
             <Button
               variant="primary"
               size="md"
-              onClick={() => selectedOffer && onBookOffer && onBookOffer(selectedOffer, creator)}
+              onClick={() => selectedOffer && handleProceedToCheckout(selectedOffer)}
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
               {selectedOffer?.type === 'COURSE' ? 'Enroll Now' : 'Book Session'}

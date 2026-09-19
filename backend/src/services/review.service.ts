@@ -68,7 +68,28 @@ export class ReviewService {
   }
 
   /**
-   * Submit or upsert a review for an enrollment or booking
+   * Recalculate and synchronize creator's aggregate rating and reviewCount in profile
+   */
+  static syncCreatorProfileRating(creatorId: string): { averageRating: number; totalReviews: number } {
+    const reviews = reviewStore.filter((r) => r.creatorId === creatorId);
+    const totalReviews = reviews.length;
+    const totalScore = reviews.reduce((acc, r) => acc + r.rating, 0);
+    const averageRating = totalReviews > 0 ? Number((totalScore / totalReviews).toFixed(2)) : 0;
+
+    // Update in-memory creatorProfile
+    const cp = inMemoryStore.creatorProfiles.find(
+      (c) => c.id === creatorId || c.userId === creatorId || c.handle === creatorId
+    );
+    if (cp) {
+      cp.rating = averageRating;
+      (cp as any).reviewCount = totalReviews;
+    }
+
+    return { averageRating, totalReviews };
+  }
+
+  /**
+   * Submit or upsert a review for an enrollment or booking (One review per enrollment)
    */
   static submitReview(params: {
     buyerId: string;
@@ -80,7 +101,7 @@ export class ReviewService {
     programTitle?: string;
     enrollmentId?: string;
     bookingId?: string;
-  }): { success: boolean; review?: ReviewRecord; error?: string } {
+  }): { success: boolean; review?: ReviewRecord; aggregate?: { averageRating: number; totalReviews: number }; error?: string } {
     const { buyerId, buyerName, buyerAvatar, creatorId, rating, reviewText, programTitle, enrollmentId, bookingId } = params;
 
     if (!creatorId) {
@@ -95,16 +116,30 @@ export class ReviewService {
       return { success: false, error: 'Review text must be at least 5 characters.' };
     }
 
-    // Check if review already exists for this enrollment or booking by this author (1 review per enrollment/booking)
+    // Verify enrollment ownership if enrollmentId provided
+    if (enrollmentId) {
+      const enrollment = inMemoryStore.enrollments.find((e) => e.id === enrollmentId);
+      if (enrollment && enrollment.userId !== buyerId) {
+        return { success: false, error: 'Unauthorized: This enrollment does not belong to you.' };
+      }
+    }
+
+    // Check if review already exists for this enrollment or booking (Strictly 1 review per enrollment/booking)
     const existingIndex = reviewStore.findIndex(
       (r) =>
-        r.buyerId === buyerId &&
-        ((enrollmentId && r.enrollmentId === enrollmentId) || (bookingId && r.bookingId === bookingId))
+        (enrollmentId && r.enrollmentId === enrollmentId) ||
+        (bookingId && r.bookingId === bookingId) ||
+        (r.buyerId === buyerId && r.creatorId === creatorId && !enrollmentId && !bookingId)
     );
 
+    let savedRecord: ReviewRecord;
+
     if (existingIndex !== -1) {
-      // Editable by author: update existing review
+      // Editable by author: update existing review (no duplicate review entries)
       const existing = reviewStore[existingIndex];
+      if (existing.buyerId !== buyerId && buyerId !== 'mock_buyer_id') {
+        return { success: false, error: 'A review for this enrollment has already been submitted.' };
+      }
       const updated: ReviewRecord = {
         ...existing,
         rating: Math.round(rating),
@@ -113,29 +148,34 @@ export class ReviewService {
         updatedAt: new Date().toISOString(),
       };
       reviewStore[existingIndex] = updated;
-      return { success: true, review: updated };
+      savedRecord = updated;
+    } else {
+      const newRecord: ReviewRecord = {
+        id: `rev-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        creatorId,
+        buyerId,
+        buyerName: buyerName || 'Verified Athlete',
+        buyerAvatar:
+          buyerAvatar ||
+          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
+        rating: Math.round(rating),
+        reviewText: reviewText.trim(),
+        programTitle: programTitle || 'Personal Coaching Protocol',
+        enrollmentId,
+        bookingId,
+        verifiedBuyer: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      reviewStore.unshift(newRecord);
+      savedRecord = newRecord;
     }
 
-    const newRecord: ReviewRecord = {
-      id: `rev-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      creatorId,
-      buyerId,
-      buyerName: buyerName || 'Verified Athlete',
-      buyerAvatar:
-        buyerAvatar ||
-        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
-      rating: Math.round(rating),
-      reviewText: reviewText.trim(),
-      programTitle: programTitle || 'Personal Coaching Protocol',
-      enrollmentId,
-      bookingId,
-      verifiedBuyer: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Dynamically update profile average rating & review count
+    const aggregate = this.syncCreatorProfileRating(creatorId);
 
-    reviewStore.unshift(newRecord);
-    return { success: true, review: newRecord };
+    return { success: true, review: savedRecord, aggregate };
   }
 
   /**
@@ -145,7 +185,7 @@ export class ReviewService {
     reviewId: string,
     buyerId: string,
     updates: { rating?: number; reviewText?: string }
-  ): { success: boolean; review?: ReviewRecord; error?: string } {
+  ): { success: boolean; review?: ReviewRecord; aggregate?: { averageRating: number; totalReviews: number }; error?: string } {
     const review = reviewStore.find((r) => r.id === reviewId);
     if (!review) {
       return { success: false, error: 'Review not found.' };
@@ -171,7 +211,8 @@ export class ReviewService {
     }
 
     review.updatedAt = new Date().toISOString();
-    return { success: true, review };
+    const aggregate = this.syncCreatorProfileRating(review.creatorId);
+    return { success: true, review, aggregate };
   }
 
   /**
@@ -180,18 +221,20 @@ export class ReviewService {
   static deleteReview(
     reviewId: string,
     buyerId: string
-  ): { success: boolean; error?: string } {
+  ): { success: boolean; aggregate?: { averageRating: number; totalReviews: number }; error?: string } {
     const index = reviewStore.findIndex((r) => r.id === reviewId);
     if (index === -1) {
       return { success: false, error: 'Review not found.' };
     }
 
-    if (reviewStore[index].buyerId !== buyerId && buyerId !== 'mock_buyer_id') {
+    const target = reviewStore[index];
+    if (target.buyerId !== buyerId && buyerId !== 'mock_buyer_id') {
       return { success: false, error: 'Unauthorized: You can only delete your own reviews.' };
     }
 
     reviewStore.splice(index, 1);
-    return { success: true };
+    const aggregate = this.syncCreatorProfileRating(target.creatorId);
+    return { success: true, aggregate };
   }
 
   /**

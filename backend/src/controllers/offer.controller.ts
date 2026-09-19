@@ -151,7 +151,16 @@ export const createOffer = async (
   } catch (error: any) {
     console.error('[createOffer Error]:', error);
     // In-memory fallback
-    const cp = inMemoryStore.creatorProfiles[0];
+    const cp = inMemoryStore.creatorProfiles.find((c) => c.userId === req.user?.userId) || inMemoryStore.creatorProfiles[0];
+    if (Boolean(req.body.isActive) && !(cp as any)?.agreementAccepted) {
+      res.status(400).json({
+        success: false,
+        code: 'CREATOR_AGREEMENT_REQUIRED',
+        error: 'Creator Agreement Required: You must review and accept the Ascend Creator Terms of Service (revenue share, refund liability, content ownership, conduct policy) before publishing any offer.',
+      });
+      return;
+    }
+
     const newOffer = {
       id: `offer-${Date.now()}`,
       creatorId: cp ? cp.id : (req.user?.userId || 'creator-chadtag'),
@@ -208,6 +217,16 @@ export const toggleOfferStatus = async (
         return;
       }
 
+      // Agreement Gating: Must have accepted Creator Agreement before publishing
+      if (willBeActive && !(existingOffer.creator as any)?.agreementAccepted) {
+        res.status(400).json({
+          success: false,
+          code: 'CREATOR_AGREEMENT_REQUIRED',
+          error: 'Creator Agreement Required: You must review and accept the Ascend Creator Terms of Service before publishing any offer.',
+        });
+        return;
+      }
+
       // M2 Gating: If publishing a paid offer, require payout setup
       if (willBeActive && Number(existingOffer.price) > 0) {
         const hasPayoutSetup = PayoutService.isPayoutSetupCompleted(existingOffer.creatorId);
@@ -237,6 +256,17 @@ export const toggleOfferStatus = async (
     // In-memory fallback
     const memOffer = inMemoryStore.offers.find((o) => o.id === offerId);
     if (memOffer) {
+      const memCp = inMemoryStore.creatorProfiles.find((cp) => cp.id === memOffer.creatorId);
+      // Agreement Gating: Must have accepted Creator Agreement before publishing
+      if (willBeActive && !(memCp as any)?.agreementAccepted) {
+        res.status(400).json({
+          success: false,
+          code: 'CREATOR_AGREEMENT_REQUIRED',
+          error: 'Creator Agreement Required: You must review and accept the Ascend Creator Terms of Service before publishing any offer.',
+        });
+        return;
+      }
+
       if (willBeActive && Number(memOffer.price) > 0) {
         const hasPayoutSetup = PayoutService.isPayoutSetupCompleted(memOffer.creatorId);
         if (!hasPayoutSetup) {

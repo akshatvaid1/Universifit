@@ -105,6 +105,7 @@ import {
   SAMPLE_CREATOR_ANALYTICS,
   SAMPLE_CREATOR_REFERRALS,
 } from '../services/api';
+import { trackCreatorPublish } from '../services/analytics';
 
 type DashboardTab = 'courses' | 'offers' | 'coupons' | 'availability' | 'community' | 'students' | 'calendar' | 'earnings' | 'analytics' | 'referrals' | 'profile';
 
@@ -239,6 +240,18 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
     loadCreatorData();
   }, []);
 
+  // Dynamically refresh live creator analytics telemetry when entering Analytics tab
+  useEffect(() => {
+    if (activeTab === 'analytics') {
+      const activeCreatorId = data.creator?.id || 'creator-marcus';
+      fetchCreatorAnalyticsApi(activeCreatorId).then((res) => {
+        if (res && res.data) {
+          setAnalyticsData(res.data);
+        }
+      });
+    }
+  }, [activeTab, data.creator?.id]);
+
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
@@ -273,6 +286,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
 
       if (res.success && res.data) {
         setCoupons((prev) => [res.data, ...prev]);
+        trackCreatorPublish(data.creator?.id || 'creator-marcus', 'offer', res.data.id || res.data.code, `Coupon: ${res.data.code}`);
         triggerToast(`Coupon "${res.data.code}" created successfully! 🎉`);
         setCouponCode('');
         setCouponValue('20');

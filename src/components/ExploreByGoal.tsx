@@ -1,213 +1,177 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Dumbbell,
-  Scale,
   Sparkles,
-  UserCheck,
+  Smile,
+  ShieldCheck,
   Apple,
-  Trophy,
+  Activity,
   ArrowRight,
   ChevronRight,
 } from 'lucide-react';
-import { Card, Badge } from './ui';
-import { fetchDiscoverCreators } from '../services/api';
+import { Card } from './ui';
 
-interface GoalCategory {
+export interface CategoryItem {
   id: string;
   name: string;
   queryParam: string;
   description: string;
+  dbMatchField: string;
   icon: React.ElementType;
-  tag: string;
-  accentGradient: string;
-  borderHover: string;
 }
 
-interface ExploreByGoalProps {
+interface CategoryGridProps {
   onSelectCategory?: (category: string) => void;
 }
 
-export const ExploreByGoal: React.FC<ExploreByGoalProps> = ({ onSelectCategory }) => {
-  const [selectedGoal, setSelectedGoal] = useState<string>('all');
-  const [totalCoachesCount, setTotalCoachesCount] = useState<number>(500);
+export const ExploreByGoal: React.FC<CategoryGridProps> = ({ onSelectCategory }) => {
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  useEffect(() => {
-    // Fetch live categories / creator stats from GET /discover
-    fetchDiscoverCreators({ limit: 1 })
-      .then((res) => {
-        if (res.data.pagination.totalItems) {
-          setTotalCoachesCount(res.data.pagination.totalItems);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const goals: GoalCategory[] = [
+  // Real DB Categories directly matching specialtyTags and curriculum modules in PostgreSQL/InMemory store
+  const categories: CategoryItem[] = [
     {
-      id: 'strength',
-      name: 'Strength & Physique',
-      queryParam: 'Strength & Physique',
-      description: 'Hypertrophy, barbell biomechanics, powerbuilding & progressive overload.',
+      id: 'physique',
+      name: 'Physique & Hypertrophy',
+      queryParam: 'physique',
+      description: 'Progressive overload, upper chest fullness, clavicle width, and barbell mechanics.',
+      dbMatchField: 'tag: physique',
       icon: Dumbbell,
-      tag: '140+ Coaches',
-      accentGradient: 'from-[#B8703F]/20 to-orange-500/5 text-[#B8703F]',
-      borderHover: 'hover:border-[#B8703F]/50',
     },
     {
-      id: 'weight-loss',
-      name: 'Weight Loss & Recomp',
-      queryParam: 'Weight Loss',
-      description: 'Metabolic rate enhancement, visceral fat loss & muscle sparing protocols.',
-      icon: Scale,
-      tag: '85+ Coaches',
-      accentGradient: 'from-[#6E8B6F]/25 to-emerald-500/5 text-[#6E8B6F]',
-      borderHover: 'hover:border-[#6E8B6F]/50',
-    },
-    {
-      id: 'skincare',
-      name: 'Skincare & Grooming',
-      queryParam: 'Skincare & Grooming',
-      description: 'Dermatologist regimens for acne remission, skin barrier health & anti-aging.',
+      id: 'grooming',
+      name: 'Grooming & Skincare',
+      queryParam: 'grooming',
+      description: 'Skin barrier health, daily grooming frameworks, hair care, and presentation.',
+      dbMatchField: 'tag: grooming',
       icon: Sparkles,
-      tag: '45+ Specialists',
-      accentGradient: 'from-sky-500/20 to-indigo-500/5 text-sky-400',
-      borderHover: 'hover:border-sky-500/50',
     },
     {
-      id: 'posture',
-      name: 'Posture & Alignment',
-      queryParam: 'Posture',
-      description: 'Neuromuscular desk reset, scapular retraction & forward head correction.',
-      icon: UserCheck,
-      tag: '60+ DPTs',
-      accentGradient: 'from-amber-500/20 to-yellow-500/5 text-amber-300',
-      borderHover: 'hover:border-amber-500/50',
+      id: 'looksmaxxing',
+      name: 'Facial Aesthetics & Structure',
+      queryParam: 'looksmaxxing',
+      description: 'Cranial posture, masseter balance, tongue resting position, and structural symmetry.',
+      dbMatchField: 'tag: looksmaxxing',
+      icon: Smile,
+    },
+    {
+      id: 'confidence',
+      name: 'Mindset & Confidence',
+      queryParam: 'confidence',
+      description: 'Gaze stability, vocal resonance, nonverbal poise, and calm psychological grounding.',
+      dbMatchField: 'tag: confidence-building',
+      icon: ShieldCheck,
     },
     {
       id: 'nutrition',
-      name: 'Nutrition Coaching',
-      queryParam: 'Nutrition Coaching',
-      description: 'Evidence-based macro targets, gut microbiome balance & longevity eating.',
+      name: 'Diet & Metabolic Nutrition',
+      queryParam: 'diet',
+      description: 'Clean bulking ratios, micronutrient timing, hydration protocols, and body recomposition.',
+      dbMatchField: 'module: diet',
       icon: Apple,
-      tag: '90+ Dietitians',
-      accentGradient: 'from-[#6E8B6F]/20 to-teal-500/5 text-[#8cb08d]',
-      borderHover: 'hover:border-[#6E8B6F]/50',
     },
     {
-      id: 'challenges',
-      name: 'Cohorts & Challenges',
-      queryParam: 'Challenges',
-      description: '30-day body transformation sprints with daily coach accountability.',
-      icon: Trophy,
-      tag: 'Active Sprints',
-      accentGradient: 'from-[#B8703F]/25 to-rose-500/5 text-[#d48b59]',
-      borderHover: 'hover:border-[#B8703F]/50',
+      id: 'posture',
+      name: 'Posture & Biomechanics',
+      queryParam: 'posture',
+      description: 'Spinal decompression, pelvic tilt correction, desk reset, and natural stature optimization.',
+      dbMatchField: 'module: posture',
+      icon: Activity,
     },
   ];
 
-  const handleCardClick = (goal: GoalCategory) => {
-    setSelectedGoal(goal.id);
+  const handleCardClick = (cat: CategoryItem) => {
+    setSelectedCategory(cat.id);
     if (onSelectCategory) {
-      onSelectCategory(goal.queryParam);
+      onSelectCategory(cat.queryParam);
     }
   };
 
   return (
-    <section id="explore-by-goal" className="py-16 lg:py-24 bg-[#16171A] relative font-sans">
+    <section id="explore-goals" className="py-16 lg:py-24 bg-[#F7F7F5] text-[#14161A] relative font-sans border-t border-[#E8E8E6]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+        {/* Section Header: Hierarchy via size/weight/spacing only. No eyebrow labels. */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="max-w-2xl space-y-3">
-            <div className="inline-flex items-center gap-2">
-              <Badge variant="copper" size="sm">
-                Targeted Protocols
-              </Badge>
-              <span className="text-xs text-[#F7F4EF]/50">
-                {totalCoachesCount}+ verified practitioners
-              </span>
-            </div>
-
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-[#F7F4EF] tracking-tight">
-              Explore by <span className="italic text-[#B8703F]">Goal</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-sans font-semibold text-[#14161A] tracking-tight">
+              Explore by Goal
             </h2>
 
-            <p className="text-sm sm:text-base text-[#F7F4EF]/70 leading-relaxed font-normal">
-              Select your primary physical or aesthetic objective. We match you with vetted coaches who specialize specifically in that discipline.
+            <p className="text-sm sm:text-base text-[#8B8D91] leading-relaxed font-normal">
+              Select a discipline to browse verified creator courses, private community spaces, and 1-on-1 coaching offerings.
             </p>
           </div>
 
           <a
             href="/discover"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[#B8703F] hover:text-[#d48b59] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded-lg px-2 py-1"
+            onClick={(e) => {
+              e.preventDefault();
+              if (onSelectCategory) onSelectCategory('All');
+              else window.location.href = '/discover';
+            }}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#14161A] hover:text-[#3652C4] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3652C4] rounded-md px-1 py-0.5 self-start md:self-auto"
           >
             <span>Browse all categories</span>
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="w-4 h-4 text-[#3652C4] transition-transform group-hover:translate-x-1" />
           </a>
         </div>
 
-        {/* Goal Category Cards Grid: 1-col mobile, 2-col tablet, 3-col desktop */}
+        {/* Real DB Category Cards Grid - Functional borders only, no shadows */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
-          {goals.map((goal, index) => {
-            const IconComponent = goal.icon;
-            const isSelected = selectedGoal === goal.id;
+          {categories.map((cat, index) => {
+            const IconComponent = cat.icon;
+            const isSelected = selectedCategory === cat.id;
 
             return (
               <motion.div
-                key={goal.id}
+                key={cat.id}
                 tabIndex={0}
                 role="button"
-                aria-label={`Explore coaches in ${goal.name}`}
-                initial={{ opacity: 0, y: 20 }}
+                aria-label={`Explore programs in ${cat.name}`}
+                initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: index * 0.08 }}
-                onClick={() => handleCardClick(goal)}
+                transition={{ duration: 0.3, delay: index * 0.04 }}
+                onClick={() => handleCardClick(cat)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    handleCardClick(goal);
+                    handleCardClick(cat);
                   }
                 }}
-                className="h-full cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16171A]"
+                className="h-full cursor-pointer rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[#3652C4] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F7F5]"
               >
                 <Card
-                  variant="charcoal"
+                  variant="ivory"
                   interactive
-                  className={`h-full p-6 sm:p-7 flex flex-col justify-between group transition-all duration-300 border-white/[0.08] ${goal.borderHover} ${
-                    isSelected ? 'border-[#B8703F] bg-[#1a1b1f] shadow-[0_0_25px_-5px_rgba(184,112,63,0.25)]' : ''
+                  className={`h-full p-6 sm:p-7 flex flex-col justify-between group transition-colors duration-150 bg-white border-[#E8E8E6] hover:border-[#14161A] rounded-xl ${
+                    isSelected ? 'ring-2 ring-[#3652C4] border-[#3652C4]' : ''
                   }`}
                 >
                   <div className="space-y-4">
-                    {/* Top Icon & Tag */}
+                    {/* Top Icon */}
                     <div className="flex items-center justify-between">
-                      <div
-                        className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${goal.accentGradient} border border-white/10 flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm`}
-                      >
-                        <IconComponent className="w-7 h-7" />
+                      <div className="w-10 h-10 rounded-md bg-[#F7F7F5] text-[#14161A] border border-[#E8E8E6] flex items-center justify-center">
+                        <IconComponent className="w-5 h-5" />
                       </div>
-
-                      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/[0.05] border border-white/10 text-[#F7F4EF]/70 group-hover:border-white/20 transition-colors">
-                        {goal.tag}
-                      </span>
                     </div>
 
-                    {/* Title & Description */}
+                    {/* Title & Description: Inter only, hierarchy via size/weight/spacing */}
                     <div>
-                      <h3 className="text-xl font-display font-bold text-[#F7F4EF] group-hover:text-white transition-colors">
-                        {goal.name}
+                      <h3 className="text-lg font-sans font-semibold text-[#14161A] group-hover:text-[#3652C4] transition-colors">
+                        {cat.name}
                       </h3>
-                      <p className="text-xs sm:text-sm text-[#F7F4EF]/60 leading-relaxed mt-2 line-clamp-2">
-                        {goal.description}
+                      <p className="text-sm text-[#8B8D91] leading-relaxed mt-2 font-normal">
+                        {cat.description}
                       </p>
                     </div>
                   </div>
 
-                  {/* Card Bottom CTA Link */}
-                  <div className="mt-6 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs font-semibold text-[#F7F4EF]/70 group-hover:text-[#B8703F] transition-colors">
-                    <span>Explore coaches in {goal.name.split(' ')[0]}</span>
-                    <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1 text-[#B8703F]" />
+                  {/* Card Bottom Link */}
+                  <div className="mt-6 pt-4 border-t border-[#E8E8E6] flex items-center justify-between text-xs font-medium text-[#8B8D91] group-hover:text-[#3652C4] transition-colors">
+                    <span>View {cat.name}</span>
+                    <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </div>
                 </Card>
               </motion.div>

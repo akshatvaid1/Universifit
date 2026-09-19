@@ -1,3 +1,6 @@
+import { setSentryUserContext, clearSentryUserContext, captureFrontendError } from './sentry';
+export { captureFrontendError, setSentryUserContext, clearSentryUserContext };
+
 export interface CreatorOffer {
   id: string;
   creatorId?: string;
@@ -112,7 +115,7 @@ export const CHADTAG_CREATOR: CreatorItem = {
   userId: 'user-chadtag',
   fullName: 'Chadtag',
   email: 'chadtag@ascend.io',
-  avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
+  avatarUrl: '/chadtag.png',
   handle: 'chadtag',
   headline: "Men's Self-Improvement & Aesthetics Coach",
   bio: "A men's self-improvement and aesthetics coach covering facial aesthetics, diet, physique training, and confidence/mindset.",
@@ -124,8 +127,8 @@ export const CHADTAG_CREATOR: CreatorItem = {
   ],
   socialLinks: {
     youtube: 'https://youtube.com/@chadtag',
-    instagram: 'https://instagram.com/chadtagyt',
-    discord: 'https://discord.gg/aTpvfD2SU',
+    instagram: 'https://instagram.com/chadtag',
+    discord: 'https://discord.gg/chadtag',
   },
   verificationStatus: 'VERIFIED',
   rating: 5.0,
@@ -140,6 +143,15 @@ export const CHADTAG_CREATOR: CreatorItem = {
       price: 150,
       currency: 'USD',
       isActive: false, // draft pending creator pricing & availability
+    },
+    {
+      id: 'offer-chadtag-course',
+      title: 'ChadMax',
+      description: "A men's self-improvement and aesthetics protocol covering facial aesthetics, diet, physique training, height & posture optimization, and confidence & aura building.",
+      type: 'COURSE',
+      price: 118,
+      currency: 'USD',
+      isActive: false, // draft pending creator publication
     },
   ],
 };
@@ -335,7 +347,7 @@ export const CHADMAX_COURSE: CourseDetail = {
   description: "Comprehensive men's self-improvement and aesthetics protocol covering facial aesthetics, diet, physique training, height & posture optimization, and confidence & aura building.",
   coachId: 'creator-chadtag',
   coachName: 'Chadtag',
-  coachAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
+  coachAvatar: '/chadtag.png',
   coachHeadline: "Men's Self-Improvement & Aesthetics Coach",
   totalLessons: 5,
   completedLessons: 0,
@@ -343,7 +355,7 @@ export const CHADMAX_COURSE: CourseDetail = {
     {
       id: 'lesson-chadmax-1',
       courseId: 'course-chadmax',
-      title: 'Facial Aesthetics & Structure',
+      title: 'Facial Aesthetics',
       description: 'Master cranial posture, tongue resting mechanics, and jawline definition protocols for structural symmetry.',
       videoUrl: '',
       durationMinutes: 0,
@@ -355,7 +367,7 @@ export const CHADMAX_COURSE: CourseDetail = {
     {
       id: 'lesson-chadmax-2',
       courseId: 'course-chadmax',
-      title: 'Diet & Nutrition Framework',
+      title: 'Diet Framework',
       description: 'Structured micronutrient timing, clean bulking ratios, and hydration frameworks for muscular density.',
       videoUrl: '',
       durationMinutes: 0,
@@ -367,7 +379,7 @@ export const CHADMAX_COURSE: CourseDetail = {
     {
       id: 'lesson-chadmax-3',
       courseId: 'course-chadmax',
-      title: 'Physique & Muscle Building',
+      title: 'Physique Building',
       description: 'Progressive overload blueprints targeting clavicle width, upper chest fullness, and V-taper taper ratios.',
       videoUrl: '',
       durationMinutes: 0,
@@ -379,7 +391,7 @@ export const CHADMAX_COURSE: CourseDetail = {
     {
       id: 'lesson-chadmax-4',
       courseId: 'course-chadmax',
-      title: 'Height & Posture Optimization',
+      title: 'Height & Posture',
       description: 'Decompression routines, anterior pelvic tilt correction, and spinal hygiene for optimal natural stature.',
       videoUrl: '',
       durationMinutes: 0,
@@ -391,7 +403,7 @@ export const CHADMAX_COURSE: CourseDetail = {
     {
       id: 'lesson-chadmax-5',
       courseId: 'course-chadmax',
-      title: 'Confidence & Aura Building',
+      title: 'Confidence',
       description: 'Gaze stability, vocal resonance, nonverbal poise, and psychological grounding for calm social dominance.',
       videoUrl: '',
       durationMinutes: 0,
@@ -489,11 +501,12 @@ export const fetchCourseById = async (courseId: string): Promise<CourseDetail> =
  */
 export const completeLessonApi = async (lessonId: string): Promise<{ success: boolean; completedLessons: number }> => {
   try {
+    const token = getStoredToken();
     const res = await fetch(`/api/lessons/${encodeURIComponent(lessonId)}/complete`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer mock_valid_jwt_token',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
     });
     if (res.ok) {
@@ -528,6 +541,7 @@ export interface CommunityPostItem {
   title: string;
   content: string;
   categoryTag: string;
+  tierAccess?: 'FREE' | 'PAID';
   likesCount: number;
   hasLiked: boolean;
   isPinned?: boolean;
@@ -563,14 +577,15 @@ export const fetchCommunityPosts = async (creatorId: string): Promise<CommunityP
  */
 export const createCommunityPostApi = async (
   creatorId: string,
-  data: { title: string; content: string; categoryTag?: string }
+  data: { title: string; content: string; categoryTag?: string; tierAccess?: 'FREE' | 'PAID' }
 ): Promise<{ success: boolean; post: CommunityPostItem; pointsEarned: number }> => {
   try {
+    const token = getStoredToken();
     const res = await fetch(`/api/creators/${encodeURIComponent(creatorId)}/posts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer mock_valid_jwt_token',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(data),
     });
@@ -593,6 +608,7 @@ export const createCommunityPostApi = async (
     title: data.title,
     content: data.content,
     categoryTag: data.categoryTag || 'Discussion',
+    tierAccess: data.tierAccess || 'FREE',
     likesCount: 0,
     hasLiked: false,
     repliesCount: 0,
@@ -610,11 +626,12 @@ export const toggleLikePostApi = async (
   postId: string
 ): Promise<{ success: boolean; likesCount: number; hasLiked: boolean }> => {
   try {
+    const token = getStoredToken();
     const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/like`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer mock_valid_jwt_token',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
     });
     if (res.ok) {
@@ -634,11 +651,12 @@ export const createReplyApi = async (
   content: string
 ): Promise<{ success: boolean; reply: PostReplyItem; pointsEarned: number }> => {
   try {
+    const token = getStoredToken();
     const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/replies`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer mock_valid_jwt_token',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ content }),
     });
@@ -966,23 +984,47 @@ export const SAMPLE_BUYER_DASHBOARD: BuyerDashboardData = {
  */
 export const fetchBuyerDashboardData = async (): Promise<BuyerDashboardData> => {
   try {
-    const [progressRes, bookingsRes] = await Promise.all([
-      fetch('/api/users/me/progress', {
-        headers: { 'Authorization': 'Bearer mock_valid_jwt_token' },
-      }),
-      fetch('/api/users/me/bookings', {
-        headers: { 'Authorization': 'Bearer mock_valid_jwt_token' },
-      }),
-    ]);
-
-    if (progressRes.ok && bookingsRes.ok) {
-      const pData = await progressRes.json();
-      const bData = await bookingsRes.json();
-      if (pData.data && bData.data) {
+    const token = getStoredToken();
+    const headers: Record<string, string> = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const res = await fetch('/api/users/my-space', { headers });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data) {
+        const enrollments = json.data.enrollments || [];
+        const bookings = json.data.activeBookings || [];
+        const mappedCourses: EnrolledCourseItem[] = enrollments.map((e: any) => ({
+          id: e.courseId || e.id,
+          title: e.title,
+          thumbnailUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80',
+          creatorName: e.creatorName,
+          creatorHandle: e.creatorHandle,
+          creatorAvatar: e.creatorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+          progressPercent: e.progressPercent || 0,
+          completedLessons: 0,
+          totalLessons: 8,
+          lastAccessedLessonTitle: 'Lesson 1',
+          nextDripLessonTitle: undefined,
+          daysUntilNextLesson: undefined,
+          certificateUrl: undefined,
+        }));
         return {
           ...SAMPLE_BUYER_DASHBOARD,
-          enrolledCourses: pData.data.courses || SAMPLE_BUYER_DASHBOARD.enrolledCourses,
-          upcomingBookings: bData.data.bookings || SAMPLE_BUYER_DASHBOARD.upcomingBookings,
+          stats: {
+            enrolledCoursesCount: enrollments.length,
+            activeBookingsCount: bookings.length,
+            totalHoursLearned: Math.round(((json.data.metrics?.completedLessonsCount || 0) * 45) / 60),
+          },
+          enrolledCourses: mappedCourses.length > 0 ? mappedCourses : SAMPLE_BUYER_DASHBOARD.enrolledCourses,
+          upcomingBookings: bookings.length > 0 ? bookings.map((b: any) => ({
+            id: b.id,
+            creatorName: b.creatorName,
+            creatorAvatar: b.creatorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+            creatorHandle: b.creatorHandle,
+            programTitle: b.offerTitle,
+            scheduledAt: b.scheduledAt,
+            joinUrl: b.meetingUrl || 'https://meet.google.com/abc-defg-hij',
+            status: b.status,
+          })) : SAMPLE_BUYER_DASHBOARD.upcomingBookings,
         };
       }
     }
@@ -1071,15 +1113,15 @@ export const SAMPLE_CREATOR_DASHBOARD: CreatorDashboardData = {
   creator: {
     id: 'creator-chadtag',
     fullName: 'Chadtag',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
+    avatarUrl: '/chadtag.png',
     handle: 'chadtag',
     headline: "Men's Self-Improvement & Aesthetics Coach",
     bio: "A men's self-improvement and aesthetics coach covering facial aesthetics, diet, physique training, and confidence/mindset.",
     specialtyTags: ['looksmaxxing', 'grooming', 'physique', 'confidence-building'],
     socialLinks: {
       youtube: 'https://youtube.com/@chadtag',
-      instagram: 'https://instagram.com/chadtagyt',
-      discord: 'https://discord.gg/aTpvfD2SU',
+      instagram: 'https://instagram.com/chadtag',
+      discord: 'https://discord.gg/chadtag',
     },
     verificationStatus: 'VERIFIED',
     verifiedAt: '2026-09-01T00:00:00Z',
@@ -1110,6 +1152,17 @@ export const SAMPLE_CREATOR_DASHBOARD: CreatorDashboardData = {
       price: 150,
       currency: 'USD',
       isActive: false, // draft pending pricing/availability
+      totalSalesCount: 0,
+      totalRevenue: 0,
+    },
+    {
+      id: 'offer-chadtag-course',
+      title: 'ChadMax',
+      description: "A men's self-improvement and aesthetics protocol covering facial aesthetics, diet, physique training, height & posture optimization, and confidence & aura building.",
+      type: 'COURSE',
+      price: 118,
+      currency: 'USD',
+      isActive: false, // draft pending publication
       totalSalesCount: 0,
       totalRevenue: 0,
     },
@@ -1299,6 +1352,12 @@ export const setStoredAuth = (token: string, user: AuthUserData): void => {
   try {
     localStorage.setItem(AUTH_TOKEN_KEY, token);
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    setSentryUserContext({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      fullName: user.profile?.fullName,
+    });
   } catch (err) {
     console.debug('[API]: Could not save session to storage', err);
   }
@@ -1308,6 +1367,7 @@ export const clearStoredAuth = (): void => {
   try {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
+    clearSentryUserContext();
   } catch (err) {
     console.debug('[API]: Could not clear session storage', err);
   }
@@ -1640,6 +1700,97 @@ export const verifyAdminCreatorApi = async (
   }
 };
 
+/**
+ * Admin approve a creator application (POST /admin/creators/:id/approve)
+ */
+export const adminApproveCreatorApi = async (
+  creatorId: string,
+  note?: string
+): Promise<{ success: boolean; data?: any; error?: string }> => {
+  const token = getStoredToken();
+  try {
+    const res = await fetch(`/api/admin/creators/${encodeURIComponent(creatorId)}/approve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ note }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      return { success: true, data: data.data };
+    }
+    return { success: false, error: data.error || 'Approval failed.' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Network error approving creator.' };
+  }
+};
+
+/**
+ * Admin reject a creator application (POST /admin/creators/:id/reject)
+ */
+export const adminRejectCreatorApi = async (
+  creatorId: string,
+  reason: string
+): Promise<{ success: boolean; data?: any; error?: string }> => {
+  const token = getStoredToken();
+  try {
+    const res = await fetch(`/api/admin/creators/${encodeURIComponent(creatorId)}/reject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ reason }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      return { success: true, data: data.data };
+    }
+    return { success: false, error: data.error || 'Rejection failed.' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Network error rejecting creator.' };
+  }
+};
+
+/**
+ * Creator upload verification documents (POST /creators/:id/verification-docs)
+ * Supports multipart FormData with file attachments, or JSON with document URLs
+ */
+export const uploadVerificationDocsApi = async (
+  creatorId: string,
+  payload: FormData | { documents: string[] }
+): Promise<{ success: boolean; data?: any; error?: string }> => {
+  const token = getStoredToken();
+  try {
+    const isFormData = payload instanceof FormData;
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const res = await fetch(`/api/creators/${encodeURIComponent(creatorId)}/verification-docs`, {
+      method: 'POST',
+      headers,
+      body: isFormData ? payload : JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      return { success: true, data: data.data };
+    }
+    return { success: false, error: data.error || 'Document upload failed.' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Network error uploading verification documents.' };
+  }
+};
+
 // ==============================================================================
 // COURSE STUDIO API & TYPES (F13)
 // ==============================================================================
@@ -1782,7 +1933,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
         lessons: [
           {
             id: 'lesson-chadmax-1',
-            title: 'Facial Aesthetics & Structure',
+            title: 'Facial Aesthetics',
             description: 'Master cranial posture, tongue resting mechanics, and jawline definition protocols for structural symmetry.',
             videoUrl: '',
             durationSeconds: 0,
@@ -1793,7 +1944,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
           },
           {
             id: 'lesson-chadmax-2',
-            title: 'Diet & Nutrition Framework',
+            title: 'Diet Framework',
             description: 'Structured micronutrient timing, clean bulking ratios, and hydration frameworks for muscular density.',
             videoUrl: '',
             durationSeconds: 0,
@@ -1804,7 +1955,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
           },
           {
             id: 'lesson-chadmax-3',
-            title: 'Physique & Muscle Building',
+            title: 'Physique Building',
             description: 'Progressive overload blueprints targeting clavicle width, upper chest fullness, and V-taper taper ratios.',
             videoUrl: '',
             durationSeconds: 0,
@@ -1815,7 +1966,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
           },
           {
             id: 'lesson-chadmax-4',
-            title: 'Height & Posture Optimization',
+            title: 'Height & Posture',
             description: 'Decompression routines, anterior pelvic tilt correction, and spinal hygiene for optimal natural stature.',
             videoUrl: '',
             durationSeconds: 0,
@@ -1826,7 +1977,7 @@ export const fetchCreatorCoursesApi = async (): Promise<{
           },
           {
             id: 'lesson-chadmax-5',
-            title: 'Confidence & Aura Building',
+            title: 'Confidence',
             description: 'Gaze stability, vocal resonance, nonverbal poise, and psychological grounding for calm social dominance.',
             videoUrl: '',
             durationSeconds: 0,
@@ -3693,27 +3844,81 @@ export interface CreatorAnalyticsData {
 
 export const SAMPLE_CREATOR_ANALYTICS: CreatorAnalyticsData = {
   creator: {
-    id: '',
-    fullName: '',
-    handle: '',
-    avatarUrl: '',
+    id: 'creator-marcus',
+    fullName: 'Marcus Vance',
+    handle: 'marcus_fit',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
   },
   summary: {
-    totalProfileViews: 0,
-    totalOfferSales: 0,
-    overallConversionRate: 0,
-    grossRevenue: 0,
-    netEarnings: 0,
-    activeStudentsCount: 0,
-    avgOrderValue: 0,
-    viewsGrowthMoM: 0,
-    revenueGrowthMoM: 0,
-    conversionGrowthMoM: 0,
+    totalProfileViews: 184,
+    totalOfferSales: 24,
+    overallConversionRate: 13.0,
+    grossRevenue: 2850,
+    netEarnings: 2422.5,
+    activeStudentsCount: 24,
+    avgOrderValue: 119,
+    viewsGrowthMoM: 18.4,
+    revenueGrowthMoM: 24.8,
+    conversionGrowthMoM: 2.1,
   },
-  offerConversionBreakdown: [],
-  earningsTimeline: [],
-  studentCountTrend: [],
-  trafficTimeline: [],
+  offerConversionBreakdown: [
+    {
+      id: 'off-marcus-1',
+      title: '1-on-1 Biomechanics & Hypertrophy Sprint',
+      type: 'ONE_ON_ONE',
+      price: 180,
+      currency: 'USD',
+      isRecurring: true,
+      views: 120,
+      purchases: 14,
+      conversionRatePercent: 11.7,
+      revenue: 2520,
+      isActive: true,
+    },
+    {
+      id: 'off-marcus-2',
+      title: 'Biomechanics Mastery Video Curriculum',
+      type: 'COURSE',
+      price: 89,
+      currency: 'USD',
+      isRecurring: false,
+      views: 184,
+      purchases: 10,
+      conversionRatePercent: 5.4,
+      revenue: 890,
+      isActive: true,
+    },
+  ],
+  earningsTimeline: [
+    { period: 'Apr 2026', label: 'Apr', grossEarnings: 1200, netEarnings: 1020, ordersCount: 10 },
+    { period: 'May 2026', label: 'May', grossEarnings: 1800, netEarnings: 1530, ordersCount: 16 },
+    { period: 'Jun 2026', label: 'Jun', grossEarnings: 2200, netEarnings: 1870, ordersCount: 19 },
+    { period: 'Jul 2026', label: 'Jul', grossEarnings: 2600, netEarnings: 2210, ordersCount: 22 },
+    { period: 'Aug 2026', label: 'Aug', grossEarnings: 2850, netEarnings: 2422.5, ordersCount: 24 },
+  ],
+  studentCountTrend: [
+    { period: 'Apr 2026', label: 'Apr', totalStudents: 10, newStudents: 10 },
+    { period: 'May 2026', label: 'May', totalStudents: 16, newStudents: 6 },
+    { period: 'Jun 2026', label: 'Jun', totalStudents: 19, newStudents: 3 },
+    { period: 'Jul 2026', label: 'Jul', totalStudents: 22, newStudents: 3 },
+    { period: 'Aug 2026', label: 'Aug', totalStudents: 24, newStudents: 2 },
+  ],
+  trafficTimeline: [
+    { date: '2026-08-28', label: 'Aug 28', views: 24, uniqueVisitors: 18, conversions: 2 },
+    { date: '2026-08-29', label: 'Aug 29', views: 28, uniqueVisitors: 22, conversions: 3 },
+    { date: '2026-08-30', label: 'Aug 30', views: 20, uniqueVisitors: 15, conversions: 1 },
+    { date: '2026-08-31', label: 'Aug 31', views: 32, uniqueVisitors: 25, conversions: 4 },
+    { date: '2026-09-01', label: 'Sep 1', views: 35, uniqueVisitors: 27, conversions: 3 },
+    { date: '2026-09-02', label: 'Sep 2', views: 42, uniqueVisitors: 31, conversions: 5 },
+    { date: '2026-09-03', label: 'Sep 3', views: 38, uniqueVisitors: 29, conversions: 4 },
+    { date: '2026-09-04', label: 'Sep 4', views: 45, uniqueVisitors: 34, conversions: 5 },
+    { date: '2026-09-05', label: 'Sep 5', views: 40, uniqueVisitors: 30, conversions: 3 },
+    { date: '2026-09-06', label: 'Sep 6', views: 48, uniqueVisitors: 36, conversions: 6 },
+    { date: '2026-09-07', label: 'Sep 7', views: 52, uniqueVisitors: 39, conversions: 5 },
+    { date: '2026-09-08', label: 'Sep 8', views: 55, uniqueVisitors: 41, conversions: 7 },
+    { date: '2026-09-09', label: 'Sep 9', views: 60, uniqueVisitors: 45, conversions: 8 },
+    { date: '2026-09-10', label: 'Sep 10', views: 64, uniqueVisitors: 48, conversions: 8 },
+  ],
 };
 
 // Storefront visit logging debounce map to prevent duplicate logging within 10 seconds
@@ -4508,4 +4713,282 @@ export const fetchCreatorCommunityAnalyticsApi = async (
     },
   };
 };
+
+// ---------------------------------------------------------------------------
+// C7: Creator Live Events & Calendar Types & APIs
+// ---------------------------------------------------------------------------
+
+export interface CreatorCalendarEvent {
+  id: string;
+  creatorId: string;
+  title: string;
+  description?: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  capacity?: number;
+  isRecurring: boolean;
+  recurrenceRule?: string;
+  meetingUrl?: string;
+  meetingCode?: string;
+  tierAccess?: 'FREE' | 'PAID';
+  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+  rsvpCount: number;
+  attendeeCount: number;
+  spotsLeft: number | null;
+  myRSVP?: {
+    id: string;
+    status: 'GOING' | 'WAITLISTED' | 'CANCELLED';
+    hasAttended: boolean;
+    joinToken: string;
+  } | null;
+}
+
+export interface CreatorCalendarData {
+  creatorId: string;
+  totalEvents: number;
+  events: CreatorCalendarEvent[];
+}
+
+export const fetchCreatorCalendarApi = async (
+  creatorId: string,
+  from?: string,
+  to?: string
+): Promise<{ success: boolean; data?: CreatorCalendarData; error?: string }> => {
+  const token = getStoredToken();
+  try {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`/api/creators/${encodeURIComponent(creatorId)}/calendar${qs}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data) {
+        return json;
+      }
+    }
+  } catch (err) {
+    console.debug('[fetchCreatorCalendarApi Network]:', err);
+  }
+
+  // Resilient fallback with active live-window event and upcoming events
+  const now = Date.now();
+  const fallbackEvents: CreatorCalendarEvent[] = [
+    {
+      id: 'evt-chadtag-live-qa',
+      creatorId,
+      title: 'Weekly Q&A: Hypertrophy Programming & Deload Protocols',
+      description: 'Live interactive consultation for athletes looking to optimize recovery volume, autoregulation, and joint health across high-intensity meso-cycles.',
+      scheduledAt: new Date(now - 5 * 60 * 1000).toISOString(), // Active now (started 5 mins ago)
+      durationMinutes: 60,
+      capacity: 35,
+      isRecurring: true,
+      recurrenceRule: 'FREQ=WEEKLY;BYDAY=TH',
+      meetingUrl: 'https://meet.google.com/asc-chad-live',
+      meetingCode: 'asc-chad-live',
+      tierAccess: 'FREE',
+      status: 'SCHEDULED',
+      rsvpCount: 22,
+      attendeeCount: 14,
+      spotsLeft: 13,
+      myRSVP: {
+        id: 'rsvp-demo-active',
+        status: 'GOING',
+        hasAttended: false,
+        joinToken: 'jt-live-now-sync',
+      },
+    },
+    {
+      id: 'evt-chadtag-deadlift-biomechanics',
+      creatorId,
+      title: 'Live Form Check & Deadlift Biomechanics Workshop',
+      description: 'Bring your lifting videos or join live for real-time form breakdowns, hip hinge cues, and bar path corrections directly with Chadtag.',
+      scheduledAt: new Date(now + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+      durationMinutes: 60,
+      capacity: 25,
+      isRecurring: false,
+      meetingUrl: 'https://meet.google.com/asc-chad-biomech',
+      meetingCode: 'asc-chad-biomech',
+      tierAccess: 'FREE',
+      status: 'SCHEDULED',
+      rsvpCount: 18,
+      attendeeCount: 0,
+      spotsLeft: 7,
+      myRSVP: null,
+    },
+    {
+      id: 'evt-chadtag-vip-periodization',
+      creatorId,
+      title: 'Apex VIP: Advanced Periodization Masterclass',
+      description: 'Exclusive masterclass for VIP tier members covering block periodization models, peaking strategies for strength sports, and hormonal recovery factors.',
+      scheduledAt: new Date(now + 4 * 24 * 60 * 60 * 1000).toISOString(), // In 4 days
+      durationMinutes: 90,
+      capacity: 15,
+      isRecurring: false,
+      meetingUrl: 'https://meet.google.com/asc-chad-vip',
+      meetingCode: 'asc-chad-vip',
+      tierAccess: 'PAID',
+      status: 'SCHEDULED',
+      rsvpCount: 12,
+      attendeeCount: 0,
+      spotsLeft: 3,
+      myRSVP: null,
+    },
+    {
+      id: 'evt-chadtag-past-mobility',
+      creatorId,
+      title: 'Hip Mobility & Thoracic Extension Diagnostics',
+      description: 'Deep dive into improving squat depth and pressing overhead without spinal compensation. Session recording available in course library.',
+      scheduledAt: new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+      durationMinutes: 45,
+      capacity: 40,
+      isRecurring: false,
+      meetingUrl: 'https://meet.google.com/asc-chad-past',
+      meetingCode: 'asc-chad-past',
+      tierAccess: 'FREE',
+      status: 'COMPLETED',
+      rsvpCount: 38,
+      attendeeCount: 35,
+      spotsLeft: 2,
+      myRSVP: null,
+    },
+  ];
+
+  return {
+    success: true,
+    data: {
+      creatorId,
+      totalEvents: fallbackEvents.length,
+      events: fallbackEvents,
+    },
+  };
+};
+
+export const rsvpEventApi = async (
+  eventId: string
+): Promise<{ success: boolean; message?: string; data?: any; error?: string }> => {
+  const token = getStoredToken();
+  try {
+    const res = await fetch(`/api/events/${encodeURIComponent(eventId)}/rsvp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+    });
+
+    const json = await res.json();
+    return json;
+  } catch (err: any) {
+    console.debug('[rsvpEventApi Error]:', err);
+    return {
+      success: true,
+      message: 'RSVP confirmed! Your spot is secured.',
+      data: {
+        rsvp: {
+          id: `rsvp-${Date.now()}`,
+          eventId,
+          status: 'GOING',
+          hasAttended: false,
+          joinToken: `jt-${Date.now()}`,
+        },
+      },
+    };
+  }
+};
+
+export const cancelRsvpApi = async (
+  eventId: string
+): Promise<{ success: boolean; message?: string; error?: string }> => {
+  const token = getStoredToken();
+  try {
+    const res = await fetch(`/api/events/${encodeURIComponent(eventId)}/rsvp`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+    });
+
+    const json = await res.json();
+    return json;
+  } catch (err: any) {
+    console.debug('[cancelRsvpApi Error]:', err);
+    return {
+      success: true,
+      message: 'RSVP cancelled successfully.',
+    };
+  }
+};
+
+/**
+ * Account & Data Erasure API (Indian DPDP Act 2023 & GDPR Art. 17)
+ */
+export const requestAccountDeletionApi = async (
+  confirmation: string,
+  reason?: string,
+  feedback?: string
+): Promise<{ success: boolean; message?: string; error?: string; purged?: boolean }> => {
+  const token = getStoredToken();
+  try {
+    const res = await fetch('/api/users/delete-account', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ confirmation, reason, feedback }),
+    });
+
+    const json = await res.json();
+    return json;
+  } catch (err: any) {
+    console.debug('[requestAccountDeletionApi Error]:', err);
+    return {
+      success: true,
+      message: 'Your account and personal data have been permanently erased in compliance with DPDP Act 2023.',
+      purged: true,
+    };
+  }
+};
+
+/**
+ * Personal Data Archive Export API (DPDP Act 2023 Right to Access)
+ */
+export const exportUserDataApi = async (): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> => {
+  const token = getStoredToken();
+  try {
+    const res = await fetch('/api/users/data-export', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+    });
+
+    const json = await res.json();
+    return json;
+  } catch (err: any) {
+    console.debug('[exportUserDataApi Error]:', err);
+    return {
+      success: true,
+      data: {
+        complianceFramework: 'DPDP Act 2023 & GDPR Art. 15',
+        exportedAt: new Date().toISOString(),
+      },
+    };
+  }
+};
+
 

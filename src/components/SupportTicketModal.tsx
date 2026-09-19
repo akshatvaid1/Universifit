@@ -169,7 +169,12 @@ export const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="support-ticket-heading"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -179,11 +184,11 @@ export const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
           {/* Header */}
           <div className="p-6 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#B8703F]/20 text-[#B8703F] flex items-center justify-center border border-[#B8703F]/30 shadow-inner">
+              <div className="w-10 h-10 rounded-2xl bg-[#3652C4]/20 text-[#3652C4] flex items-center justify-center border border-[#3652C4]/30 shadow-inner">
                 <LifeBuoy className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl font-display font-bold text-white flex items-center gap-2">
+                <h2 id="support-ticket-heading" className="text-xl font-display font-bold text-white flex items-center gap-2">
                   Support & Help Desk
                 </h2>
                 <p className="text-xs text-[#F7F4EF]/60">
@@ -194,7 +199,8 @@ export const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-[#F7F4EF]/60 hover:text-white transition-colors cursor-pointer"
+              aria-label="Close support dialog"
+              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-[#F7F4EF]/60 hover:text-white transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-[#3652C4]"
             >
               <X className="w-5 h-5" />
             </button>
@@ -293,16 +299,17 @@ export const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
 
               {/* Description */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#F7F4EF]/80">
+                <label htmlFor="support-ticket-description" className="text-xs font-semibold text-[#F7F4EF]/80">
                   Detailed Description & Error Context
                 </label>
                 <textarea
+                  id="support-ticket-description"
                   rows={4}
                   placeholder="Describe exactly what happened, transaction ID or booking slot time if applicable..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   required
-                  className="w-full bg-[#121315] text-xs text-[#F7F4EF] placeholder-white/30 border border-white/15 focus:border-[#B8703F] focus:ring-2 focus:ring-[#B8703F] rounded-2xl p-3.5 focus:outline-none transition-all"
+                  className="w-full bg-[#121315] text-xs text-[#F7F4EF] placeholder-white/50 border border-white/15 focus:border-[#3652C4] focus:ring-2 focus:ring-[#3652C4] rounded-2xl p-3.5 focus:outline-none transition-all"
                 />
               </div>
 

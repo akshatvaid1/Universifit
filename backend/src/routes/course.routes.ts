@@ -1,12 +1,20 @@
 import { Router } from 'express';
 import {
   getCourseById,
+  getUserCourseProgress,
   generateVideoUploadUrl,
   createCourseStudio,
   updateCourseStudio,
   getCreatorStudioCourses,
   deleteCourseStudio,
 } from '../controllers/course.controller.js';
+import {
+  getCourseDiscussions,
+  createCourseDiscussion,
+  getCourseDiscussionById,
+  createCourseDiscussionReply,
+  toggleCourseDiscussionLike,
+} from '../controllers/courseDiscussion.controller.js';
 import { authenticateJWT, requireRole } from '../middleware/auth.middleware.js';
 
 const router = Router();
@@ -25,6 +33,18 @@ router.put('/:id', authenticateJWT, requireRole('CREATOR', 'ADMIN'), updateCours
 
 // DELETE /courses/:id - Delete course
 router.delete('/:id', authenticateJWT, requireRole('CREATOR', 'ADMIN'), deleteCourseStudio as any);
+
+// ---------------------------------------------------------------------------
+// Course Discussions (Scoped strictly to enrolled students & instructors)
+// ---------------------------------------------------------------------------
+router.get('/:courseId/discussions', authenticateJWT, getCourseDiscussions as any);
+router.post('/:courseId/discussions', authenticateJWT, createCourseDiscussion as any);
+router.get('/:courseId/discussions/:discussionId', authenticateJWT, getCourseDiscussionById as any);
+router.post('/:courseId/discussions/:discussionId/replies', authenticateJWT, createCourseDiscussionReply as any);
+router.post('/:courseId/discussions/:discussionId/like', authenticateJWT, toggleCourseDiscussionLike as any);
+
+// GET /courses/:id/progress - Fetch user course progress
+router.get('/:id/progress', authenticateJWT, getUserCourseProgress as any);
 
 // GET /courses/:id - Fetch course with lessons and server-side drip checking (Public / Enrolled / Creator)
 router.get('/:id', getCourseById as any);

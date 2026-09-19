@@ -10,21 +10,21 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = 'charcoal', interactive = false, children, ...props }, ref) => {
     const baseStyles =
-      'rounded-xl transition-all duration-200 overflow-hidden';
+      'rounded-lg transition-colors duration-150 overflow-hidden';
 
     const variants = {
       charcoal:
-        'bg-[#16171A] text-[#F7F4EF] border border-white/10 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.5)]',
+        'bg-[#14161A] text-white border border-[#26282E]',
       ivory:
-        'bg-[#F7F4EF] text-[#1A1A1A] border border-black/5 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06)]',
+        'bg-white text-[#14161A] border border-[#E8E8E6]',
       glass:
-        'bg-[#16171A]/85 backdrop-blur-md text-[#F7F4EF] border border-white/10 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)]',
+        'bg-white text-[#14161A] border border-[#E8E8E6]',
       outline:
-        'bg-transparent text-[#F7F4EF] border border-white/15 hover:border-white/30',
+        'bg-transparent text-[#14161A] border border-[#E8E8E6] hover:border-[#14161A]',
     };
 
     const interactiveStyles = interactive
-      ? 'hover:-translate-y-1 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.7)] hover:border-[#B8703F]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121315] cursor-pointer'
+      ? 'hover:border-[#3652C4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3652C4] cursor-pointer'
       : '';
 
     return (
@@ -60,7 +60,7 @@ export const CardTitle: React.FC<HTMLAttributes<HTMLHeadingElement>> = ({
 }) => {
   return (
     <h3
-      className={twMerge('text-lg sm:text-xl font-display font-semibold tracking-tight', className)}
+      className={twMerge('text-lg sm:text-xl font-sans font-semibold tracking-tight text-[#14161A]', className)}
       {...props}
     >
       {children}

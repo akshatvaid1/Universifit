@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import {
   getAllCommunityPosts,
+  getCommunityPostById,
+  getCommunityPostReplies,
   createGlobalPost,
   createPostReply,
   togglePostLike,
@@ -18,6 +20,14 @@ const router = Router();
 // GET /posts & /community/posts - Fetch community feed
 router.get('/', getAllCommunityPosts);
 router.get('/posts', getAllCommunityPosts);
+
+// GET /posts/:id & /community/posts/:id - Fetch single post
+router.get('/:id', getCommunityPostById);
+router.get('/posts/:id', getCommunityPostById);
+
+// GET /posts/:id/replies & /community/posts/:id/replies - Fetch post replies
+router.get('/:id/replies', getCommunityPostReplies);
+router.get('/posts/:id/replies', getCommunityPostReplies);
 
 // POST /posts & /community/posts - Create community discussion
 router.post('/', authenticateJWT, createGlobalPost);

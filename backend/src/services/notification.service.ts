@@ -4,6 +4,7 @@
  */
 
 import { EmailService } from './email.service.js';
+import { inMemoryStore } from '../config/inMemoryDb.js';
 
 export type NotificationType =
   | 'BOOKING_NEW'
@@ -72,21 +73,28 @@ export class NotificationService {
     const { userId, type, title, body, linkUrl, metadata, sendEmail, recipientEmail, emailData } = params;
 
     let emailSent = false;
+    let targetEmail = recipientEmail;
+    if (!targetEmail) {
+      const user = inMemoryStore.users.find((u) => u.id === userId);
+      if (user?.email) {
+        targetEmail = user.email;
+      }
+    }
 
-    if (sendEmail && recipientEmail) {
+    if (sendEmail && targetEmail) {
       try {
         if (type === 'PAYMENT_SUCCESS' && emailData) {
-          await EmailService.sendPaymentSuccessEmail(recipientEmail, emailData);
+          await EmailService.sendPaymentSuccessEmail(targetEmail, emailData);
           emailSent = true;
         } else if (type === 'BOOKING_CONFIRMED' && emailData) {
-          await EmailService.sendBookingConfirmedEmail(recipientEmail, emailData);
+          await EmailService.sendBookingConfirmedEmail(targetEmail, emailData);
           emailSent = true;
         } else if ((type === 'VERIFICATION_APPROVED' || type === 'VERIFICATION_REJECTED') && emailData) {
-          await EmailService.sendVerificationStatusEmail(recipientEmail, emailData);
+          await EmailService.sendVerificationStatusEmail(targetEmail, emailData);
           emailSent = true;
         } else {
           await EmailService.sendEmail({
-            to: recipientEmail,
+            to: targetEmail,
             subject: title,
             html: `<div style="font-family: sans-serif; padding: 20px; background: #121315; color: #fff;"><h2>${title}</h2><p>${body}</p></div>`,
             text: body,

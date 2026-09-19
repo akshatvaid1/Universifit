@@ -47,9 +47,9 @@ export const JoinCallButton: React.FC<JoinCallButtonProps> = ({
   const isUpcoming = !isActive && timeStatus.status === 'UPCOMING';
 
   const sizeClasses = {
-    sm: 'px-3.5 py-1.5 text-xs gap-1.5',
-    md: 'px-4 py-2.5 text-sm gap-2',
-    lg: 'px-6 py-3.5 text-base gap-2.5',
+    sm: 'px-3 py-1.5 text-xs gap-1.5 rounded-lg',
+    md: 'px-4 py-2 text-sm gap-2 rounded-lg',
+    lg: 'px-6 py-2.5 text-base gap-2.5 rounded-lg',
   }[buttonSize];
 
   return (
@@ -58,23 +58,18 @@ export const JoinCallButton: React.FC<JoinCallButtonProps> = ({
       {showBadge && (
         <div className="flex items-center gap-1.5 mb-1.5">
           {isActive ? (
-            <motion.span
-              initial={{ scale: 0.95 }}
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#F0F4FF] text-[#3652C4] border border-[#D0DBFF]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3652C4] animate-pulse" />
               Live Call Window Active
-            </motion.span>
+            </span>
           ) : isUpcoming ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/[0.06] text-[#F7F4EF]/60 border border-white/10">
-              <Clock className="w-3 h-3 text-[#B8703F]" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#F7F7F5] text-[#8B8D91] border border-[#E8E8E6]">
+              <Clock className="w-3 h-3 text-[#8B8D91]" />
               {timeStatus.badgeText} ({timeStatus.startsInText})
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/[0.04] text-[#F7F4EF]/40 border border-white/5">
-              <CheckCircle className="w-3 h-3 text-white/30" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#F7F7F5] text-[#8B8D91] border border-[#E8E8E6]">
+              <CheckCircle className="w-3 h-3 text-[#8B8D91]" />
               Session Ended
             </span>
           )}
@@ -95,30 +90,29 @@ export const JoinCallButton: React.FC<JoinCallButtonProps> = ({
             onClick={onJoinClick}
             className="no-underline block"
           >
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`relative inline-flex items-center justify-center font-bold text-white rounded-xl shadow-lg transition-all cursor-pointer bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 border border-emerald-400/40 shadow-emerald-500/25 ${sizeClasses}`}
+            <button
+              type="button"
+              className={`relative inline-flex items-center justify-center font-medium text-white transition-colors cursor-pointer bg-[#3652C4] hover:bg-[#2B42A4] active:bg-[#24378A] ${sizeClasses}`}
             >
-              <Video className="w-4 h-4 text-white fill-current" />
+              <Video className="w-4 h-4 text-white" />
               <span>Join Google Meet</span>
-              <ExternalLink className="w-3.5 h-3.5 text-emerald-100" />
-            </motion.button>
+              <ExternalLink className="w-3.5 h-3.5 text-white/80" />
+            </button>
           </a>
         ) : (
           <button
             type="button"
-            disabled={!isActive}
-            className={`relative inline-flex items-center justify-center font-semibold rounded-xl transition-all cursor-not-allowed select-none bg-white/[0.04] text-[#F7F4EF]/40 border border-white/[0.08] ${sizeClasses}`}
+            disabled
+            className={`relative inline-flex items-center justify-center font-medium transition-colors cursor-not-allowed select-none bg-[#F7F7F5] text-[#8B8D91] border border-[#E8E8E6] ${sizeClasses}`}
           >
             {isUpcoming ? (
               <>
-                <Lock className="w-3.5 h-3.5 text-[#F7F4EF]/30" />
+                <Lock className="w-3.5 h-3.5 text-[#8B8D91]" />
                 <span>Join Call ({timeStatus.startsInText})</span>
               </>
             ) : (
               <>
-                <CheckCircle className="w-3.5 h-3.5 text-[#F7F4EF]/30" />
+                <CheckCircle className="w-3.5 h-3.5 text-[#8B8D91]" />
                 <span>Session Ended</span>
               </>
             )}
@@ -129,25 +123,26 @@ export const JoinCallButton: React.FC<JoinCallButtonProps> = ({
         <AnimatePresence>
           {showTooltip && (
             <motion.div
-              initial={{ opacity: 0, y: 5 }}
+              initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 5 }}
-              className="absolute z-50 right-0 sm:right-0 bottom-full mb-2 w-64 p-2.5 rounded-xl bg-[#1A1C20] border border-white/15 text-xs text-[#F7F4EF] shadow-2xl pointer-events-none"
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.15 }}
+              className="absolute z-50 right-0 sm:right-0 bottom-full mb-2 w-64 p-3 rounded-lg bg-[#FFFFFF] border border-[#E8E8E6] text-xs text-[#14161A] shadow-md pointer-events-none"
             >
               <div className="flex items-start gap-2">
                 {isActive ? (
-                  <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <Sparkles className="w-4 h-4 text-[#3652C4] shrink-0 mt-0.5" />
                 ) : (
-                  <AlertCircle className="w-4 h-4 text-[#B8703F] shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-[#8B8D91] shrink-0 mt-0.5" />
                 )}
                 <div className="space-y-1">
-                  <p className="font-semibold text-white">
+                  <p className="font-semibold text-[#14161A]">
                     {isActive ? 'Room Ready for Call' : 'Google Meet Security Window'}
                   </p>
-                  <p className="text-[11px] text-[#F7F4EF]/70 leading-relaxed">
+                  <p className="text-xs text-[#8B8D91] leading-relaxed">
                     {timeStatus.tooltip}
                   </p>
-                  <p className="text-[10px] text-[#B8703F] font-mono">
+                  <p className="text-[11px] text-[#3652C4] font-mono">
                     Window: 15m prior &rarr; 60m post-slot
                   </p>
                 </div>

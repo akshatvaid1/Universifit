@@ -18,6 +18,19 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 600,
@@ -32,6 +45,12 @@ export default defineConfig({
           }
           if (id.includes('node_modules/lucide-react/')) {
             return 'vendor-icons';
+          }
+          if (id.includes('node_modules/@sentry/')) {
+            return 'vendor-sentry';
+          }
+          if (id.includes('node_modules/posthog-js/')) {
+            return 'vendor-posthog';
           }
         },
       },

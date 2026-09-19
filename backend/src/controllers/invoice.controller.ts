@@ -82,9 +82,15 @@ export const downloadInvoicePdf = async (req: Request, res: Response): Promise<v
  */
 export const getMyInvoices = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const userEmail = req.user?.email || 'akshat@example.com';
-    const userId = req.user?.userId;
+    if (!req.user || !req.user.email) {
+      res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Authentication required to view tax invoices.',
+      });
+      return;
+    }
 
+    const userEmail = req.user.email;
     const invoices = InvoiceService.getBuyerInvoices(userEmail);
 
     res.status(200).json({
@@ -108,7 +114,15 @@ export const getMyInvoices = async (req: AuthenticatedRequest, res: Response): P
  */
 export const getCreatorInvoices = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const creatorId = req.user?.userId || 'creator-marcus';
+    if (!req.user || !req.user.userId) {
+      res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Creator authentication required.',
+      });
+      return;
+    }
+
+    const creatorId = req.user.userId;
     const invoices = InvoiceService.getCreatorInvoices(creatorId);
 
     const totalGross = invoices.reduce((sum, i) => sum + i.totalAmount, 0);

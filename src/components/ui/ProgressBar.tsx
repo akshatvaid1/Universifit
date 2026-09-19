@@ -29,32 +29,32 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   };
 
   const fillVariants = {
-    // Accent Copper (#B8703F)
-    copper: 'bg-gradient-to-r from-[#B8703F] to-[#d48b59]',
-    // Accent Sage (#6E8B6F)
-    sage: 'bg-gradient-to-r from-[#6E8B6F] to-[#8cb08d]',
-    // Default Clean White
-    default: 'bg-white',
+    // Primary Near-Black (#14161A)
+    copper: 'bg-[#14161A]',
+    // Signal-Blue (#3652C4)
+    sage: 'bg-[#3652C4]',
+    // Minimalist Near-Black Default
+    default: 'bg-[#14161A]',
   };
 
   return (
     <div className={twMerge('w-full font-sans', className)} {...props}>
       {(showLabel || label) && (
-        <div className="flex items-center justify-between text-xs font-semibold text-[#F7F4EF]/80 mb-1.5">
+        <div className="flex items-center justify-between text-xs font-medium text-[#14161A] mb-1.5">
           <span>{label || 'Course Progress'}</span>
-          <span className="font-mono text-[#B8703F]">{percentage}%</span>
+          <span className="font-semibold text-[#14161A]">{percentage}%</span>
         </div>
       )}
 
       <div
         className={twMerge(
-          'w-full rounded-full bg-white/[0.08] overflow-hidden p-0.5 border border-white/[0.06]',
+          'w-full rounded-full bg-[#E8E8E6] overflow-hidden',
           sizeClasses[size]
         )}
       >
         <div
           className={twMerge(
-            'h-full rounded-full transition-all duration-500 ease-out shadow-xs',
+            'h-full rounded-full transition-all duration-300 ease-out',
             fillVariants[variant]
           )}
           style={{ width: `${percentage}%` }}

@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Temporary and local scratch files
+scratch/
+backend/uploads/invoices/ASC-INV-2026-100*.pdf
+backend/uploads/certificates/certificate-ASC-CERT-2026-1001.pdf
+backend/prisma/seed.js
+backend/prisma/seed.d.ts

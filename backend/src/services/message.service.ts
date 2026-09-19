@@ -4,6 +4,7 @@
  */
 
 import { NotificationService } from './notification.service.js';
+import { inMemoryStore } from '../config/inMemoryDb.js';
 
 export interface MessageRecord {
   id: string;
@@ -45,7 +46,7 @@ export interface ConversationSummary {
 const messageStore: MessageRecord[] = [];
 
 // Store of valid connections: (buyerId <-> creatorId) with associated context
-interface AuthorizedConnection {
+export interface AuthorizedConnection {
   buyerId: string;
   creatorId: string;
   creatorUserId?: string;
@@ -68,29 +69,115 @@ export class MessageService {
     senderId: string,
     receiverId: string
   ): { authorized: boolean; connection?: AuthorizedConnection } {
-    // Normalization: creator can be referenced by creatorId or userId
-    const found = authorizedConnections.find(
-      (c) =>
-        (c.buyerId === senderId && (c.creatorId === receiverId || c.creatorUserId === receiverId)) ||
-        ((c.creatorId === senderId || c.creatorUserId === senderId) && c.buyerId === receiverId) ||
-        // Allow self or test mock accounts
-        senderId === receiverId
-    );
-
-    if (found) {
-      return { authorized: true, connection: found };
+    if (senderId === receiverId) {
+      return { authorized: true };
     }
 
-    // Default allow for demo seed users
-    return {
-      authorized: true,
-      connection: {
-        buyerId: senderId,
-        creatorId: receiverId,
-        contextTitle: 'Verified Coaching Program',
-        contextType: 'ENROLLMENT',
-      },
-    };
+    // Check if either is an ADMIN
+    const senderUser = inMemoryStore.users.find((u) => u.id === senderId);
+    const receiverUser = inMemoryStore.users.find((u) => u.id === receiverId);
+    if (senderUser?.role === 'ADMIN' || receiverUser?.role === 'ADMIN') {
+      return {
+        authorized: true,
+        connection: {
+          buyerId: senderId,
+          creatorId: receiverId,
+          contextTitle: 'Admin Support',
+          contextType: 'ENROLLMENT',
+        },
+      };
+    }
+
+    // Check explicit authorized connections list
+    const foundExplicit = authorizedConnections.find(
+      (c) =>
+        (c.buyerId === senderId && (c.creatorId === receiverId || c.creatorUserId === receiverId)) ||
+        ((c.creatorId === senderId || c.creatorUserId === senderId) && c.buyerId === receiverId)
+    );
+    if (foundExplicit) {
+      return { authorized: true, connection: foundExplicit };
+    }
+
+    // Determine who is Creator and who is Buyer
+    let creatorProfile = inMemoryStore.creatorProfiles.find(
+      (c) => c.id === receiverId || c.userId === receiverId || c.handle === receiverId
+    );
+    let buyerId = senderId;
+
+    if (!creatorProfile) {
+      // Check if sender is the creator
+      creatorProfile = inMemoryStore.creatorProfiles.find(
+        (c) => c.id === senderId || c.userId === senderId || c.handle === senderId
+      );
+      if (creatorProfile) {
+        buyerId = receiverId;
+      }
+    }
+
+    if (creatorProfile) {
+      const creatorProfileId = creatorProfile.id;
+      const creatorUserId = creatorProfile.userId;
+
+      // 1. Check for Active / Completed Enrollment
+      const creatorOfferIds = new Set(
+        inMemoryStore.offers
+          .filter((o) => o.creatorId === creatorProfileId || o.creatorId === creatorUserId)
+          .map((o) => o.id)
+      );
+      const creatorCourseIds = new Set(
+        inMemoryStore.courses
+          .filter((c) => c.creatorId === creatorProfileId || c.creatorId === creatorUserId)
+          .map((c) => c.id)
+      );
+
+      const activeEnrollment = inMemoryStore.enrollments.find((e) => {
+        if (e.userId !== buyerId) return false;
+        if (e.status !== 'ACTIVE' && e.status !== 'COMPLETED') return false;
+        if (e.offerId && creatorOfferIds.has(e.offerId)) return true;
+        if (e.courseId && creatorCourseIds.has(e.courseId)) return true;
+        return false;
+      });
+
+      if (activeEnrollment) {
+        const offer = inMemoryStore.offers.find((o) => o.id === activeEnrollment.offerId);
+        const course = inMemoryStore.courses.find((c) => c.id === activeEnrollment.courseId);
+        return {
+          authorized: true,
+          connection: {
+            buyerId,
+            creatorId: creatorProfileId,
+            creatorUserId,
+            enrollmentId: activeEnrollment.id,
+            contextTitle: offer?.title || course?.title || 'Verified Coaching Program',
+            contextType: 'ENROLLMENT',
+          },
+        };
+      }
+
+      // 2. Check for Confirmed / Scheduled / Completed Booking
+      const validBooking = inMemoryStore.bookings.find((b) => {
+        if (b.userId !== buyerId) return false;
+        if (b.creatorId !== creatorProfileId && b.creatorId !== creatorUserId) return false;
+        return ['SCHEDULED', 'CONFIRMED', 'COMPLETED'].includes(b.status);
+      });
+
+      if (validBooking) {
+        return {
+          authorized: true,
+          connection: {
+            buyerId,
+            creatorId: creatorProfileId,
+            creatorUserId,
+            bookingId: validBooking.id,
+            contextTitle: '1:1 Coaching Consultation',
+            contextType: 'BOOKING',
+          },
+        };
+      }
+    }
+
+    // No valid enrollment or booking found -> Unauthorized!
+    return { authorized: false };
   }
 
   /**
@@ -182,10 +269,29 @@ export class MessageService {
    * Get chronological message thread between two users
    */
   static getThread(userId: string, partnerId: string): MessageRecord[] {
+    const partnerCp = inMemoryStore.creatorProfiles.find(
+      (c) => c.id === partnerId || c.userId === partnerId || c.handle === partnerId
+    );
+    const userCp = inMemoryStore.creatorProfiles.find(
+      (c) => c.id === userId || c.userId === userId || c.handle === userId
+    );
+
+    const partnerAliases = new Set<string>([partnerId]);
+    if (partnerCp) {
+      partnerAliases.add(partnerCp.id);
+      partnerAliases.add(partnerCp.userId);
+    }
+
+    const userAliases = new Set<string>([userId]);
+    if (userCp) {
+      userAliases.add(userCp.id);
+      userAliases.add(userCp.userId);
+    }
+
     const thread = messageStore.filter(
       (m) =>
-        (m.senderId === userId && m.receiverId === partnerId) ||
-        (m.senderId === partnerId && m.receiverId === userId)
+        (userAliases.has(m.senderId) && partnerAliases.has(m.receiverId)) ||
+        (partnerAliases.has(m.senderId) && userAliases.has(m.receiverId))
     );
 
     return thread.sort(
@@ -253,9 +359,28 @@ export class MessageService {
    * Mark all unread messages from a partner as read
    */
   static markAsRead(userId: string, partnerId: string): number {
+    const partnerCp = inMemoryStore.creatorProfiles.find(
+      (c) => c.id === partnerId || c.userId === partnerId || c.handle === partnerId
+    );
+    const userCp = inMemoryStore.creatorProfiles.find(
+      (c) => c.id === userId || c.userId === userId || c.handle === userId
+    );
+
+    const partnerAliases = new Set<string>([partnerId]);
+    if (partnerCp) {
+      partnerAliases.add(partnerCp.id);
+      partnerAliases.add(partnerCp.userId);
+    }
+
+    const userAliases = new Set<string>([userId]);
+    if (userCp) {
+      userAliases.add(userCp.id);
+      userAliases.add(userCp.userId);
+    }
+
     let count = 0;
     messageStore.forEach((m) => {
-      if (m.receiverId === userId && m.senderId === partnerId && !m.isRead) {
+      if (userAliases.has(m.receiverId) && partnerAliases.has(m.senderId) && !m.isRead) {
         m.isRead = true;
         count++;
       }

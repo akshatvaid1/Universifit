@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Star, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { fetchDiscoverCreators, type CreatorItem } from '../services/api';
 
 interface CreatorsSectionProps {
@@ -11,7 +11,7 @@ export const CreatorsSection: React.FC<CreatorsSectionProps> = ({ onBookCreator 
   const [creators, setCreators] = useState<CreatorItem[]>([]);
   const [activeFilter, setActiveFilter] = useState('All');
 
-  const categories = ['All', 'Strength & Physique', 'Nutrition', 'Skincare & Grooming', 'Posture'];
+  const categories = ['All', 'Physique', 'Grooming', 'Looksmaxxing', 'Confidence'];
 
   useEffect(() => {
     fetchDiscoverCreators({ limit: 8 })
@@ -32,26 +32,15 @@ export const CreatorsSection: React.FC<CreatorsSectionProps> = ({ onBookCreator 
 
   if (creators.length === 0) {
     return (
-      <section id="explore-creators" className="py-16 sm:py-20 lg:py-24 bg-[#0d0d0e] relative">
+      <section id="explore-creators" className="py-16 sm:py-20 lg:py-24 bg-[#F7F7F5] text-[#14161A] border-t border-[#E8E8E6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl border border-white/[0.08] bg-[#16171A]/70 p-8 sm:p-12 text-center flex flex-col items-center justify-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#B8703F]/10 border border-[#B8703F]/20 flex items-center justify-center text-[#B8703F]">
-              <Sparkles className="w-7 h-7" />
-            </div>
-            <h3 className="text-xl sm:text-2xl font-bold font-display text-[#F7F4EF]">
-              Practitioner Roster In Onboarding
+          <div className="rounded-xl border border-[#E8E8E6] bg-white p-8 sm:p-12 text-center flex flex-col items-center justify-center space-y-3">
+            <h3 className="text-xl sm:text-2xl font-semibold font-sans text-[#14161A]">
+              Creator Roster In Onboarding
             </h3>
-            <p className="text-sm sm:text-base text-[#F7F4EF]/70 max-w-md">
-              Founding coaches and clinical practitioners are currently completing platform credential audits. New verified profiles will appear here.
+            <p className="text-sm sm:text-base text-[#8B8D91] max-w-md font-normal">
+              Founding coaches and practitioners are currently completing platform onboarding. Newly verified profiles will appear here.
             </p>
-            <div className="pt-2">
-              <a
-                href="/login"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#B8703F] text-white font-medium text-sm hover:bg-[#A35F32] transition-colors"
-              >
-                Join as a Founding Creator <ArrowRight className="w-4 h-4" />
-              </a>
-            </div>
           </div>
         </div>
       </section>
@@ -59,34 +48,30 @@ export const CreatorsSection: React.FC<CreatorsSectionProps> = ({ onBookCreator 
   }
 
   return (
-    <section id="explore-creators" className="py-20 lg:py-28 bg-[#0d0d0e] relative">
+    <section id="explore-creators" className="py-20 lg:py-28 bg-[#F7F7F5] text-[#14161A] relative font-sans border-t border-[#E8E8E6]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
+        {/* Section Header: Hierarchy via size/weight/spacing only. No eyebrow labels. */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.06] border border-white/[0.1] text-xs font-bold text-neutral-300">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Vetted Industry Leaders</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
-              Learn directly from the top 1%
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-sans font-semibold tracking-tight text-[#14161A]">
+              Explore Active Creators
             </h2>
-            <p className="text-sm sm:text-base text-neutral-400 max-w-xl">
-              Every practitioner is rigorously vetted for credentials, client transformation history, and scientific rigor.
+            <p className="text-sm sm:text-base text-[#8B8D91] max-w-xl font-normal leading-relaxed">
+              Find creators who provide structured curriculums, communities, and coaching sessions.
             </p>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-2 p-1.5 bg-[#171719] rounded-full border border-white/[0.08] overflow-x-auto self-start md:self-auto">
+          {/* Filter Pills - Clean functional border, no shadows */}
+          <div className="flex items-center gap-1.5 p-1 bg-white rounded-md border border-[#E8E8E6] overflow-x-auto self-start md:self-auto">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveFilter(cat)}
-                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#171719] ${
+                className={`px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
                   activeFilter === cat
-                    ? 'bg-white text-black shadow-md'
-                    : 'text-neutral-400 hover:text-white hover:bg-white/[0.06]'
+                    ? 'bg-[#14161A] text-white'
+                    : 'text-[#8B8D91] hover:text-[#14161A] hover:bg-[#F7F7F5]'
                 }`}
               >
                 {cat}
@@ -95,75 +80,73 @@ export const CreatorsSection: React.FC<CreatorsSectionProps> = ({ onBookCreator 
           </div>
         </div>
 
-        {/* Creators Grid */}
+        {/* Creators Grid - Functional borders only, no shadows */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filtered.map((creator) => (
             <motion.div
               key={creator.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              whileHover={{ y: -6 }}
-              className="bg-[#151517] rounded-3xl p-5 border border-white/[0.08] hover:border-white/[0.18] transition-all flex flex-col justify-between group shadow-xl"
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-xl p-5 border border-[#E8E8E6] hover:border-[#14161A] transition-colors duration-150 flex flex-col justify-between group"
             >
               <div>
-                {/* Image & Badges */}
-                <div className="relative mb-5">
-                  <div className="h-44 w-full rounded-2xl overflow-hidden bg-neutral-800">
+                {/* Image */}
+                <div className="relative mb-4">
+                  <div className="h-48 w-full rounded-lg overflow-hidden bg-[#F7F7F5] border border-[#E8E8E6]">
                     <img
-                      src={creator.avatarUrl || undefined}
-                      alt={`${creator.fullName} — ${creator.headline || 'Verified Universifit Coach'}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      src={creator.avatarUrl || '/chadtag.png'}
+                      alt={`${creator.fullName} profile`}
+                      loading="lazy"
+                      decoding="async"
+                      width={280}
+                      height={192}
+                      className="w-full h-full object-cover"
                     />
-                  </div>
-
-                  <div className="absolute -bottom-4 left-3 right-3 flex items-end justify-between">
-                    <div className="relative">
-                      <img
-                        src={creator.avatarUrl || undefined}
-                        alt={`${creator.fullName} avatar photo`}
-                        className="w-14 h-14 rounded-2xl object-cover ring-4 ring-[#151517] shadow-lg"
-                      />
-                    </div>
-
-                    <div className="bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1 text-xs font-bold text-amber-400 shadow-md">
-                      <Star className="w-3.5 h-3.5 fill-amber-400" />
-                      <span>{creator.rating.toFixed(2)}</span>
-                      <span className="text-white/40 font-normal">({creator.totalClients})</span>
-                    </div>
                   </div>
                 </div>
 
-                {/* Body Details */}
-                <div className="pt-2 space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="font-extrabold text-base text-white">{creator.fullName}</h3>
-                    <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0" />
+                {/* Body Details - No floating badges or icon-lists */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-sans font-semibold text-base text-[#14161A] truncate">
+                      {creator.fullName}
+                    </h3>
+                    {creator.verificationStatus === 'VERIFIED' && (
+                      <span className="text-xs text-[#5A5D62] font-normal shrink-0">
+                        Verified
+                      </span>
+                    )}
                   </div>
-                  <span className="inline-block text-[11px] font-bold text-neutral-400 bg-white/[0.06] px-2.5 py-0.5 rounded-full border border-white/[0.06]">
-                    {creator.specialtyTags[0] || 'Vetted Coach'}
-                  </span>
-                  <p className="text-xs text-neutral-300 font-medium line-clamp-2">
+
+                  <div>
+                    <span className="inline-block text-[11px] font-medium text-[#14161A] bg-[#F7F7F5] px-2 py-0.5 rounded border border-[#E8E8E6]">
+                      {creator.specialtyTags[0] || 'Verified Creator'}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-[#5A5D62] line-clamp-2 leading-relaxed font-normal">
                     {creator.headline}
                   </p>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="pt-5 mt-4 border-t border-white/[0.06] flex items-center justify-between gap-2">
+              {/* Action Buttons: single accent signal-blue CTA */}
+              <div className="pt-4 mt-4 border-t border-[#E8E8E6] flex items-center justify-between gap-2">
                 <div>
-                  <span className="text-[10px] text-neutral-500 uppercase font-bold">Rates from</span>
-                  <p className="text-xs font-black text-white">
-                    {creator.featuredOffers[0]?.price ? `$${creator.featuredOffers[0].price}` : 'Vetted'}
+                  <span className="text-[10px] text-[#5A5D62] uppercase font-medium block">Price</span>
+                  <p className="text-xs font-semibold text-[#14161A]">
+                    {creator.featuredOffers[0]?.price ? `$${creator.featuredOffers[0].price}` : 'Consultation'}
                   </p>
                 </div>
 
                 <button
                   onClick={() => onBookCreator(creator.fullName)}
-                  className="px-4 py-2 rounded-full bg-white text-black font-bold text-xs hover:bg-neutral-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-md outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#151517] active:scale-95"
+                  className="px-3.5 py-1.5 rounded-md bg-[#3652C4] text-white font-medium text-xs hover:bg-[#2D44A6] transition-colors flex items-center gap-1 cursor-pointer"
                 >
-                  <span>Book</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>View</span>
+                  <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
             </motion.div>

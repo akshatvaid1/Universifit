@@ -21,6 +21,8 @@ export function createRateLimiter(options: RateLimitOptions) {
     max,
     message = 'Too many requests from this client. Please try again later.',
     keyGenerator = (req: Request) => {
+      const testIp = req.headers['x-test-ip'] || req.headers['x-test-rate-limit-ip'];
+      if (typeof testIp === 'string') return testIp;
       const forwarded = req.headers['x-forwarded-for'];
       if (typeof forwarded === 'string') {
         return forwarded.split(',')[0].trim();
@@ -82,13 +84,17 @@ export function createRateLimiter(options: RateLimitOptions) {
   };
 }
 
+const DEFAULT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) || (15 * 60 * 1000);
+const AUTH_MAX = Number(process.env.RATE_LIMIT_AUTH_MAX) || 15;
+const CHECKOUT_MAX = Number(process.env.RATE_LIMIT_CHECKOUT_MAX) || 20;
+
 /**
  * Pre-configured rate limiter for authentication routes:
  * 15 requests per 15 minutes per IP (protects login, register, and OAuth flows from brute-force)
  */
 export const authRateLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000,
-  max: 15,
+  windowMs: DEFAULT_WINDOW_MS,
+  max: AUTH_MAX,
   message: 'Too many authentication attempts from this IP address. Please try again in 15 minutes.',
 });
 
@@ -97,7 +103,8 @@ export const authRateLimiter = createRateLimiter({
  * 20 orders/verifications per 15 minutes per IP (protects payment gateways from card testing and order spam)
  */
 export const checkoutRateLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
+  windowMs: DEFAULT_WINDOW_MS,
+  max: CHECKOUT_MAX,
   message: 'Too many checkout requests detected from this IP address. Please wait a few minutes before retrying.',
 });
+

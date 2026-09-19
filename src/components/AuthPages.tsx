@@ -24,6 +24,7 @@ import {
   verifyEmailApi,
   resendVerificationApi,
 } from '../services/api';
+import { trackSignup } from '../services/analytics';
 import { CreatorOnboardingWizard } from './CreatorOnboardingWizard';
 
 export type AuthMode = 'login' | 'signup' | 'forgot' | 'reset' | 'verify';
@@ -174,6 +175,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
       });
 
       if (res.success && res.user) {
+        trackSignup(res.user.id, res.user.role || selectedRole, 'email');
         // Transition to Email Verification screen
         setInfoMsg(`Verification code dispatched to ${email.trim()}.`);
         setMode('verify');

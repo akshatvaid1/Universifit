@@ -9,17 +9,18 @@ import {
   SearchX,
   Dumbbell,
   Sparkles,
-  UserCheck,
+  Smile,
+  ShieldCheck,
   Apple,
+  Activity,
   Video,
   BookOpen,
   Users,
-  DollarSign,
   Check,
   AlertCircle,
 } from 'lucide-react';
 import { CoachCard } from './CoachCard';
-import { Card, Input, Button, Badge, Breadcrumbs } from './ui';
+import { Input, Button, Breadcrumbs } from './ui';
 import {
   fetchDiscoverCreators,
   searchGlobalApi,
@@ -55,15 +56,49 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState<boolean>(false);
 
-  // Goal options
+  // Sync state when props change
+  useEffect(() => {
+    if (initialCategory !== undefined) {
+      setSelectedGoal(initialCategory || 'All');
+    }
+  }, [initialCategory]);
+
+  useEffect(() => {
+    if (initialSearch !== undefined) {
+      setSearchQuery(initialSearch);
+    }
+  }, [initialSearch]);
+
+  // Keep URL search params in sync with active filter/query
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/discover')) {
+      const params = new URLSearchParams(window.location.search);
+      if (selectedGoal && selectedGoal !== 'All') {
+        params.set('category', selectedGoal);
+      } else {
+        params.delete('category');
+        params.delete('goal');
+      }
+      if (searchQuery.trim()) {
+        params.set('q', searchQuery.trim());
+      } else {
+        params.delete('q');
+        params.delete('search');
+      }
+      const newQuery = params.toString() ? `?${params.toString()}` : '';
+      window.history.replaceState({}, '', `/discover${newQuery}`);
+    }
+  }, [selectedGoal, searchQuery]);
+
+  // Goal & Discipline options (Real DB categories)
   const goalOptions = [
     { id: 'All', label: 'All Disciplines', icon: Sparkles },
-    { id: 'Strength & Physique', label: 'Strength & Physique', icon: Dumbbell },
-    { id: 'Weight Loss', label: 'Weight Loss & Recomp', icon: DollarSign },
-    { id: 'Skincare & Grooming', label: 'Skincare & Grooming', icon: Sparkles },
-    { id: 'Posture', label: 'Posture & Alignment', icon: UserCheck },
-    { id: 'Nutrition Coaching', label: 'Nutrition Coaching', icon: Apple },
-    { id: 'Challenges', label: 'Cohorts & Challenges', icon: Users },
+    { id: 'physique', label: 'Strength & Physique', icon: Dumbbell },
+    { id: 'grooming', label: 'Grooming & Skincare', icon: Sparkles },
+    { id: 'looksmaxxing', label: 'Facial Aesthetics', icon: Smile },
+    { id: 'confidence', label: 'Mindset & Confidence', icon: ShieldCheck },
+    { id: 'diet', label: 'Diet & Nutrition', icon: Apple },
+    { id: 'posture', label: 'Posture & Biomechanics', icon: Activity },
   ];
 
   // Budget options
@@ -79,7 +114,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
     { id: 'all', label: 'All Formats', icon: Sparkles },
     { id: 'ONE_ON_ONE', label: '1-on-1 Coaching', icon: Video },
     { id: 'COURSE', label: 'Video Curriculum', icon: BookOpen },
-    { id: 'COMMUNITY', label: 'Group Cohorts', icon: Users },
+    { id: 'COMMUNITY', label: 'Group Cohort', icon: Users },
   ];
 
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -105,19 +140,19 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
         setCoaches(discRes.data.creators);
       }
 
-      if (searchRes && searchRes.results?.courses) {
+      if (searchRes?.results?.courses) {
         setMatchingCourses(searchRes.results.courses);
-      } else if (!searchQuery.trim()) {
+      } else {
         setMatchingCourses([]);
       }
-    } catch (err) {
-      console.debug('Discovery search API error, using fallback dataset', err);
+    } catch (error: any) {
+      console.error('[DiscoverPage]: Failed to fetch coaches:', error);
+      setFetchError('Unable to query coach directory. Please check your connection.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Debounced search & filter effect (300ms)
   useEffect(() => {
     const handler = setTimeout(() => {
       loadCoachesAndCourses();
@@ -126,17 +161,29 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
     return () => clearTimeout(handler);
   }, [selectedGoal, searchQuery]);
 
-  // Client-side Budget & Format Filtering & Sorting
+  // Client-side filtering & sorting
   const filteredCoaches = useMemo(() => {
     return coaches
       .filter((c) => {
-        // Format filter
+        // Goal Filter
+        if (selectedGoal !== 'All') {
+          const term = selectedGoal.toLowerCase();
+          const goalMatches =
+            c.specialtyTags.some((tag) =>
+              tag.toLowerCase().includes(term) || term.includes(tag.toLowerCase())
+            ) ||
+            c.headline?.toLowerCase().includes(term) ||
+            c.bio?.toLowerCase().includes(term);
+          if (!goalMatches) return false;
+        }
+
+        // Format Filter
         if (selectedFormat !== 'all') {
-          const hasFormat = c.featuredOffers.some((o) => o.type === selectedFormat);
+          const hasFormat = c.featuredOffers?.some((o) => o.type === selectedFormat);
           if (!hasFormat) return false;
         }
 
-        // Budget filter
+        // Budget Filter
         if (selectedBudget !== 'all') {
           const price = Number(c.featuredOffers[0]?.price || 150);
           if (selectedBudget === 'under-100' && price >= 100) return false;
@@ -151,7 +198,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
         if (sortBy === 'clients') return b.totalClients - a.totalClients;
         return 0;
       });
-  }, [coaches, selectedFormat, selectedBudget, sortBy]);
+  }, [coaches, selectedGoal, selectedFormat, selectedBudget, sortBy]);
 
   const handleResetFilters = () => {
     setSelectedGoal('All');
@@ -168,11 +215,11 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
     searchQuery.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-[#16171A] text-[#F7F4EF] font-sans pb-24">
-      {/* Top Breadcrumb & Title Bar */}
-      <div className="border-b border-white/[0.08] bg-[#121315] pt-8 pb-10">
+    <div className="min-h-screen bg-[#F7F7F5] text-[#14161A] font-sans pb-24">
+      {/* Top Breadcrumb & Search Header */}
+      <div className="border-b border-[#E8E8E6] bg-white pt-8 pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
               <Breadcrumbs
                 items={[
@@ -191,7 +238,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                   ...(selectedGoal !== 'All'
                     ? [
                         {
-                          label: selectedGoal,
+                          label: goalOptions.find((g) => g.id === selectedGoal)?.label || selectedGoal,
                           isCurrent: !searchQuery.trim(),
                           onClick: searchQuery.trim() ? () => setSearchQuery('') : undefined,
                         },
@@ -209,26 +256,28 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                 className="mb-3"
               />
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-[#F7F4EF] tracking-tight">
-                Discover <span className="italic text-[#B8703F]">Vetted Coaches</span>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-sans font-semibold text-[#14161A] tracking-tight">
+                Discover Vetted Coaches
               </h1>
-              <p className="text-sm text-[#F7F4EF]/60 mt-1 max-w-xl font-normal">
-                Browse verified practitioners across strength, metabolic nutrition, clinical skincare, and posture optimization.
+              <p className="text-sm sm:text-base text-[#8B8D91] mt-1.5 max-w-xl font-normal leading-relaxed">
+                Browse verified practitioners across physique, grooming, facial aesthetics, and posture optimization.
               </p>
             </div>
 
-            {/* Quick Search Input */}
-            <div className="w-full sm:w-80">
+            {/* Search Bar */}
+            <div className="w-full lg:w-96">
               <Input
-                placeholder="Search coach, discipline, or goal..."
+                aria-label="Search coach, discipline, or curriculum"
+                placeholder="Search coach, discipline, or curriculum..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                leftIcon={<Search className="w-4 h-4" />}
+                leftIcon={<Search className="w-4 h-4 text-[#5A5D62]" />}
                 rightIcon={
                   searchQuery ? (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="cursor-pointer hover:text-white"
+                      className="cursor-pointer text-[#5A5D62] hover:text-[#14161A] p-1 rounded focus-visible:ring-2 focus-visible:ring-[#3652C4]"
+                      aria-label="Clear search query"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -245,20 +294,20 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* DESKTOP FILTER SIDEBAR (Span 3) */}
-          <aside className="hidden lg:block lg:col-span-3 space-y-8 sticky top-24 self-start">
-            <div className="p-6 rounded-2xl bg-[#121315] border border-white/[0.08] shadow-lg space-y-6">
+          <aside className="hidden lg:block lg:col-span-3 space-y-6 sticky top-24 self-start">
+            <div className="p-5 rounded-xl bg-white border border-[#E8E8E6] space-y-6">
               
               {/* Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E8E8E6]">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-[#B8703F]" />
-                  <h3 className="font-display font-bold text-base text-[#F7F4EF]">Filters</h3>
+                  <SlidersHorizontal className="w-4 h-4 text-[#14161A]" />
+                  <h3 className="font-sans font-semibold text-sm text-[#14161A]">Filters</h3>
                 </div>
 
                 {hasActiveFilters && (
                   <button
                     onClick={handleResetFilters}
-                    className="text-xs font-semibold text-[#B8703F] hover:text-[#d48b59] flex items-center gap-1 cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] rounded-md px-1.5 py-0.5"
+                    className="text-xs font-medium text-[#3652C4] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>Reset</span>
@@ -267,8 +316,8 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
               </div>
 
               {/* Goal / Discipline Filter */}
-              <div className="space-y-2.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#F7F4EF]/50 block">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#8B8D91] block">
                   Goal & Discipline
                 </label>
                 <div className="space-y-1">
@@ -279,17 +328,17 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                       <button
                         key={goal.id}
                         onClick={() => setSelectedGoal(goal.id)}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] focus-visible:ring-offset-1 focus-visible:ring-offset-[#121315] ${
+                        className={`w-full text-left px-3 py-2 rounded-md text-xs font-medium flex items-center justify-between transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#3652C4] ${
                           isSelected
-                            ? 'bg-[#B8703F]/15 text-[#B8703F] border border-[#B8703F]/30 font-semibold'
-                            : 'text-[#F7F4EF]/70 hover:bg-white/[0.04] hover:text-white'
+                            ? 'bg-[#14161A] text-white'
+                            : 'text-[#14161A] hover:bg-[#F7F7F5]'
                         }`}
                       >
                         <div className="flex items-center gap-2 truncate">
                           <IconComp className="w-3.5 h-3.5 shrink-0" />
                           <span className="truncate">{goal.label}</span>
                         </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#B8703F] shrink-0" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
                       </button>
                     );
                   })}
@@ -297,8 +346,8 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
               </div>
 
               {/* Format Filter */}
-              <div className="space-y-2.5 pt-4 border-t border-white/[0.06]">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#F7F4EF]/50 block">
+              <div className="space-y-2 pt-4 border-t border-[#E8E8E6]">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#8B8D91] block">
                   Coaching Format
                 </label>
                 <div className="space-y-1">
@@ -308,14 +357,14 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                       <button
                         key={fmt.id}
                         onClick={() => setSelectedFormat(fmt.id)}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] focus-visible:ring-offset-1 focus-visible:ring-offset-[#121315] ${
+                        className={`w-full text-left px-3 py-2 rounded-md text-xs font-medium flex items-center justify-between transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#3652C4] ${
                           isSelected
-                            ? 'bg-[#6E8B6F]/15 text-[#6E8B6F] border border-[#6E8B6F]/30 font-semibold'
-                            : 'text-[#F7F4EF]/70 hover:bg-white/[0.04] hover:text-white'
+                            ? 'bg-[#14161A] text-white'
+                            : 'text-[#14161A] hover:bg-[#F7F7F5]'
                         }`}
                       >
                         <span>{fmt.label}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#6E8B6F]" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
                       </button>
                     );
                   })}
@@ -323,8 +372,8 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
               </div>
 
               {/* Budget Range Filter */}
-              <div className="space-y-2.5 pt-4 border-t border-white/[0.06]">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#F7F4EF]/50 block">
+              <div className="space-y-2 pt-4 border-t border-[#E8E8E6]">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#8B8D91] block">
                   Budget Range
                 </label>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -334,10 +383,10 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                       <button
                         key={b.id}
                         onClick={() => setSelectedBudget(b.id)}
-                        className={`px-2.5 py-2 rounded-xl text-[11px] font-medium text-center border transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] focus-visible:ring-offset-1 focus-visible:ring-offset-[#121315] ${
+                        className={`px-2.5 py-2 rounded-md text-xs font-medium text-center border transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#3652C4] ${
                           isSelected
-                            ? 'bg-white/[0.1] text-white border-[#B8703F] font-bold'
-                            : 'bg-white/[0.02] text-[#F7F4EF]/60 border-white/[0.08] hover:bg-white/[0.05] hover:text-white'
+                            ? 'bg-[#14161A] text-white border-[#14161A]'
+                            : 'bg-white text-[#14161A] border-[#E8E8E6] hover:bg-[#F7F7F5]'
                         }`}
                       >
                         {b.label}
@@ -351,26 +400,28 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
           </aside>
 
           {/* MAIN RESULTS CONTENT (Span 9) */}
-          <main className="lg:col-span-9 space-y-6">
+          <section className="lg:col-span-9 space-y-6" aria-label="Coach search results">
             
             {/* Action Bar: Total Count, Active Filters Pills, Sort Dropdown & Mobile Filter Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8E8E6]">
               <div className="flex items-center gap-3">
-                {/* Mobile Filter Toggle */}
+                {/* Mobile Filter Toggle Button */}
                 <button
                   onClick={() => setIsMobileFilterOpen(true)}
-                  className="lg:hidden px-3.5 py-2 rounded-xl bg-white/[0.06] border border-white/10 text-xs font-bold text-white flex items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F]"
+                  aria-expanded={isMobileFilterOpen}
+                  aria-controls="mobile-filter-drawer"
+                  className="lg:hidden px-3 py-1.5 rounded-md bg-white border border-[#E8E8E6] text-xs font-medium text-[#14161A] flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#3652C4]"
                 >
-                  <Filter className="w-4 h-4 text-[#B8703F]" />
+                  <Filter className="w-3.5 h-3.5 text-[#3652C4]" />
                   <span>Filters</span>
                   {hasActiveFilters && (
-                    <span className="w-2 h-2 rounded-full bg-[#B8703F]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3652C4]" />
                   )}
                 </button>
 
-                <p className="text-sm font-semibold text-[#F7F4EF]/80">
+                <p className="text-sm font-medium text-[#14161A]">
                   Showing{' '}
-                  <span className="text-[#B8703F] font-bold font-mono">
+                  <span className="font-semibold text-[#14161A]">
                     {filteredCoaches.length}
                   </span>{' '}
                   verified coaches
@@ -378,21 +429,21 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
               </div>
 
               {/* Sort Controls */}
-              <div className="flex items-center gap-2 text-xs font-medium text-[#F7F4EF]/60">
+              <div className="flex items-center gap-2 text-xs font-medium text-[#5A5D62]">
                 <span>Sort by:</span>
-                <div className="flex items-center bg-[#121315] p-1 rounded-xl border border-white/[0.08]">
+                <div className="flex items-center bg-white p-0.5 rounded-md border border-[#E8E8E6]">
                   <button
                     onClick={() => setSortBy('rating')}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] ${
-                      sortBy === 'rating' ? 'bg-white text-black' : 'text-[#F7F4EF]/60 hover:text-white'
+                    className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                      sortBy === 'rating' ? 'bg-[#14161A] text-white' : 'text-[#5A5D62] hover:text-[#14161A]'
                     }`}
                   >
                     Rating
                   </button>
                   <button
                     onClick={() => setSortBy('clients')}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F] ${
-                      sortBy === 'clients' ? 'bg-white text-black' : 'text-[#F7F4EF]/60 hover:text-white'
+                    className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                      sortBy === 'clients' ? 'bg-[#14161A] text-white' : 'text-[#5A5D62] hover:text-[#14161A]'
                     }`}
                   >
                     Popular
@@ -403,82 +454,86 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
 
             {/* Active Filters Chips Bar */}
             {hasActiveFilters && (
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-xs text-[#F7F4EF]/40 font-medium mr-1">Active:</span>
+              <div className="flex flex-wrap items-center gap-2 pt-1" aria-label="Active filters">
+                <span className="text-xs text-[#5A5D62] font-medium mr-1">Active:</span>
 
                 {selectedGoal !== 'All' && (
-                  <Badge variant="copper" size="sm" className="gap-1.5">
-                    <span>{selectedGoal}</span>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md bg-white border border-[#E8E8E6] text-[#14161A]">
+                    <span>{goalOptions.find((g) => g.id === selectedGoal)?.label || selectedGoal}</span>
                     <button
                       onClick={() => setSelectedGoal('All')}
-                      className="hover:text-white cursor-pointer"
+                      className="hover:text-[#3652C4] cursor-pointer rounded p-0.5"
+                      aria-label={`Remove goal filter ${selectedGoal}`}
                     >
                       <X className="w-3 h-3" />
                     </button>
-                  </Badge>
+                  </span>
                 )}
 
                 {selectedFormat !== 'all' && (
-                  <Badge variant="verified" size="sm" className="gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md bg-white border border-[#E8E8E6] text-[#14161A]">
                     <span>
                       {formatOptions.find((f) => f.id === selectedFormat)?.label}
                     </span>
                     <button
                       onClick={() => setSelectedFormat('all')}
-                      className="hover:text-white cursor-pointer"
+                      className="hover:text-[#3652C4] cursor-pointer rounded p-0.5"
+                      aria-label="Remove format filter"
                     >
                       <X className="w-3 h-3" />
                     </button>
-                  </Badge>
+                  </span>
                 )}
 
                 {selectedBudget !== 'all' && (
-                  <Badge variant="neutral" size="sm" className="gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md bg-white border border-[#E8E8E6] text-[#14161A]">
                     <span>
                       {budgetOptions.find((b) => b.id === selectedBudget)?.label}
                     </span>
                     <button
                       onClick={() => setSelectedBudget('all')}
-                      className="hover:text-white cursor-pointer"
+                      className="hover:text-[#3652C4] cursor-pointer rounded p-0.5"
+                      aria-label="Remove budget filter"
                     >
                       <X className="w-3 h-3" />
                     </button>
-                  </Badge>
+                  </span>
                 )}
 
                 {searchQuery && (
-                  <Badge variant="ivory" size="sm" className="gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md bg-white border border-[#E8E8E6] text-[#14161A]">
                     <span>"{searchQuery}"</span>
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="hover:text-black/60 cursor-pointer"
+                      className="hover:text-[#3652C4] cursor-pointer rounded p-0.5"
+                      aria-label="Remove search query filter"
                     >
                       <X className="w-3 h-3" />
                     </button>
-                  </Badge>
+                  </span>
                 )}
 
                 <button
                   onClick={handleResetFilters}
-                  className="text-xs text-[#B8703F] hover:underline font-semibold ml-2 cursor-pointer"
+                  className="text-xs text-[#3652C4] hover:underline font-medium ml-2 cursor-pointer"
                 >
                   Clear all
                 </button>
               </div>
             )}
 
-            {/* MATCHING COURSES SECTION (When searching) */}
+            {/* MATCHING COURSES (When searching) */}
             {matchingCourses.length > 0 && searchQuery.trim().length > 0 && (
-              <div className="p-5 rounded-3xl bg-[#16171A] border border-white/[0.08] space-y-3 shadow-lg">
+              <div className="p-5 rounded-xl bg-white border border-[#E8E8E6] space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-[#B8703F]" />
-                    <h3 className="text-sm font-display font-bold text-white">
+                    <BookOpen className="w-4 h-4 text-[#3652C4]" />
+                    <h3 className="text-sm font-sans font-semibold text-[#14161A]">
                       Matching Curriculums & Video Protocols ({matchingCourses.length})
                     </h3>
                   </div>
-                  <span className="text-[11px] font-mono text-[#F7F4EF]/50">
-                    Direct access via Universifit Player
+                  <span className="text-xs text-[#8B8D91]">
+                    Universifit Video Player
                   </span>
                 </div>
 
@@ -487,28 +542,25 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                     <div
                       key={course.id}
                       onClick={() => onSelectCourse && onSelectCourse(course.id)}
-                      className="p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.06] hover:border-[#B8703F]/40 transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                      className="p-3 rounded-lg bg-[#F7F7F5] hover:bg-white border border-[#E8E8E6] hover:border-[#14161A] transition-colors cursor-pointer flex items-center justify-between gap-3 group"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-[#B8703F]/15 border border-[#B8703F]/30 text-[#B8703F] flex items-center justify-center shrink-0">
-                          <BookOpen className="w-5 h-5" />
+                        <div className="w-9 h-9 rounded-md bg-white border border-[#E8E8E6] text-[#14161A] flex items-center justify-center shrink-0">
+                          <BookOpen className="w-4 h-4 text-[#3652C4]" />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-white group-hover:text-[#B8703F] transition-colors truncate">
+                          <h4 className="text-xs font-semibold text-[#14161A] group-hover:text-[#3652C4] transition-colors truncate">
                             {course.title}
                           </h4>
-                          <p className="text-[11px] text-[#F7F4EF]/50 truncate">
+                          <p className="text-[11px] text-[#8B8D91] truncate">
                             by {course.coachName} • {course.category}
                           </p>
                         </div>
                       </div>
                       {course.price !== undefined && (
                         <div className="text-right shrink-0">
-                          <span className="text-xs font-bold font-mono text-[#B8703F] block">
+                          <span className="text-xs font-bold text-[#14161A] block">
                             ${course.price}
-                          </span>
-                          <span className="text-[10px] text-[#6E8B6F] font-semibold">
-                            Enrolled / Available
                           </span>
                         </div>
                       )}
@@ -520,70 +572,60 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
 
             {/* RESULTS GRID, SKELETONS, ERROR, OR EMPTY STATE */}
             {isLoading ? (
-              /* CARD-BASED SKELETON LOADERS (NOT SPINNERS) */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+              /* CARD-BASED SKELETON LOADERS */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6 pt-2">
                 {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <Card
+                  <div
                     key={n}
-                    variant="charcoal"
-                    className="p-5 bg-[#121315] border-white/[0.08] animate-pulse space-y-4"
+                    className="p-5 rounded-xl bg-white border border-[#E8E8E6] animate-pulse space-y-4"
                   >
-                    <div className="h-44 rounded-xl bg-white/[0.04]" />
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white/[0.05] shrink-0" />
-                      <div className="space-y-1.5 flex-1">
-                        <div className="h-4 w-3/4 bg-white/[0.06] rounded" />
-                        <div className="h-3 w-1/2 bg-white/[0.04] rounded" />
-                      </div>
+                    <div className="h-44 rounded-lg bg-[#F7F7F5]" />
+                    <div className="space-y-2">
+                      <div className="h-4 w-3/4 bg-[#F7F7F5] rounded" />
+                      <div className="h-3 w-1/2 bg-[#F7F7F5] rounded" />
                     </div>
-                    <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-                      <div className="h-3 w-full bg-white/[0.04] rounded" />
-                      <div className="h-3 w-4/5 bg-white/[0.04] rounded" />
+                    <div className="space-y-1.5 pt-2 border-t border-[#E8E8E6]">
+                      <div className="h-3 w-full bg-[#F7F7F5] rounded" />
+                      <div className="h-3 w-4/5 bg-[#F7F7F5] rounded" />
                     </div>
-                    <div className="flex gap-1.5 pt-1">
-                      <div className="h-6 w-16 bg-white/[0.04] rounded-full" />
-                      <div className="h-6 w-20 bg-white/[0.04] rounded-full" />
-                    </div>
-                    <div className="h-10 bg-white/[0.05] rounded-full mt-2" />
-                  </Card>
+                    <div className="h-9 bg-[#F7F7F5] rounded-md mt-2" />
+                  </div>
                 ))}
               </div>
             ) : fetchError ? (
-              /* ACTIONABLE ERROR STATE (NOT GENERIC) */
-              <Card
-                variant="charcoal"
-                className="py-16 px-6 text-center max-w-xl mx-auto space-y-5 my-8 border-rose-500/30 bg-[#121315] shadow-xl"
-              >
-                <div className="w-16 h-16 rounded-3xl bg-rose-500/15 border border-rose-500/30 text-rose-400 mx-auto flex items-center justify-center">
-                  <AlertCircle className="w-8 h-8" />
+              /* ERROR STATE */
+              <div className="py-16 px-6 text-center max-w-xl mx-auto space-y-5 my-8 rounded-xl bg-white border border-[#E8E8E6]">
+                <div className="w-12 h-12 rounded-md bg-[#F7F7F5] border border-[#E8E8E6] text-rose-500 mx-auto flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-display font-bold text-white tracking-tight">
+                  <h3 className="text-xl font-sans font-semibold text-[#14161A] tracking-tight">
                     Unable to load coach catalog
                   </h3>
-                  <p className="text-sm text-[#F7F4EF]/60 leading-relaxed max-w-md mx-auto">
-                    We encountered a connection issue while querying verified practitioner profiles. Please verify your internet connection or tap the button below to retry.
+                  <p className="text-sm text-[#8B8D91] leading-relaxed max-w-md mx-auto font-normal">
+                    We encountered a connection issue while querying practitioner profiles. Please verify your connection or retry below.
                   </p>
                 </div>
                 <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                   <Button
                     variant="primary"
-                    size="md"
+                    size="sm"
                     onClick={loadCoachesAndCourses}
-                    leftIcon={<RotateCcw className="w-4 h-4" />}
+                    leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
                   >
-                    Retry Fetching Coaches
+                    Retry
                   </Button>
                   <Button
                     variant="outline"
-                    size="md"
+                    size="sm"
                     onClick={handleResetFilters}
                   >
                     Reset Filters
                   </Button>
                 </div>
-              </Card>
+              </div>
             ) : filteredCoaches.length > 0 ? (
+              /* RESULTS GRID */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6 pt-2">
                 {filteredCoaches.map((coach) => (
                   <CoachCard
@@ -594,73 +636,72 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                 ))}
               </div>
             ) : (
-              /* CLEAR INFORMATIVE EMPTY STATE REUSING CARD & BUTTON */
+              /* CLEAR INFORMATIVE EMPTY STATE */
               <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
+                initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="my-8"
               >
-                <Card
-                  variant="charcoal"
-                  className="py-16 px-6 bg-[#121315] border-white/[0.08] text-center max-w-xl mx-auto space-y-5 shadow-xl"
-                >
-                  <div className="w-16 h-16 rounded-3xl bg-[#B8703F]/15 border border-[#B8703F]/30 text-[#B8703F] mx-auto flex items-center justify-center shadow-sm">
-                    <SearchX className="w-8 h-8" />
+                <div className="py-16 px-6 bg-white border border-[#E8E8E6] rounded-xl text-center max-w-xl mx-auto space-y-4">
+                  <div className="w-12 h-12 rounded-md bg-[#F7F7F5] border border-[#E8E8E6] text-[#14161A] mx-auto flex items-center justify-center">
+                    <SearchX className="w-6 h-6 text-[#14161A]" />
                   </div>
 
                   <div className="space-y-2">
-                    <h3 className="text-2xl sm:text-3xl font-display font-bold text-[#F7F4EF] tracking-tight">
+                    <h3 className="text-xl sm:text-2xl font-sans font-semibold text-[#14161A] tracking-tight">
                       {hasActiveFilters
                         ? 'No coaches found matching your criteria'
                         : 'No verified coaches currently listed'}
                     </h3>
-                    <p className="text-sm text-[#F7F4EF]/60 leading-relaxed font-normal">
+                    <p className="text-sm text-[#8B8D91] leading-relaxed font-normal max-w-md mx-auto">
                       {hasActiveFilters
-                        ? "We couldn't find any coaches for your exact filter combination. Try broadening your budget range, clearing the format filter, or searching for broader terms like 'Strength' or 'Nutrition'."
-                        : 'New expert practitioners are currently completing the Universifit credential verification review. Check back soon or apply to join as a verified coach.'}
+                        ? "We couldn't find any coaches for your exact filter combination. Try clearing some filters or searching for broader terms like 'Physique' or 'Nutrition'."
+                        : 'New expert practitioners are currently completing platform onboarding. Check back soon or apply to join as a creator.'}
                     </p>
                   </div>
 
                   {hasActiveFilters && (
-                    <div className="pt-3 flex items-center justify-center gap-3">
+                    <div className="pt-2 flex items-center justify-center gap-3">
                       <Button
                         variant="primary"
-                        size="md"
+                        size="sm"
                         onClick={handleResetFilters}
-                        leftIcon={<RotateCcw className="w-4 h-4" />}
+                        leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
                       >
                         Reset All Filters
                       </Button>
                     </div>
                   )}
-                </Card>
+                </div>
               </motion.div>
             )}
 
-          </main>
+          </section>
         </div>
       </div>
 
       {/* MOBILE FILTER MODAL DRAWER */}
       <AnimatePresence>
         {isMobileFilterOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+          <div
+            id="mobile-filter-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-filter-heading"
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
           >
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="bg-[#16171A] w-full max-w-lg rounded-t-3xl sm:rounded-3xl border border-white/10 p-6 space-y-6 max-h-[90vh] overflow-y-auto"
+              className="bg-white w-full max-w-lg rounded-t-xl sm:rounded-xl border border-[#E8E8E6] p-6 space-y-6 max-h-[90vh] overflow-y-auto text-[#14161A]"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <h3 className="font-display font-bold text-lg text-white">Filter Coaches</h3>
+              <div className="flex items-center justify-between pb-3 border-b border-[#E8E8E6]">
+                <h3 id="mobile-filter-heading" className="font-sans font-semibold text-base text-[#14161A]">Filter Coaches</h3>
                 <button
                   onClick={() => setIsMobileFilterOpen(false)}
-                  className="p-1.5 rounded-full bg-white/[0.06] text-white/70 hover:text-white"
+                  className="p-1 rounded-md hover:bg-[#F7F7F5] text-[#5A5D62] hover:text-[#14161A] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#3652C4]"
+                  aria-label="Close filters dialog"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -668,16 +709,16 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
 
               {/* Goal Filter */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white/50 uppercase">Goal</label>
+                <label className="text-xs font-semibold text-[#8B8D91] uppercase">Goal & Discipline</label>
                 <div className="grid grid-cols-2 gap-1.5">
                   {goalOptions.map((g) => (
                     <button
                       key={g.id}
                       onClick={() => setSelectedGoal(g.id)}
-                      className={`p-2.5 rounded-xl text-xs font-medium text-left border ${
+                      className={`p-2.5 rounded-md text-xs font-medium text-left border transition-colors cursor-pointer ${
                         selectedGoal === g.id
-                          ? 'bg-[#B8703F]/20 text-[#B8703F] border-[#B8703F]'
-                          : 'bg-white/[0.03] text-white/70 border-white/10'
+                          ? 'bg-[#14161A] text-white border-[#14161A]'
+                          : 'bg-white text-[#14161A] border-[#E8E8E6] hover:bg-[#F7F7F5]'
                       }`}
                     >
                       {g.label}
@@ -687,17 +728,17 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
               </div>
 
               {/* Format Filter */}
-              <div className="space-y-2 pt-2 border-t border-white/10">
-                <label className="text-xs font-bold text-white/50 uppercase">Format</label>
+              <div className="space-y-2 pt-2 border-t border-[#E8E8E6]">
+                <label className="text-xs font-semibold text-[#8B8D91] uppercase">Format</label>
                 <div className="grid grid-cols-2 gap-1.5">
                   {formatOptions.map((f) => (
                     <button
                       key={f.id}
                       onClick={() => setSelectedFormat(f.id)}
-                      className={`p-2.5 rounded-xl text-xs font-medium text-left border ${
+                      className={`p-2.5 rounded-md text-xs font-medium text-left border transition-colors cursor-pointer ${
                         selectedFormat === f.id
-                          ? 'bg-[#6E8B6F]/20 text-[#6E8B6F] border-[#6E8B6F]'
-                          : 'bg-white/[0.03] text-white/70 border-white/10'
+                          ? 'bg-[#14161A] text-white border-[#14161A]'
+                          : 'bg-white text-[#14161A] border-[#E8E8E6] hover:bg-[#F7F7F5]'
                       }`}
                     >
                       {f.label}
@@ -706,9 +747,30 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                 </div>
               </div>
 
-              <div className="pt-4 flex items-center gap-3">
+              {/* Budget Filter */}
+              <div className="space-y-2 pt-2 border-t border-[#E8E8E6]">
+                <label className="text-xs font-semibold text-[#8B8D91] uppercase">Budget Range</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {budgetOptions.map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => setSelectedBudget(b.id)}
+                      className={`p-2.5 rounded-md text-xs font-medium text-left border transition-colors cursor-pointer ${
+                        selectedBudget === b.id
+                          ? 'bg-[#14161A] text-white border-[#14161A]'
+                          : 'bg-white text-[#14161A] border-[#E8E8E6] hover:bg-[#F7F7F5]'
+                      }`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 flex items-center gap-3 border-t border-[#E8E8E6]">
                 <Button
                   variant="outline"
+                  size="sm"
                   className="flex-1"
                   onClick={handleResetFilters}
                 >
@@ -716,6 +778,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                 </Button>
                 <Button
                   variant="primary"
+                  size="sm"
                   className="flex-1"
                   onClick={() => setIsMobileFilterOpen(false)}
                 >
@@ -723,7 +786,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                 </Button>
               </div>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

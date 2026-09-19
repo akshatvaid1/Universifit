@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getUserSubscriptions,
+  createSubscription,
   cancelSubscription,
   pauseSubscription,
   resumeSubscription,
@@ -13,6 +14,8 @@ const router = Router();
 router.use(authenticateJWT);
 
 router.get('/me', getUserSubscriptions);
+router.post('/create', createSubscription);
+router.post('/', createSubscription);
 router.post('/:enrollmentId/cancel', cancelSubscription);
 router.post('/:enrollmentId/pause', pauseSubscription);
 router.post('/:enrollmentId/resume', resumeSubscription);

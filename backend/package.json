@@ -9,6 +9,10 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "test:observability": "node dist/test-observability-integration.js",
+    "test:analytics": "node dist/test-analytics-integration.js",
+    "test:security": "tsx src/test-security-audit.ts",
+    "test:privacy": "tsx src/test-data-deletion.ts",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
@@ -16,6 +20,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1123.0",
     "@prisma/client": "^6.4.1",
+    "@sentry/node": "^10.74.0",
     "@types/pdfkit": "^0.17.6",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -26,7 +31,8 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pdfkit": "^0.20.2",
-    "razorpay": "^2.9.8"
+    "razorpay": "^2.9.8",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -40,5 +46,8 @@
     "prisma": "^6.4.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

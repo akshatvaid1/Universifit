@@ -6,10 +6,9 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
   BookOpen,
 } from 'lucide-react';
-import { Button, Badge } from './ui';
+import { Button } from './ui';
 import {
   submitReviewApi,
   updateReviewApi,
@@ -97,8 +96,8 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       if (res.success) {
         setSuccessMessage(
           existingReview?.id
-            ? 'Your verified review has been updated! ⭐'
-            : 'Thank you! Your verified review is now published on the coach storefront. 🎉'
+            ? 'Your verified review has been updated.'
+            : 'Thank you. Your verified review is now published on this profile.'
         );
         if (res.data) onReviewSaved(res.data);
         setTimeout(() => {
@@ -117,66 +116,63 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   const getRatingLabel = (score: number) => {
     switch (score) {
       case 5:
-        return 'Exceptional — Exceeded expectations (5/5)';
+        return 'Exceptional (5/5)';
       case 4:
-        return 'Very Good — Highly recommended (4/5)';
+        return 'Very Good (4/5)';
       case 3:
-        return 'Satisfactory — Met expectations (3/5)';
+        return 'Satisfactory (3/5)';
       case 2:
         return 'Below Expectations (2/5)';
       case 1:
-        return 'Needs Significant Improvement (1/5)';
+        return 'Needs Improvement (1/5)';
       default:
-        return 'Rate your experience';
+        return 'Select rating';
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs overflow-y-auto">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className="w-full max-w-lg bg-[#16171A] border border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.98 }}
+        className="w-full max-w-lg bg-white border border-[#E8E8E6] rounded-xl flex flex-col overflow-hidden text-[#14161A] font-sans"
       >
         {/* Header Bar */}
-        <div className="p-5 sm:p-6 border-b border-white/[0.08] flex items-center justify-between bg-[#121315]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
-              <Star className="w-5 h-5 fill-amber-400" />
+        <div className="p-5 border-b border-[#E8E8E6] flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-semibold text-[#14161A]">
+                {existingReview ? 'Edit Your Review' : 'Rate & Review Practitioner'}
+              </h3>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#F7F7F5] border border-[#E8E8E6] text-[#14161A]">
+                <ShieldCheck className="w-3 h-3 text-[#3652C4]" />
+                Verified
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-display font-bold text-white tracking-tight">
-                  {existingReview ? 'Edit Your Review' : 'Rate & Review Coach'}
-                </h3>
-                <Badge variant="verified" size="sm">
-                  VERIFIED BUYER
-                </Badge>
-              </div>
-              <p className="text-xs text-[#F7F4EF]/50">
-                Sharing feedback for Coach {creatorName}
-              </p>
-            </div>
+            <p className="text-xs text-[#8B8D91] mt-0.5">
+              Client evaluation for {creatorName}
+            </p>
           </div>
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="p-1 rounded-md text-[#8B8D91] hover:text-[#14161A] hover:bg-[#F7F7F5] transition-colors cursor-pointer"
+            aria-label="Close review dialog"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5">
           {/* Program Context Chip */}
-          <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center gap-2.5">
-            <BookOpen className="w-4 h-4 text-[#B8703F] shrink-0" />
+          <div className="p-3 rounded-lg bg-[#F7F7F5] border border-[#E8E8E6] flex items-center gap-2.5">
+            <BookOpen className="w-4 h-4 text-[#3652C4] shrink-0" />
             <div className="min-w-0">
-              <span className="text-[10px] uppercase font-bold text-neutral-400 block tracking-wider">
-                Completed Program
+              <span className="text-[11px] font-medium text-[#8B8D91] block">
+                Completed Program / Session
               </span>
-              <span className="text-xs font-semibold text-white truncate block">
+              <span className="text-xs font-semibold text-[#14161A] truncate block">
                 {programTitle}
               </span>
             </div>
@@ -184,25 +180,25 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
           {/* Error / Success Notifications */}
           {errorMessage && (
-            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {successMessage && (
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
               <span>{successMessage}</span>
             </div>
           )}
 
           {/* Interactive Star Rating */}
           <div className="space-y-2 text-center py-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#F7F4EF]/70 block">
-              Overall Experience Rating
+            <label className="text-xs font-medium text-[#8B8D91] block">
+              Overall Rating
             </label>
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1.5">
               {[1, 2, 3, 4, 5].map((starValue) => {
                 const isFilled = (hoverRating !== null ? hoverRating : rating) >= starValue;
                 return (
@@ -212,20 +208,21 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                     onClick={() => setRating(starValue)}
                     onMouseEnter={() => setHoverRating(starValue)}
                     onMouseLeave={() => setHoverRating(null)}
-                    className="p-1 rounded-xl hover:scale-115 transition-transform cursor-pointer focus:outline-none"
+                    className="p-1 rounded transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#3652C4]"
+                    aria-label={`${starValue} Stars`}
                   >
                     <Star
-                      className={`w-8 h-8 transition-colors ${
+                      className={`w-7 h-7 transition-colors ${
                         isFilled
-                          ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]'
-                          : 'text-neutral-600'
+                          ? 'text-[#14161A] fill-[#14161A]'
+                          : 'text-[#E8E8E6] fill-transparent'
                       }`}
                     />
                   </button>
                 );
               })}
             </div>
-            <p className="text-xs text-[#B8703F] font-medium transition-all">
+            <p className="text-xs font-medium text-[#14161A]">
               {getRatingLabel(hoverRating !== null ? hoverRating : rating)}
             </p>
           </div>
@@ -233,35 +230,36 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           {/* Review Textarea */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-[#F7F4EF]/70 block">
-                Your Detailed Feedback
+              <label className="text-xs font-medium text-[#14161A] block">
+                Your Feedback
               </label>
-              <span className="text-[10px] text-neutral-400 font-mono">
+              <span className="text-[11px] text-[#8B8D91]">
                 {reviewText.length} characters
               </span>
             </div>
             <textarea
               rows={4}
-              placeholder="What was your experience like? How did the coach explain concepts or handle form corrections? What results did you achieve?"
+              placeholder="Describe your coaching or curriculum experience, specific improvements, and communication with the practitioner..."
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
-              className="w-full bg-[#121315] border border-white/10 rounded-2xl p-4 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#B8703F] leading-relaxed resize-none"
+              className="w-full bg-white border border-[#E8E8E6] rounded-md p-3 text-sm text-[#14161A] placeholder-[#8B8D91] focus:outline-none focus:border-[#14161A] focus:ring-1 focus:ring-[#14161A] leading-relaxed resize-none"
             />
           </div>
 
           {/* Verified Guarantee note */}
-          <div className="p-3.5 rounded-2xl bg-[#6E8B6F]/10 border border-[#6E8B6F]/20 text-[11px] text-[#6E8B6F] flex items-center gap-2.5">
-            <ShieldCheck className="w-4 h-4 shrink-0" />
+          <div className="p-3 rounded-md bg-[#F7F7F5] border border-[#E8E8E6] text-[11px] text-[#8B8D91] flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#3652C4] shrink-0" />
             <span>
-              Your review will appear with the <strong>Verified Athlete</strong> badge. You can edit or update your review anytime.
+              Reviews are verified against platform purchases and bookings. Fake or incentivized reviews are strictly prohibited.
             </span>
           </div>
 
           {/* Submit Actions */}
-          <div className="pt-2 flex items-center justify-end gap-3 border-t border-white/[0.08]">
+          <div className="pt-2 flex items-center justify-end gap-3 border-t border-[#E8E8E6]">
             <Button
               variant="outline"
               type="button"
+              size="sm"
               onClick={onClose}
             >
               Cancel
@@ -270,8 +268,8 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             <Button
               variant="primary"
               type="submit"
+              size="sm"
               isLoading={isSubmitting}
-              leftIcon={<Sparkles className="w-4 h-4" />}
             >
               {existingReview ? 'Update Review' : 'Publish Verified Review'}
             </Button>

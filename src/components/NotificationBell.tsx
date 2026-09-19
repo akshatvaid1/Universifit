@@ -88,19 +88,19 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }
     switch (type) {
       case 'BOOKING_CONFIRMED':
       case 'BOOKING_NEW':
-        return <Calendar className="w-4 h-4 text-[#6E8B6F]" />;
+        return <Calendar className="w-4 h-4 text-[#3652C4]" />;
       case 'MESSAGE_RECEIVED':
-        return <MessageSquare className="w-4 h-4 text-[#B8703F]" />;
+        return <MessageSquare className="w-4 h-4 text-[#3652C4]" />;
       case 'PAYMENT_SUCCESS':
         return <CreditCard className="w-4 h-4 text-emerald-400" />;
       case 'COURSE_PUBLISHED':
         return <Sparkles className="w-4 h-4 text-amber-400" />;
       case 'VERIFICATION_APPROVED':
-        return <ShieldCheck className="w-4 h-4 text-[#6E8B6F]" />;
+        return <ShieldCheck className="w-4 h-4 text-[#3652C4]" />;
       case 'VERIFICATION_REJECTED':
         return <AlertCircle className="w-4 h-4 text-rose-400" />;
       default:
-        return <CheckCircle2 className="w-4 h-4 text-[#B8703F]" />;
+        return <CheckCircle2 className="w-4 h-4 text-[#3652C4]" />;
     }
   };
 
@@ -116,13 +116,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }
           setIsOpen(!isOpen);
           if (!isOpen) loadNotifications();
         }}
-        className="relative p-2 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-[#F7F4EF]/80 hover:text-white transition-all cursor-pointer flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8703F]"
+        className="relative p-2 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-[#F7F4EF]/80 hover:text-white transition-all cursor-pointer flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3652C4]"
         title="Notifications"
         aria-label="Open notifications"
+        aria-expanded={isOpen}
+        aria-controls="notifications-dropdown-panel"
       >
         <Bell className="w-4 h-4 text-[#F7F4EF]" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#B8703F] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#3652C4] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -132,6 +134,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id="notifications-dropdown-panel"
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}

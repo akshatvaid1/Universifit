@@ -18,7 +18,22 @@ export interface PayoutDetails {
 }
 
 // In-memory persistent store for creator payout configurations
-const creatorPayoutStore = new Map<string, PayoutDetails>();
+const creatorPayoutStore = new Map<string, PayoutDetails>([
+  [
+    'creator-chadtag',
+    {
+      payoutMethod: 'BANK_TRANSFER',
+      accountHolderName: 'Chadtag Athletics',
+      accountNumber: '918283746591',
+      maskedAccountNumber: '••••••••6591',
+      ifscOrSwift: 'HDFC0001234',
+      bankName: 'HDFC Bank Ltd',
+      gstin: '27AAPFV8921M1Z5',
+      payoutSetupCompleted: true,
+      updatedAt: '2026-09-01T00:00:00Z',
+    },
+  ],
+]);
 
 export class PayoutService {
   /**

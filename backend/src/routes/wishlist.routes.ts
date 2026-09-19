@@ -15,6 +15,7 @@ router.use(authenticateJWT);
 router.get('/', getWishlist);
 router.post('/', addToWishlist);
 router.post('/toggle', toggleWishlist);
+router.post('/:offerId', addToWishlist);
 router.delete('/:offerId', removeFromWishlist);
 
 export default router;

@@ -40,27 +40,42 @@ passport.use(
         const avatarUrl = profile.photos?.[0]?.value || null;
         const googleId = profile.id;
 
-        // Query database for existing user matching email
-        let user = await prisma.user.findUnique({
-          where: { email },
+        // Query database for existing user matching googleId or email
+        let user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { googleId },
+              { email },
+            ],
+          },
         });
 
         if (!user) {
           // Create new user in PostgreSQL database
           user = await prisma.user.create({
             data: {
+              googleId,
               email,
               fullName,
               avatarUrl,
               passwordHash: 'oauth_google_' + Math.random().toString(36).slice(2),
               role: 'BUYER',
+              isEmailVerified: true,
             },
           });
-        } else if (!user.avatarUrl && avatarUrl) {
-          user = await prisma.user.update({
-            where: { id: user.id },
-            data: { avatarUrl },
-          });
+        } else {
+          // Update googleId and avatar if missing
+          const updateData: any = {};
+          if (!user.googleId) updateData.googleId = googleId;
+          if (!user.avatarUrl && avatarUrl) updateData.avatarUrl = avatarUrl;
+          if (!user.isEmailVerified) updateData.isEmailVerified = true;
+
+          if (Object.keys(updateData).length > 0) {
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: updateData,
+            });
+          }
         }
 
         const authUser = {

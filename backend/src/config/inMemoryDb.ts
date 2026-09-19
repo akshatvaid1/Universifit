@@ -6,6 +6,7 @@ export interface MemoryUser {
   passwordHash: string;
   fullName: string;
   avatarUrl?: string;
+  googleId?: string;
   role: 'BUYER' | 'CREATOR' | 'ADMIN';
   points: number;
   isProfilePrivate?: boolean;
@@ -37,6 +38,10 @@ export interface MemoryCreatorProfile {
   profileViews?: number;
   referralCode?: string;
   referralBonus?: number;
+  payoutMethod?: string;
+  payoutDetails?: any;
+  gstin?: string;
+  payoutSetupCompleted?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -145,6 +150,16 @@ export interface MemoryLessonProgress {
   updatedAt: Date;
 }
 
+export interface MemoryAvailability {
+  id: string;
+  creatorId: string;
+  startTime: Date;
+  endTime: Date;
+  isBooked: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface MemoryBooking {
   id: string;
   userId: string;
@@ -208,6 +223,35 @@ export interface MemoryPostReply {
 export interface MemoryPostLike {
   id: string;
   postId: string;
+  userId: string;
+  createdAt: Date;
+}
+
+export interface MemoryCourseDiscussionPost {
+  id: string;
+  courseId: string;
+  lessonId?: string;
+  authorId: string;
+  title: string;
+  content: string;
+  likesCount: number;
+  isPinned: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MemoryCourseDiscussionReply {
+  id: string;
+  discussionId: string;
+  authorId: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MemoryCourseDiscussionLike {
+  id: string;
+  discussionId: string;
   userId: string;
   createdAt: Date;
 }
@@ -330,6 +374,7 @@ export interface MemoryEvent {
   conferenceId?: string;
   calendarEventId?: string;
   eventOfferId?: string;
+  tierAccess?: TierAccess;
   status: EventStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -345,6 +390,24 @@ export interface MemoryEventRSVP {
   joinToken: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface MemoryAlert {
+  id: string;
+  type: 'PAYMENT_WEBHOOK_FAILURE' | 'PAYMENT_GATEWAY_ERROR' | 'AUTH_ANOMALY' | 'UNHANDLED_EXCEPTION';
+  severity: 'WARNING' | 'CRITICAL' | 'FATAL';
+  message: string;
+  metadata?: Record<string, any>;
+  createdAt: Date;
+}
+
+export interface MemoryAnalyticsEvent {
+  id: string;
+  eventName: string; // 'page_view' | 'signup' | 'creator_publish' | 'checkout_start' | 'checkout_completed' | 'enroll' | 'book' | 'community_join'
+  creatorId?: string;
+  userId?: string;
+  metadata: Record<string, any>;
+  timestamp: Date;
 }
 
 class InMemoryStore {
@@ -373,6 +436,12 @@ class InMemoryStore {
   eventRsvps: MemoryEventRSVP[] = [];
   membershipTiers: MemoryMembershipTier[] = [];
   membershipMembers: MemoryMembershipMember[] = [];
+  courseDiscussionPosts: MemoryCourseDiscussionPost[] = [];
+  courseDiscussionReplies: MemoryCourseDiscussionReply[] = [];
+  courseDiscussionLikes: MemoryCourseDiscussionLike[] = [];
+  availabilities: MemoryAvailability[] = [];
+  alerts: MemoryAlert[] = [];
+  analyticsEvents: MemoryAnalyticsEvent[] = [];
 
   constructor() {
     this.seed();
@@ -400,7 +469,7 @@ class InMemoryStore {
       email: 'chadtag@ascend.io',
       passwordHash: chadtagPasswordHash,
       fullName: 'Chadtag',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
+      avatarUrl: '/chadtag.png',
       role: 'CREATOR',
       points: 0,
       createdAt: new Date('2026-09-01T00:00:00Z'),
@@ -421,13 +490,13 @@ class InMemoryStore {
       ],
       verificationDocs: [
         'https://youtube.com/@chadtag',
-        'https://instagram.com/chadtagyt',
-        'https://discord.gg/aTpvfD2SU',
+        'https://instagram.com/chadtag',
+        'https://discord.gg/chadtag',
       ],
       socialLinks: {
         youtube: 'https://youtube.com/@chadtag',
-        instagram: 'https://instagram.com/chadtagyt',
-        discord: 'https://discord.gg/aTpvfD2SU',
+        instagram: 'https://instagram.com/chadtag',
+        discord: 'https://discord.gg/chadtag',
       },
       verificationStatus: 'VERIFIED',
       verifiedAt: new Date('2026-09-01T00:00:00Z'),
@@ -438,43 +507,61 @@ class InMemoryStore {
       profileViews: 0,
       referralCode: 'CHADTAG',
       referralBonus: 25,
+      payoutSetupCompleted: true,
       createdAt: new Date('2026-09-01T00:00:00Z'),
       updatedAt: new Date('2026-09-01T00:00:00Z'),
     };
 
-    // 1:1 Coaching Call Offer (Price placeholder, marked draft pending his input on pricing/availability)
+    // 1:1 Coaching Call Offer - DRAFT (not auto-published, editable/publishable by Chadtag)
     const offChadtag1on1: MemoryOffer = {
       id: 'offer-chadtag-1on1',
       creatorId: 'creator-chadtag',
       title: '1:1 Coaching Call',
       description: 'Private 1-on-1 consultation session covering facial aesthetics assessment, customized nutrition framework, physique roadmap, and confidence building.',
       type: 'ONE_ON_ONE',
-      price: 150, // placeholder
+      price: 150,
       currency: 'USD',
-      isActive: false, // draft pending creator pricing & availability
+      isActive: false, // DRAFT: editable & publishable by him via Course Studio
       viewCount: 0,
       createdAt: new Date('2026-09-01T00:00:00Z'),
       updatedAt: new Date('2026-09-01T00:00:00Z'),
     };
 
-    // Course "ChadMax" (Status "draft" until Chadtag uploads real videos and publishes it himself via Course Studio M1)
-    const courseChadMax: MemoryCourse = {
-      id: 'course-chadmax',
+    // Course "ChadMax" Offer - DRAFT (not auto-published, editable/publishable by Chadtag)
+    const offChadMax: MemoryOffer = {
+      id: 'offer-chadtag-course',
       creatorId: 'creator-chadtag',
       title: 'ChadMax',
       description: "A men's self-improvement and aesthetics protocol covering facial aesthetics, diet, physique training, height & posture optimization, and confidence & aura building.",
+      type: 'COURSE',
+      price: 118,
+      currency: 'USD',
+      isActive: false, // DRAFT: editable & publishable by him via Course Studio
+      viewCount: 0,
+      createdAt: new Date('2026-09-01T00:00:00Z'),
+      updatedAt: new Date('2026-09-01T00:00:00Z'),
+    };
+
+    // Course "ChadMax" (Curriculum loaded - DRAFT)
+    const courseChadMax: MemoryCourse = {
+      id: 'course-chadmax',
+      creatorId: 'creator-chadtag',
+      offerId: 'offer-chadtag-course',
+      title: 'ChadMax',
+      description: "A men's self-improvement and aesthetics protocol covering facial aesthetics, diet, physique training, height & posture optimization, and confidence & aura building.",
       thumbnailUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80',
-      isPublished: false, // draft
+      isPublished: false, // DRAFT: editable & publishable by him via Course Studio
       createdAt: new Date('2026-09-01T00:00:00Z'),
       updatedAt: new Date('2026-09-01T00:00:00Z'),
     };
 
     // 5 modules as structured lessons (curriculum loaded)
+    // Modules: Facial Aesthetics, Diet Framework, Physique Building, Height & Posture, Confidence
     const lessonsChadMax: MemoryLesson[] = [
       {
         id: 'lesson-chadmax-1',
         courseId: 'course-chadmax',
-        title: 'Facial Aesthetics & Structure',
+        title: 'Facial Aesthetics',
         description: 'Master cranial posture, tongue resting mechanics, and jawline definition protocols for structural symmetry.',
         videoUrl: '',
         durationSeconds: 0,
@@ -487,7 +574,7 @@ class InMemoryStore {
       {
         id: 'lesson-chadmax-2',
         courseId: 'course-chadmax',
-        title: 'Diet & Nutrition Framework',
+        title: 'Diet Framework',
         description: 'Structured micronutrient timing, clean bulking ratios, and hydration frameworks for muscular density.',
         videoUrl: '',
         durationSeconds: 0,
@@ -500,7 +587,7 @@ class InMemoryStore {
       {
         id: 'lesson-chadmax-3',
         courseId: 'course-chadmax',
-        title: 'Physique & Muscle Building',
+        title: 'Physique Building',
         description: 'Progressive overload blueprints targeting clavicle width, upper chest fullness, and V-taper taper ratios.',
         videoUrl: '',
         durationSeconds: 0,
@@ -513,7 +600,7 @@ class InMemoryStore {
       {
         id: 'lesson-chadmax-4',
         courseId: 'course-chadmax',
-        title: 'Height & Posture Optimization',
+        title: 'Height & Posture',
         description: 'Decompression routines, anterior pelvic tilt correction, and spinal hygiene for optimal natural stature.',
         videoUrl: '',
         durationSeconds: 0,
@@ -526,7 +613,7 @@ class InMemoryStore {
       {
         id: 'lesson-chadmax-5',
         courseId: 'course-chadmax',
-        title: 'Confidence & Aura Building',
+        title: 'Confidence',
         description: 'Gaze stability, vocal resonance, nonverbal poise, and psychological grounding for calm social dominance.',
         videoUrl: '',
         durationSeconds: 0,
@@ -540,7 +627,7 @@ class InMemoryStore {
 
     this.users = [uAdmin, uChadtag];
     this.creatorProfiles = [cpChadtag];
-    this.offers = [offChadtag1on1];
+    this.offers = [offChadtag1on1, offChadMax];
     this.courses = [courseChadMax];
     this.lessons = lessonsChadMax;
     this.lessonProgress = [];
@@ -555,11 +642,74 @@ class InMemoryStore {
     this.wishlistItems = [];
     this.certificates = [];
     this.storefrontVisits = [];
-    this.referrals = [];
-    this.pointsRules = [];
-    this.userLevels = [];
+    this.pointsRules = [
+      { id: 'rule-global-post', creatorId: null, action: 'post', points: 10, isActive: true },
+      { id: 'rule-global-reply', creatorId: null, action: 'reply', points: 5, isActive: true },
+      { id: 'rule-global-like', creatorId: null, action: 'like-received', points: 2, isActive: true },
+      { id: 'rule-global-lesson', creatorId: null, action: 'lesson-complete', points: 25, isActive: true },
+      { id: 'rule-global-event', creatorId: null, action: 'event-attend', points: 50, isActive: true },
+    ];
+    this.userLevels = [
+      { id: 'lvl-global-1', creatorId: null, tierName: 'Beginner', minPoints: 0, badgeColor: '#6B7280' },
+      { id: 'lvl-global-2', creatorId: null, tierName: 'Consistent', minPoints: 50, badgeColor: '#3B82F6' },
+      { id: 'lvl-global-3', creatorId: null, tierName: 'Elite', minPoints: 200, badgeColor: '#F59E0B' },
+    ];
     this.pointsTransactions = [];
-    this.events = [];
+
+    const now = Date.now();
+    const evtLiveNow: MemoryEvent = {
+      id: 'evt-chadtag-live-qa',
+      creatorId: 'creator-chadtag',
+      title: 'Weekly Q&A: Hypertrophy Programming & Deload Protocols',
+      description: 'Live interactive consultation for athletes looking to optimize recovery volume, autoregulation, and joint health across high-intensity meso-cycles.',
+      scheduledAt: new Date(now - 5 * 60 * 1000), // Active now (started 5 mins ago)
+      durationMinutes: 60,
+      capacity: 35,
+      isRecurring: true,
+      recurrenceRule: 'FREQ=WEEKLY;BYDAY=TH',
+      meetingUrl: 'https://meet.google.com/asc-chad-live',
+      meetingCode: 'asc-chad-live',
+      tierAccess: 'FREE',
+      status: 'SCHEDULED',
+      createdAt: new Date('2026-09-01T00:00:00Z'),
+      updatedAt: new Date('2026-09-01T00:00:00Z'),
+    };
+
+    const evtUpcomingWorkshop: MemoryEvent = {
+      id: 'evt-chadtag-deadlift-biomechanics',
+      creatorId: 'creator-chadtag',
+      title: 'Live Form Check & Deadlift Biomechanics Workshop',
+      description: 'Bring your lifting videos or join live for real-time form breakdowns, hip hinge cues, and bar path corrections directly with Chadtag.',
+      scheduledAt: new Date(now + 24 * 60 * 60 * 1000), // Tomorrow
+      durationMinutes: 60,
+      capacity: 25,
+      isRecurring: false,
+      meetingUrl: 'https://meet.google.com/asc-chad-biomech',
+      meetingCode: 'asc-chad-biomech',
+      tierAccess: 'FREE',
+      status: 'SCHEDULED',
+      createdAt: new Date('2026-09-01T00:00:00Z'),
+      updatedAt: new Date('2026-09-01T00:00:00Z'),
+    };
+
+    const evtVipMasterclass: MemoryEvent = {
+      id: 'evt-chadtag-vip-periodization',
+      creatorId: 'creator-chadtag',
+      title: 'Apex VIP: Advanced Periodization Masterclass',
+      description: 'Exclusive masterclass for VIP tier members covering block periodization models, peaking strategies for strength sports, and hormonal recovery factors.',
+      scheduledAt: new Date(now + 4 * 24 * 60 * 60 * 1000), // In 4 days
+      durationMinutes: 90,
+      capacity: 15,
+      isRecurring: false,
+      meetingUrl: 'https://meet.google.com/asc-chad-vip',
+      meetingCode: 'asc-chad-vip',
+      tierAccess: 'PAID',
+      status: 'SCHEDULED',
+      createdAt: new Date('2026-09-01T00:00:00Z'),
+      updatedAt: new Date('2026-09-01T00:00:00Z'),
+    };
+
+    this.events = [evtLiveNow, evtUpcomingWorkshop, evtVipMasterclass];
     this.eventRsvps = [];
     this.membershipTiers = [];
     this.membershipMembers = [];

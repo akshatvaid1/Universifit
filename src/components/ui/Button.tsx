@@ -27,19 +27,19 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium font-sans rounded-full transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121315] focus-visible:ring-[#B8703F] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 cursor-pointer select-none';
+      'inline-flex items-center justify-center font-medium font-sans rounded-md transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F7F5] focus-visible:ring-[#3652C4] active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none cursor-pointer select-none';
 
     const variants = {
       primary:
-        'bg-[#B8703F] text-white hover:bg-[#a66233] shadow-sm hover:shadow-[0_4px_20px_-4px_rgba(184,112,63,0.4)]',
+        'bg-[#3652C4] text-white hover:bg-[#2D44A6]',
       ghost:
-        'bg-transparent text-[#F7F4EF] hover:bg-white/10 hover:text-white border border-transparent',
+        'bg-transparent text-[#14161A] hover:bg-black/[0.04] border border-transparent',
       secondary:
-        'bg-[#F7F4EF] text-[#1A1A1A] hover:bg-white shadow-sm',
+        'bg-white text-[#14161A] hover:bg-[#F7F7F5] border border-[#E5E5E3]',
       outline:
-        'bg-transparent text-[#F7F4EF] border border-white/20 hover:border-white/40 hover:bg-white/5',
+        'bg-transparent text-[#14161A] border border-[#8B8D91]/30 hover:border-[#14161A] hover:bg-black/[0.02]',
       sage:
-        'bg-[#6E8B6F] text-white hover:bg-[#5f7a60] shadow-sm',
+        'bg-[#3652C4] text-white hover:bg-[#2D44A6]',
     };
 
     const sizes = {
